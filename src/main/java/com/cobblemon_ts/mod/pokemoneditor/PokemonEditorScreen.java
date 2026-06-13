@@ -25,6 +25,9 @@ public class PokemonEditorScreen extends Screen {
     private final String targetPlayerName;
     private final int partySize;
     private final List<PokemonData> partyData = new ArrayList<>();
+    // ★ 保存每个槽位的原始值快照（用于检测用户修改了哪些字段）
+    // 在 refreshEditFields 时保存；在 saveChanges 时比较当前值与快照生成 modifiedFields
+    private final List<PokemonData> originalSnapshots = new ArrayList<>();
 
     private int selectedSlot = -1;
     private int activeTab = 0; // 0=概要, 1=对战, 2=能力, 3=高级
@@ -34,6 +37,8 @@ public class PokemonEditorScreen extends Screen {
     private EditBox sumNatureField, sumAbilityField, sumFriendshipField, sumFormField;
     private EditBox sumHeldItemField, genderField;
     private Button sumShinyButton;
+    private Button clearNameBtn; // 清空昵称按钮（×）
+    private Button statusCycleBtn; // 状态切换：无状态 → 中毒 → 麻痹 → 烧伤 → 冰冻 → 睡眠 → 剧毒
     private Button levelDownBtn, levelUpBtn, friendshipDownBtn, friendshipUpBtn;
 
     // ========== 能力 Tab 字段 ==========
@@ -102,7 +107,10 @@ public class PokemonEditorScreen extends Screen {
         this.targetPlayerUUID = targetPlayerUUID;
         this.targetPlayerName = targetPlayerName;
         this.partySize = partySize;
-        for (int i = 0; i < partySize; i++) partyData.add(new PokemonData());
+        for (int i = 0; i < partySize; i++) {
+            partyData.add(new PokemonData());
+            originalSnapshots.add(new PokemonData());
+        }
     }
 
     // ============================================================
@@ -113,6 +121,9 @@ public class PokemonEditorScreen extends Screen {
         // 1. 边界检查：槽位索引必须在 0~partyData.size() 范围内
         if (pkt.slot() < 0 || pkt.slot() >= partyData.size()) return;
         PokemonData d = partyData.get(pkt.slot());
+
+        // ★ 关键：从服务端读回的是原始数据，清除修改记录（这不是用户改的）
+        d.clearModified();
 
         // ★ DEBUG: 打印收到的完整数据包（特别是 moves 部分）
         PokemonEditorDebug.infoMoves("[Screen] RECEIVED packet for slot {}: slot0='{}'({}/{}) slot1='{}'({}/{}) slot2='{}'({}/{}) slot3='{}'({}/{})",
@@ -177,10 +188,11 @@ public class PokemonEditorScreen extends Screen {
             }
         }
 
-        // 7. HP / 携带物 / 性别
+        // 7. HP / 携带物 / 性别 / 状态
         d.currentHp = pkt.currentHp(); d.maxHp = pkt.maxHp();
         d.heldItem = cleanName(pkt.heldItem());
         d.gender = pkt.gender();
+        d.status = cleanName(pkt.status());
 
         // 8. 可能特性列表（分号分隔，用于下拉选择）
         d.possibleAbilities.clear();
@@ -357,8 +369,14 @@ public class PokemonEditorScreen extends Screen {
                 .pos(editX + labelW + 10 + 100 + 4 + 18 + 2, rowY + rowStep)
                 .size(18, 18)
                 .build();
-        sumNameField = new EditBox(this.font, editX + labelW + 10, rowY + rowStep * 2, 230, 18, Component.literal(""));
+        sumNameField = new EditBox(this.font, editX + labelW + 10, rowY + rowStep * 2, 160, 18, Component.literal(""));
         sumNameField.setMaxLength(30);
+        // 昵称清空按钮（×）
+        clearNameBtn = Button.builder(Component.literal("\u00D7"),
+                btn -> sumNameField.setValue(""))
+                .pos(editX + labelW + 10 + 160 + 4, rowY + rowStep * 2)
+                .size(18, 18)
+                .build();
         sumNatureField = new EditBox(this.font, editX + labelW + 10, rowY + rowStep * 3, 160, 18, Component.literal(""));
         sumNatureField.setMaxLength(20);
         sumAbilityField = new EditBox(this.font, editX + labelW + 10, rowY + rowStep * 4, 160, 18, Component.literal(""));
@@ -397,7 +415,7 @@ public class PokemonEditorScreen extends Screen {
                 .build();
         sumFormField = new EditBox(this.font, editX + labelW + 10, rowY + rowStep * 6, 160, 18, Component.literal(""));
         sumFormField.setMaxLength(40);
-        sumHeldItemField = new EditBox(this.font, editX + labelW + 10, rowY + rowStep * 7, 230, 18, Component.literal(""));
+        sumHeldItemField = new EditBox(this.font, editX + labelW + 10, rowY + rowStep * 7, 160, 18, Component.literal(""));
         sumHeldItemField.setMaxLength(50);
         // 性别：0=雄性 1=雌性 2=无性别，用数字输入框+一个切换按钮
         genderField = makeIntBox(editX + labelW + 10, rowY + rowStep * 8, 60, 0, 2);
@@ -414,6 +432,12 @@ public class PokemonEditorScreen extends Screen {
                 btn -> { if (selectedSlot >= 0) { partyData.get(selectedSlot).shiny = !partyData.get(selectedSlot).shiny; updateShinyButton(); }})
                 .pos(editX + labelW + 10, rowY + rowStep * 9)
                 .size(110, 18)
+                .build();
+        // 状态下拉（无/中毒/麻痹/烧伤/冰冻/睡眠/剧毒）- 点击循环切换
+        statusCycleBtn = Button.builder(Component.literal("  状态: 无  "),
+                btn -> { if (selectedSlot >= 0) cycleToNextStatus(); })
+                .pos(editX + labelW + 10 + 115, rowY + rowStep * 9)
+                .size(160, 18)
                 .build();
 
         // ---------- 能力 Tab ----------
@@ -750,6 +774,8 @@ public class PokemonEditorScreen extends Screen {
             this.addRenderableWidget(b);
         }
         this.addRenderableWidget(sumShinyButton);
+        this.addRenderableWidget(clearNameBtn);
+        this.addRenderableWidget(statusCycleBtn);
         this.addRenderableWidget(genderCycleBtn);
         // 注册等级和亲密度箭头
         this.addRenderableWidget(levelDownBtn);
@@ -841,6 +867,7 @@ public class PokemonEditorScreen extends Screen {
             b.visible = sumVisible;
         }
         sumShinyButton.visible = sumVisible;
+        statusCycleBtn.visible = sumVisible;
         genderCycleBtn.visible = sumVisible;
 
         // ★能力 Tab（6 项 IV + 6 项 EV + 快捷按钮）
@@ -928,6 +955,10 @@ public class PokemonEditorScreen extends Screen {
     private void refreshEditFields() {
         if (selectedSlot < 0 || selectedSlot >= partyData.size()) return;
         PokemonData d = partyData.get(selectedSlot);
+
+        // ★ 保存原始值快照（刷新 UI 字段前记录，用户修改后可比较）
+        originalSnapshots.set(selectedSlot, d.snapshot());
+        d.clearModified();
 
         // ★ DEBUG: 打印 PokemonData 中当前存储的 moves（渲染前）
         PokemonEditorDebug.infoMoves("[Screen] refreshEditFields START: slot={} exists={} moves=slot0='{}'({}/{}) slot1='{}'({}/{}) slot2='{}'({}/{}) slot3='{}'({}/{})",
@@ -1030,6 +1061,7 @@ public class PokemonEditorScreen extends Screen {
         advRawScrollOffset = 0; // 切换槽位时重置数据区滚动位置
 
         updateShinyButton();
+        updateStatusButton();
 
         // 所有槽位都可编辑；空槽位的保存按钮需要物种字段不为空
         for (EditBox b : new EditBox[] {
@@ -1067,6 +1099,54 @@ public class PokemonEditorScreen extends Screen {
         }
     }
 
+    // 状态 ID 归一化（frozen → freeze, poison_badly → bad_poison 等）
+    private String normalizeStatusId(String raw) {
+        if (raw == null) return "";
+        String cur = raw.toLowerCase().replaceAll("[^a-z_]", "");
+        if (cur.equals("frozen")) cur = "freeze";
+        if (cur.equals("poison_badly") || cur.equals("badly") || cur.equals("tox")) cur = "bad_poison";
+        if (cur.contains("freeze") || cur.contains("frozen")) cur = "freeze";
+        if (cur.contains("badly") || cur.contains("poison_bad") || cur.contains("bad_poison")) cur = "bad_poison";
+        return cur;
+    }
+
+    // 状态显示文本映射（Cobblemon status key → 中文显示）
+    private static final String[][] STATUS_DISPLAY = {
+            {"", "  状态: 无  "},
+            {"poison", "  状态: 中毒  "},
+            {"paralysis", "  状态: 麻痹  "},
+            {"burn", "  状态: 烧伤  "},
+            {"freeze", "  状态: 冰冻  "},
+            {"sleep", "  状态: 睡眠  "},
+            {"bad_poison", "  状态: 剧毒  "}
+    };
+
+    // 当前 status -> 下一个 status（循环）
+    private void cycleToNextStatus() {
+        if (selectedSlot < 0 || selectedSlot >= partyData.size()) return;
+        PokemonData d = partyData.get(selectedSlot);
+        String cur = normalizeStatusId(d.status);
+        int idx = -1;
+        for (int i = 0; i < STATUS_DISPLAY.length; i++) {
+            if (STATUS_DISPLAY[i][0].equals(cur)) { idx = i; break; }
+        }
+        if (idx < 0) idx = 0;
+        int next = (idx + 1) % STATUS_DISPLAY.length;
+        d.status = STATUS_DISPLAY[next][0];
+        updateStatusButton();
+    }
+
+    private void updateStatusButton() {
+        if (selectedSlot < 0 || selectedSlot >= partyData.size()) return;
+        PokemonData d = partyData.get(selectedSlot);
+        String cur = normalizeStatusId(d.status);
+        String display = "  状态: 无  ";
+        for (String[] row : STATUS_DISPLAY) {
+            if (row[0].equals(cur)) { display = row[1]; break; }
+        }
+        statusCycleBtn.setMessage(Component.literal(display));
+    }
+
     private int parseOrDefault(EditBox box, int def) {
         try { return Integer.parseInt(box.getValue()); } catch (Exception e) { return def; }
     }
@@ -1076,7 +1156,10 @@ public class PokemonEditorScreen extends Screen {
         PokemonData d = partyData.get(selectedSlot);
 
         // 物种字段：中文 → 英文（Cobblemon需要英文名）
+        String beforeSpecies = d.speciesName;
         d.speciesName = PokemonNameMap.toEnglish(sumSpeciesField.getValue());
+        PokemonEditorDebug.logEditor("[Screen] species: UI='{}' → EN='{}' (was '{}')",
+                sumSpeciesField.getValue(), d.speciesName, beforeSpecies);
 
         // 空物种名 = 空覆盖（删除该槽位）
         // 无论 d.exists 是否为 true，只要 speciesName 空了，就表示清空
@@ -1084,11 +1167,25 @@ public class PokemonEditorScreen extends Screen {
         boolean isDelete = (d.speciesName == null || d.speciesName.isEmpty());
         d.level = Math.max(1, Math.min(900, parseOrDefault(sumLevelField, d.level)));
         d.displayName = sumNameField.getValue();
+        PokemonEditorDebug.logEditor("[Screen] displayName: UI='{}' → EN='{}'",
+                sumNameField.getValue(), d.displayName);
         d.friendship = Math.max(0, Math.min(255, parseOrDefault(sumFriendshipField, d.friendship)));
+        String beforeNature = d.nature;
         d.nature = PokemonNameMap.natureToEnglish(sumNatureField.getValue());
+        PokemonEditorDebug.logEditor("[Screen] nature: UI='{}' → EN='{}' (was '{}', changed={})",
+                sumNatureField.getValue(), d.nature, beforeNature,
+                !java.util.Objects.equals(d.nature, beforeNature));
+        String beforeAbility = d.ability;
         d.ability = PokemonNameMap.abilityToEnglish(sumAbilityField.getValue());
+        PokemonEditorDebug.logEditor("[Screen] ability: UI='{}' → EN='{}' (was '{}', changed={})",
+                sumAbilityField.getValue(), d.ability, beforeAbility,
+                !java.util.Objects.equals(d.ability, beforeAbility));
         d.formName = sumFormField.getValue();
+        String beforeHeldItem = d.heldItem;
         d.heldItem = PokemonNameMap.itemToEnglish(sumHeldItemField.getValue());
+        PokemonEditorDebug.logEditor("[Screen] heldItem: UI='{}' → EN='{}' (was '{}', changed={})",
+                sumHeldItemField.getValue(), d.heldItem, beforeHeldItem,
+                !java.util.Objects.equals(d.heldItem, beforeHeldItem));
         d.experience = Math.max(0, parseOrDefault(advExpField, d.experience));
 
         d.ivHp = Math.max(0, Math.min(31, parseOrDefault(ivHp, d.ivHp)));
@@ -1273,10 +1370,36 @@ public class PokemonEditorScreen extends Screen {
         String rawDataText = (advRawField != null) ? advRawField.getValue() : "";
         if (rawDataText == null) rawDataText = "";
 
-        PokemonEditorDebug.logEditor("[Screen] SENDING packet for slot {}: species={}, level={}, shiny={}, friendship={}, ivHp={}, evHp={}, move1={}, dataLen={}",
+        // ★ 关键：比较当前 PokemonData 与原始快照，确定用户修改了哪些字段
+        // 这将告诉服务端只修改这些字段，而不是全部
+        PokemonData base = originalSnapshots.get(selectedSlot);
+        java.util.Set<String> modifiedFields = d.diffFrom(base);
+        // ★ 关键：打印 nature/ability/heldItem 的详细对比（调试这些字段不生效的核心问题）
+        if (base != null) {
+            PokemonEditorDebug.logEditor("[Screen] FIELD-CHECK slot {}: nature(current='{}' vs base='{}', equal={}, inModified={}) ability(current='{}' vs base='{}', equal={}, inModified={}) heldItem(current='{}' vs base='{}', equal={}, inModified={})",
+                    selectedSlot,
+                    d.nature, base.nature, java.util.Objects.equals(d.nature, base.nature), modifiedFields.contains("nature"),
+                    d.ability, base.ability, java.util.Objects.equals(d.ability, base.ability), modifiedFields.contains("ability"),
+                    d.heldItem, base.heldItem, java.util.Objects.equals(d.heldItem, base.heldItem), modifiedFields.contains("heldItem"));
+        }
+        // 特殊：空槽位时，所有字段都是修改过的
+        if (base == null || !base.exists) {
+            modifiedFields.add("speciesName");
+            modifiedFields.add("level");
+        }
+
+        // 将 modifiedFields 编码到 rawDataText 开头，格式：
+        //   __MODIFIED__=speciesName,level,ivHp,status\n原始数据
+        // 服务端会解析这一行，提取修改字段列表
+        String modifiedHeader = "__MODIFIED__=" + String.join(",", modifiedFields) + "\n";
+        String combinedRawData = modifiedHeader + rawDataText;
+
+        PokemonEditorDebug.logEditor("[Screen] SENDING packet for slot {}: species={}, level={}, shiny={}, friendship={}, ivHp={}, evHp={}, move1={}, modifiedFields=[{}], hpModified={}, statusModified={}",
                 selectedSlot, d.speciesName, d.level, d.shiny, d.friendship,
                 d.ivHp, d.evHp, d.move1,
-                (rawDataText != null) ? rawDataText.length() : 0);
+                String.join(",", modifiedFields),
+                modifiedFields.contains("currentHp") || modifiedFields.contains("maxHp"),
+                modifiedFields.contains("status"));
         // ★详细的 move 数据 debug
         PokemonEditorDebug.infoMoves("[Screen] SENDING move data: slot0='{}'({}/{}) slot1='{}'({}/{}) slot2='{}'({}/{}) slot3='{}'({}/{})",
                 d.move1, d.move1PP, d.move1MaxPP,
@@ -1308,8 +1431,9 @@ public class PokemonEditorScreen extends Screen {
                         d.move1MaxPP, d.move2MaxPP, d.move3MaxPP, d.move4MaxPP,
                         d.currentHp, d.maxHp, d.heldItem,
                         d.gender,
-                        uuidText,
-                        rawDataText));
+                        uuidText,           // pokemonUUID
+                        combinedRawData,    // rawJsonData（包含 modifiedFields 头）
+                        d.status));          // status
 
         updateSlotButtonLabel(selectedSlot);
         if (Minecraft.getInstance().player != null) {
@@ -1376,6 +1500,8 @@ public class PokemonEditorScreen extends Screen {
         sb.append("move2=").append(d.move2).append("\n");
         sb.append("move3=").append(d.move3).append("\n");
         sb.append("move4=").append(d.move4).append("\n");
+        sb.append("heldItem=").append(d.heldItem).append("\n");
+        sb.append("status=").append(d.status).append("\n");
         return sb.toString();
     }
 
@@ -1432,6 +1558,8 @@ public class PokemonEditorScreen extends Screen {
                                 case "gender": d.gender = Math.max(0, Math.min(2, Integer.parseInt(val))); break;
                                 case "nature": if (!val.isEmpty()) d.nature = val; break;
                                 case "ability": if (!val.isEmpty()) d.ability = val; break;
+                                case "helditem": case "held_item": if (!val.isEmpty()) d.heldItem = val; break;
+                                case "status": if (val != null) d.status = val.trim(); break;
                             }
                         } catch (Throwable ignored) {}
                         pos = valEnd;
@@ -1513,6 +1641,8 @@ public class PokemonEditorScreen extends Screen {
                         case "move2": d.move2 = PokemonNameMap.moveToEnglish(val); break;
                         case "move3": d.move3 = PokemonNameMap.moveToEnglish(val); break;
                         case "move4": d.move4 = PokemonNameMap.moveToEnglish(val); break;
+                        case "helditem": case "held_item": d.heldItem = PokemonNameMap.itemToEnglish(val); break;
+                        case "status": if (val != null) d.status = val.trim(); break;
                     }
                 } catch (Throwable ignored) {}
 
@@ -1560,6 +1690,7 @@ public class PokemonEditorScreen extends Screen {
             sumFormField.visible = show; sumHeldItemField.visible = show;
             genderField.visible = show; genderCycleBtn.visible = show;
             sumShinyButton.visible = show;
+            if (clearNameBtn != null) clearNameBtn.visible = show;
             if (levelDownBtn != null) levelDownBtn.visible = show;
             if (levelUpBtn != null) levelUpBtn.visible = show;
             if (friendshipDownBtn != null) friendshipDownBtn.visible = show;
@@ -1710,6 +1841,41 @@ public class PokemonEditorScreen extends Screen {
                 guiGraphics.drawString(this.font, genderText, editX + 50 + 10 + 65 + 100, rowY + rowStep * 8 + 4, genderTextColor, true);
             }
 
+            // ★ 携带物图标渲染（在携带物输入框右侧）
+            int iconX = editX + 50 + 10 + 160 + 8;
+            int iconY = rowY + rowStep * 7;
+            try {
+                String heldZh = sumHeldItemField.getValue();
+                if (heldZh != null && !heldZh.trim().isEmpty()) {
+                    String heldEn = PokemonNameMap.itemToEnglish(heldZh);
+                    String rawId = heldEn;
+                    if (rawId.contains(":")) {
+                        int idx = rawId.lastIndexOf(":");
+                        rawId = rawId.substring(idx + 1);
+                    }
+                    rawId = rawId.trim().toLowerCase();
+                    net.minecraft.world.item.Item foundItem = null;
+                    for (Map.Entry<net.minecraft.resources.ResourceKey<net.minecraft.world.item.Item>, net.minecraft.world.item.Item> e : net.minecraft.core.registries.BuiltInRegistries.ITEM.entrySet()) {
+                        String id = e.getKey().location().getPath();
+                        if (id.equalsIgnoreCase(rawId)) {
+                            foundItem = e.getValue();
+                            break;
+                        }
+                    }
+                    if (foundItem != null && foundItem != net.minecraft.world.item.Items.AIR) {
+                        net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(foundItem);
+                        guiGraphics.renderItem(stack, iconX, iconY + 1);
+                        guiGraphics.renderItemDecorations(this.font, stack, iconX, iconY + 1);
+                        PokemonEditorDebug.logEditor("[Screen] heldItem icon: rendered '{}' (UI='{}'→EN='{}') at ({},{})",
+                                rawId, heldZh, heldEn, iconX, iconY);
+                    } else {
+                        PokemonEditorDebug.warnEditor("[Screen] heldItem icon: NOT FOUND - UI='{}' → EN='{}' → rawId='{}'",
+                                heldZh, heldEn, rawId);
+                    }
+                }
+            } catch (Throwable t) {
+                PokemonEditorDebug.warnEditor("[Screen] heldItem icon render error: {}", t.getMessage());
+            }
             // ========== 右侧宝可梦信息卡 ==========
             if (selectedSlot >= 0 && selectedSlot < partyData.size()) {
                 PokemonData d = partyData.get(selectedSlot);

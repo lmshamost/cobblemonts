@@ -1,6 +1,9 @@
 package com.cobblemon_ts.mod.pokemoneditor;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.Item;
+import net.minecraft.resources.ResourceKey;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1056,9 +1059,25 @@ public class PokemonNameMap {
     }
     public static String natureToEnglish(String zh) {
         if (zh == null || zh.isEmpty()) return zh;
-        String en = NATURE_ZH_TO_EN.get(zh.trim());
+        String trimmed = zh.trim();
+        // 1. 精确硬编码映射
+        String en = NATURE_ZH_TO_EN.get(trimmed);
         if (en != null) return en;
-        if (NATURE_EN_TO_ZH.containsKey(zh.toLowerCase().trim())) return zh.toLowerCase().trim();
+        // 2. 如果输入本身就是英文 ID（例如手动输入 hardy）
+        String lower = trimmed.toLowerCase();
+        if (NATURE_EN_TO_ZH.containsKey(lower)) return lower;
+        // 3. 反向 lang 查找：遍历所有硬编码 key，看 lang 翻译是否等于中文
+        for (String key : NATURE_EN_TO_ZH.keySet()) {
+            String translated = tryLang("cobblemon.nature." + key, null);
+            if (translated != null && translated.trim().equals(trimmed)) {
+                return key;
+            }
+        }
+        // 4. 也尝试用中文作为 key 调 lang（某些 mod 可能用中文 ID）
+        String reverse = tryLang("cobblemon.nature." + lower, null);
+        if (reverse != null && !reverse.equals("cobblemon.nature." + lower)) {
+            // 这返回的是中文翻译...没用
+        }
         return zh;
     }
 
@@ -1284,9 +1303,45 @@ public class PokemonNameMap {
     }
     public static String itemToEnglish(String zh) {
         if (zh == null || zh.isEmpty()) return zh;
-        String en = ITEM_ZH_TO_EN.get(zh.trim());
+        String trimmed = zh.trim();
+        // 1. 精确硬编码映射
+        String en = ITEM_ZH_TO_EN.get(trimmed);
         if (en != null) return en;
-        if (ITEM_EN_TO_ZH.containsKey(zh.toLowerCase().trim())) return zh.toLowerCase().trim();
+        // 2. 如果输入本身就是英文 ID
+        String lower = trimmed.toLowerCase();
+        if (ITEM_EN_TO_ZH.containsKey(lower)) return lower;
+        // 3. 遍历物品注册表：通过每个物品的 descriptionId 查 lang 翻译，匹配中文
+        try {
+            String[] prefixes = new String[] { "item.", "block." };
+            for (Map.Entry<ResourceKey<Item>, Item> entry : BuiltInRegistries.ITEM.entrySet()) {
+                String itemId = entry.getKey().location().getPath();
+                for (String prefix : prefixes) {
+                    String langKey = prefix + entry.getKey().location().getNamespace() + "." + itemId;
+                    String translated = tryLang(langKey, null);
+                    if (translated != null && translated.trim().equals(trimmed)) {
+                        // 匹配到中文，返回英文 ID
+                        return itemId;
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+        // 4. 反向 lang 查找：遍历所有硬编码 key，看 lang 翻译是否等于中文（兜底）
+        String[] itemKeys = new String[] {
+            "item.cobblemon.", "item.minecraft.", "block.minecraft.", "block.cobblemon."
+        };
+        for (String key : ITEM_EN_TO_ZH.keySet()) {
+            for (String prefix : itemKeys) {
+                String translated = tryLang(prefix + key, null);
+                if (translated != null && translated.trim().equals(trimmed)) {
+                    return key;
+                }
+            }
+        }
+        // 5. 清理命名空间（如果用户直接输入了如 minecraft:dirt）
+        if (trimmed.contains(":")) {
+            int idx = trimmed.lastIndexOf(":");
+            return trimmed.substring(idx + 1).trim();
+        }
         return zh;
     }
     // 清理物品名（去除引号、minecraft:前缀等）
@@ -1913,9 +1968,20 @@ public class PokemonNameMap {
 
     public static String abilityToEnglish(String zh) {
         if (zh == null || zh.isEmpty()) return zh;
-        String en = ABILITY_ZH_TO_EN.get(zh.trim());
+        String trimmed = zh.trim();
+        // 1. 精确硬编码映射
+        String en = ABILITY_ZH_TO_EN.get(trimmed);
         if (en != null) return en;
-        if (ABILITY_EN_TO_ZH.containsKey(zh.toLowerCase().trim())) return zh.toLowerCase().trim();
+        // 2. 如果输入本身就是英文 ID
+        String lower = trimmed.toLowerCase();
+        if (ABILITY_EN_TO_ZH.containsKey(lower)) return lower;
+        // 3. 反向 lang 查找：遍历所有硬编码 key，看 lang 翻译是否等于中文
+        for (String key : ABILITY_EN_TO_ZH.keySet()) {
+            String translated = tryLang("cobblemon.ability." + key, null);
+            if (translated != null && translated.trim().equals(trimmed)) {
+                return key;
+            }
+        }
         return zh;
     }
 

@@ -78,7 +78,7 @@ public class PokemonEditorNetwork {
                                     int move1PP, int move2PP, int move3PP, int move4PP,
                                     int move1MaxPP, int move2MaxPP, int move3MaxPP, int move4MaxPP,
                                     int currentHp, int maxHp, String heldItem, int gender,
-                                    String possibleAbilities) implements CustomPacketPayload {
+                                    String possibleAbilities, String status) implements CustomPacketPayload {
         public static final Type<PokemonDataPacket> TYPE = new Type<>(PKT_POKEMON_DATA);
 
         // ---- 内部嵌套分组（仅用于序列化，不暴露给外部 API）----
@@ -90,8 +90,12 @@ public class PokemonEditorNetwork {
         private record Group3(int level, int experience, int friendship, boolean shiny) {}
         // Group4: 能力/招式 (nature + ability + moves4 = 6 项)
         private record Group4(String nature, String ability, Moves4 moves) {}
-        // Group5: HP/道具/性别/特性列表/movePP (6 项)
-        private record Group5(int currentHp, int maxHp, String heldItem, int gender, String possibleAbilities, Stats6 movePPs) {}
+        // Group5: HP/道具/性别/特性列表/movePP/status
+        // 重新组织：statusItem(2) + currentHp(1) + maxHp(1) + gender(1) + possibleAbilities(1) + movePPs(1)
+        //  → 7 项？需要重新分组，用 statusItem 子组后 Group5 变成 6 项
+        private record Group5StatusItem(String status, String heldItem) {}
+        private record Group5(Group5StatusItem statusItem, int currentHp, int maxHp,
+                              int gender, String possibleAbilities, Stats6 movePPs) {}
 
         // ---- Pack/Unpack 工具方法 ----
         private static int packTwo(int a, int b) { return a * 1000 + b; }
@@ -118,23 +122,27 @@ public class PokemonEditorNetwork {
                 Group3::new
         );
         // Group4 内部再嵌套一层：nature + ability + (moves4 的 StreamCodec)
-        // 通过 composite 组合 nature + ability 为一个小 record，再和 moves4 组合
         private record Group4a(String nature, String ability) {}
         private static final StreamCodec<ByteBuf, Group4a> G4A_CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8, Group4a::nature,
                 ByteBufCodecs.STRING_UTF8, Group4a::ability,
                 Group4a::new
         );
-        // Group4: (g4a:2) + (moves:4 包装为 Moves4) = 使用 composite 组合 g4a_record + moves4_record
         private static final StreamCodec<ByteBuf, Group4> G4_CODEC = StreamCodec.composite(
                 G4A_CODEC, g -> new Group4a(g.nature, g.ability),
                 MOVES_CODEC, g -> new Moves4(g.moves.m1, g.moves.m2, g.moves.m3, g.moves.m4),
                 (g4a, mv) -> new Group4(g4a.nature, g4a.ability, mv)
         );
+        // Group5: statusItem(2) + currentHp + maxHp + gender + possibleAbilities + movePPs = 6 项
+        private static final StreamCodec<ByteBuf, Group5StatusItem> G5SI_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, Group5StatusItem::status,
+                ByteBufCodecs.STRING_UTF8, Group5StatusItem::heldItem,
+                Group5StatusItem::new
+        );
         private static final StreamCodec<ByteBuf, Group5> G5_CODEC = StreamCodec.composite(
+                G5SI_CODEC, g -> new Group5StatusItem(g.statusItem.status, g.statusItem.heldItem),
                 ByteBufCodecs.VAR_INT, Group5::currentHp,
                 ByteBufCodecs.VAR_INT, Group5::maxHp,
-                ByteBufCodecs.STRING_UTF8, Group5::heldItem,
                 ByteBufCodecs.VAR_INT, Group5::gender,
                 ByteBufCodecs.STRING_UTF8, Group5::possibleAbilities,
                 STATS_CODEC, Group5::movePPs,
@@ -142,7 +150,6 @@ public class PokemonEditorNetwork {
         );
 
         // 顶层 composite：6 个组件 (g1, g2, g3, ivs, evs, g4+g5 合并)
-        // 再做一层合并：把 g4 和 g5 合并为 Group45
         private record Group45(Group4 g4, Group5 g5) {}
         private static final StreamCodec<ByteBuf, Group45> G45_CODEC = StreamCodec.composite(
                 G4_CODEC, Group45::g4,
@@ -150,7 +157,7 @@ public class PokemonEditorNetwork {
                 Group45::new
         );
 
-        // 现在顶层有 6 个组件：g1, g2, g3, ivs, evs, g45 → 刚好 6 个！
+        // 顶层有 6 个组件：g1, g2, g3, ivs, evs, g45 → 刚好 6 个！
         public static final StreamCodec<ByteBuf, PokemonDataPacket> STREAM_CODEC = StreamCodec.composite(
                 G1_CODEC, p -> new Group1(p.slot, p.exists, p.pokemonUUID),
                 G2_CODEC, p -> new Group2(p.speciesName, p.displayName, p.formName),
@@ -159,7 +166,8 @@ public class PokemonEditorNetwork {
                 STATS_CODEC, p -> new Stats6(p.evHp, p.evAtk, p.evDef, p.evSpA, p.evSpD, p.evSpe),
                 G45_CODEC, p -> new Group45(
                         new Group4(p.nature, p.ability, new Moves4(p.move1, p.move2, p.move3, p.move4)),
-                        new Group5(p.currentHp, p.maxHp, p.heldItem, p.gender, p.possibleAbilities,
+                        new Group5(new Group5StatusItem(p.status, p.heldItem),
+                                p.currentHp, p.maxHp, p.gender, p.possibleAbilities,
                                 new Stats6(p.move1PP, p.move2PP, p.move3PP, p.move4PP,
                                         packTwo(p.move1MaxPP, p.move2MaxPP),
                                         packTwo(p.move3MaxPP, p.move4MaxPP)))
@@ -175,8 +183,8 @@ public class PokemonEditorNetwork {
                         g45.g5.movePPs.hp, g45.g5.movePPs.atk, g45.g5.movePPs.def, g45.g5.movePPs.spA,
                         unpackFirst(g45.g5.movePPs.spD), unpackSecond(g45.g5.movePPs.spD),
                         unpackFirst(g45.g5.movePPs.spe), unpackSecond(g45.g5.movePPs.spe),
-                        g45.g5.currentHp, g45.g5.maxHp, g45.g5.heldItem, g45.g5.gender,
-                        g45.g5.possibleAbilities
+                        g45.g5.currentHp, g45.g5.maxHp, g45.g5.statusItem.heldItem, g45.g5.gender,
+                        g45.g5.possibleAbilities, g45.g5.statusItem.status
                 )
         );
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
@@ -196,7 +204,7 @@ public class PokemonEditorNetwork {
                                       int move1PP, int move2PP, int move3PP, int move4PP,
                                       int move1MaxPP, int move2MaxPP, int move3MaxPP, int move4MaxPP,
                                       int currentHp, int maxHp, String heldItem, int gender,
-                                      String pokemonUUID, String rawJsonData) implements CustomPacketPayload {
+                                      String pokemonUUID, String rawJsonData, String status) implements CustomPacketPayload {
         public static final Type<UpdatePokemonPacket> TYPE = new Type<>(PKT_UPDATE_POKEMON);
 
         // ---- 内部嵌套分组 ----
@@ -205,7 +213,8 @@ public class PokemonEditorNetwork {
         private record UGroup3(int level, int experience, String displayName, boolean shiny, int friendship) {}
         private record UGroup4(String nature, String ability, Moves4 moves) {}
         private record UGroup4a(String nature, String ability) {}
-        private record UGroup5(int currentHp, int maxHp, String heldItem, int gender, Stats6 movePPs) {}
+        private record UGroup5StatusItem(String status, String heldItem) {}
+        private record UGroup5(UGroup5StatusItem statusItem, int currentHp, int maxHp, int gender, Stats6 movePPs) {}
         private record UGroup45(UGroup4 g4, UGroup5 g5) {}
 
         private static int packTwoU(int a, int b) { return a * 1000 + b; }
@@ -242,10 +251,16 @@ public class PokemonEditorNetwork {
                 MOVES_CODEC, g -> new Moves4(g.moves.m1, g.moves.m2, g.moves.m3, g.moves.m4),
                 (g4a, mv) -> new UGroup4(g4a.nature, g4a.ability, mv)
         );
+        // UGroup5: statusItem(2) + currentHp + maxHp + gender + movePPs = 6 项
+        private static final StreamCodec<ByteBuf, UGroup5StatusItem> UG5SI_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, UGroup5StatusItem::status,
+                ByteBufCodecs.STRING_UTF8, UGroup5StatusItem::heldItem,
+                UGroup5StatusItem::new
+        );
         private static final StreamCodec<ByteBuf, UGroup5> UG5_CODEC = StreamCodec.composite(
+                UG5SI_CODEC, g -> new UGroup5StatusItem(g.statusItem.status, g.statusItem.heldItem),
                 ByteBufCodecs.VAR_INT, UGroup5::currentHp,
                 ByteBufCodecs.VAR_INT, UGroup5::maxHp,
-                ByteBufCodecs.STRING_UTF8, UGroup5::heldItem,
                 ByteBufCodecs.VAR_INT, UGroup5::gender,
                 STATS_CODEC, UGroup5::movePPs,
                 UGroup5::new
@@ -265,7 +280,8 @@ public class PokemonEditorNetwork {
                 STATS_CODEC, p -> new Stats6(p.evHp, p.evAtk, p.evDef, p.evSpA, p.evSpD, p.evSpe),
                 UG45_CODEC, p -> new UGroup45(
                         new UGroup4(p.nature, p.ability, new Moves4(p.move1, p.move2, p.move3, p.move4)),
-                        new UGroup5(p.currentHp, p.maxHp, p.heldItem, p.gender,
+                        new UGroup5(new UGroup5StatusItem(p.status, p.heldItem),
+                                p.currentHp, p.maxHp, p.gender,
                                 new Stats6(p.move1PP, p.move2PP, p.move3PP, p.move4PP,
                                         packTwoU(p.move1MaxPP, p.move2MaxPP),
                                         packTwoU(p.move3MaxPP, p.move4MaxPP)))
@@ -281,8 +297,8 @@ public class PokemonEditorNetwork {
                         g45.g5.movePPs.hp, g45.g5.movePPs.atk, g45.g5.movePPs.def, g45.g5.movePPs.spA,
                         unpackFirstU(g45.g5.movePPs.spD), unpackSecondU(g45.g5.movePPs.spD),
                         unpackFirstU(g45.g5.movePPs.spe), unpackSecondU(g45.g5.movePPs.spe),
-                        g45.g5.currentHp, g45.g5.maxHp, g45.g5.heldItem, g45.g5.gender,
-                        g1.pokemonUUID, g1.rawJsonData
+                        g45.g5.currentHp, g45.g5.maxHp, g45.g5.statusItem.heldItem, g45.g5.gender,
+                        g1.pokemonUUID, g1.rawJsonData, g45.g5.statusItem.status
                 )
         );
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
@@ -327,7 +343,7 @@ public class PokemonEditorNetwork {
                     data.move1PP, data.move2PP, data.move3PP, data.move4PP,
                     data.move1MaxPP, data.move2MaxPP, data.move3MaxPP, data.move4MaxPP,
                     data.currentHp, data.maxHp, data.heldItem, data.gender,
-                    String.join(";", data.possibleAbilities)
+                    String.join(";", data.possibleAbilities), data.status
             ));
         }
     }
@@ -364,7 +380,7 @@ public class PokemonEditorNetwork {
                             empty.move1PP, empty.move2PP, empty.move3PP, empty.move4PP,
                             empty.move1MaxPP, empty.move2MaxPP, empty.move3MaxPP, empty.move4MaxPP,
                             empty.currentHp, empty.maxHp, empty.heldItem, empty.gender,
-                            String.join(";", empty.possibleAbilities)
+                            String.join(";", empty.possibleAbilities), empty.status
                     ));
                     serverPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal("[宝可梦编辑器] 已删除队伍 " + (pkt.slot() + 1)));
                     return;
@@ -388,7 +404,7 @@ public class PokemonEditorNetwork {
                         refreshed.move1PP, refreshed.move2PP, refreshed.move3PP, refreshed.move4PP,
                         refreshed.move1MaxPP, refreshed.move2MaxPP, refreshed.move3MaxPP, refreshed.move4MaxPP,
                         refreshed.currentHp, refreshed.maxHp, refreshed.heldItem, refreshed.gender,
-                        String.join(";", refreshed.possibleAbilities)
+                        String.join(";", refreshed.possibleAbilities), refreshed.status
                 ));
 
                 serverPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal("[宝可梦编辑器] 已保存队伍 " + (pkt.slot() + 1)));
