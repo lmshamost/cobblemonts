@@ -1,0 +1,23 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "coblemon_ts:lucky_recipes_enabled"
+    }
+  ],
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "a": { "item": "minecraft:netherite_ingot" },
+    "b": { "item": "minecraft:nether_star" },
+    "c": { "item": "minecraft:diamond_block" }
+  },
+  "pattern": [
+    "aba",
+    "bcb",
+    "aba"
+  ],
+  "result": {
+    "count": 1,
+    "id": "coblemon_ts:boss_lucky_block"
+  }
+}

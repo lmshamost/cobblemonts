@@ -1,0 +1,11 @@
+[charm_settings]
+    # 防晃护符捕获率加成倍数
+    catching_charm_boost = 1.5
+    # 经验护符经验加成倍数
+    exp_charm_boost = 1.5
+    # 圆形护符孵化加速倍数
+    oval_charm_hatch_boost = 1.5
+    # 闪耀护符闪光几率加成倍数
+    shiny_charm_boost = 3.0
+    # 证章护符标记几率加成倍数
+    mark_charm_boost = 1.5

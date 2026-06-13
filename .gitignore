@@ -1,0 +1,46 @@
+# Ignore all by default
+*
+
+# But keep these
+!.gitignore
+!.gitattributes
+!README.md
+!TEMPLATE_LICENSE.txt
+!build.gradle
+!settings.gradle
+!gradle.properties
+!gradlew
+!gradlew.bat
+
+# Keep source code
+!src/**
+!src/
+
+# Keep gradle wrapper
+!gradle/**
+!gradle/
+
+# Keep github actions
+!.github/**
+!.github/
+
+# Keep root-level manifest
+!META-INF/mods.toml
+!META-INF/neoforge.mods.toml
+
+# Common ignore patterns
+build/
+.gradle/
+.idea/
+.vscode/
+out/
+*.class
+*.log
+*.iml
+.DS_Store
+Thumbs.db
+*.bak
+*.backup_*
+*.tmp
+*.jar
+*.zip

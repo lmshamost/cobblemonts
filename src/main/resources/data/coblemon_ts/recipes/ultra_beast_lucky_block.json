@@ -1,0 +1,23 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "coblemon_ts:lucky_recipes_enabled"
+    }
+  ],
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "a": { "item": "minecraft:end_crystal" },
+    "b": { "item": "cobblemon:beast_ball" },
+    "c": { "item": "cobblemon:master_ball" }
+  },
+  "pattern": [
+    "bcb",
+    "cac",
+    "bcb"
+  ],
+  "result": {
+    "count": 1,
+    "id": "coblemon_ts:ultra_beast_lucky_block"
+  }
+}

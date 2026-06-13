@@ -1,0 +1,38 @@
+{
+  "itemGroup.coblemon_ts": "Cobblemon TS",
+  "block.coblemon_ts.example_block": "Example Block",
+  "item.coblemon_ts.example_item": "Example Item",
+  "item.coblemon_ts.oval_charm": "Oval Charm",
+  "item.coblemon_ts.shiny_charm": "Shiny Charm",
+  "item.coblemon_ts.exp_charm": "Exp. Charm",
+  "item.coblemon_ts.catching_charm": "Catching Charm",
+  "item.coblemon_ts.mark_charm": "Mark Charm",
+  "item.coblemon_ts.pokemon_editor": "Pokemon Editor",
+  "item.coblemon_ts.pokemon_editor.tooltip.one": "Creative-mode only tool",
+  "item.coblemon_ts.pokemon_editor.tooltip.two": "Right-click to edit your party",
+  "item.coblemon_ts.pokemon_editor.tooltip.three": "Left-click a player to edit their party",
+
+  "coblemon_ts.configuration.title": "Cobblemon TS Configs",
+  "coblemon_ts.configuration.section.coblemon_ts.common.toml": "Cobblemon TS Configs",
+  "coblemon_ts.configuration.section.coblemon_ts.common.toml.title": "Cobblemon TS Configs",
+  "coblemon_ts.configuration.items": "Item List",
+  "coblemon_ts.configuration.logDirtBlock": "Log Dirt Block",
+  "coblemon_ts.configuration.magicNumberIntroduction": "Magic Number Text",
+  "coblemon_ts.configuration.magicNumber": "Magic Number",
+
+  "key.cobblemon_quick_battle.quick_battle": "Quick Battle",
+
+  "block.coblemon_ts.lucky_block": "Lucky Block",
+  "block.coblemon_ts.legendary_lucky_block": "Legendary Lucky Block",
+  "block.coblemon_ts.ultra_beast_lucky_block": "Ultra Beast Lucky Block",
+  "block.coblemon_ts.boss_lucky_block": "Shiny Lucky Block",
+  "block.coblemon_ts.item_lucky_block": "Item Lucky Block",
+
+  "gui.coblemon_ts.held_items": "Held Items",
+
+  "tag.item.coblemon_ts.lucky_drops": "Lucky Drops",
+
+  "coblemon_ts.pc.deposited": "§aPokemon sent to PC!",
+  "coblemon_ts.pc.full": "§cPC boxes are full!",
+  "coblemon_ts.pc.last_pokemon": "§cCannot deposit your last Pokemon!"
+}

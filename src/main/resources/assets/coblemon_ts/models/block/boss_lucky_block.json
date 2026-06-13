@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "coblemon_ts:block/boss_lucky_block"
+  }
+}

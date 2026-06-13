@@ -1,0 +1,57 @@
+{
+  "itemGroup.coblemon_ts": "方块宝可梦 TS",
+  "block.coblemon_ts.example_block": "示例方块",
+  "item.coblemon_ts.example_item": "示例物品",
+  "item.coblemon_ts.oval_charm": "圆形护符",
+  "item.coblemon_ts.shiny_charm": "闪耀护符",
+  "item.coblemon_ts.exp_charm": "经验护符",
+  "item.coblemon_ts.catching_charm": "防晃护符",
+  "item.coblemon_ts.mark_charm": "标记护符",
+  "item.coblemon_ts.exp_all": "高级学习装置",
+  "item.coblemon_ts.pokemon_editor": "宝可梦编辑器",
+  "item.coblemon_ts.pokemon_editor.tooltip.one": "仅限创造模式使用",
+  "item.coblemon_ts.pokemon_editor.tooltip.two": "右键点击编辑自己的队伍",
+  "item.coblemon_ts.pokemon_editor.tooltip.three": "左键点击玩家编辑他们的队伍",
+
+  "message.coblemon_ts.charm_obtained": "§a获得了 %s！§r",
+  "message.coblemon_ts.charm_already_owned": "§e你已经拥有 %s，点击背包中的护符槽激活/关闭。§r",
+  "message.coblemon_ts.charm_already_active": "§e%s 已经处于激活状态。§r",
+
+  "coblemon_ts.configuration.title": "Cobblemon TS 配置",
+  "coblemon_ts.configuration.section.coblemon_ts.common.toml": "Cobblemon TS 配置",
+  "coblemon_ts.configuration.section.coblemon_ts.common.toml.title": "Cobblemon TS 配置",
+  "coblemon_ts.configuration.items": "物品列表",
+  "coblemon_ts.configuration.logDirtBlock": "记录泥土方块",
+  "coblemon_ts.configuration.magicNumberIntroduction": "魔法数字文本",
+  "coblemon_ts.configuration.magicNumber": "魔法数字",
+
+  "gui.coblemon_ts.main": "方块宝可梦 TS",
+  "gui.coblemon_ts.subtitle": "宝可梦管理系统",
+  "gui.coblemon_ts.party": "宝可梦队伍",
+  "gui.coblemon_ts.charms": "护符管理",
+  "gui.coblemon_ts.charm_slots": "护符槽位",
+  "gui.coblemon_ts.held_items": "携带物",
+
+  "key.coblemon_ts.open_menu": "打开菜单",
+  "key.categories.coblemon_ts": "方块宝可梦 TS",
+
+  "charm.shiny": "%s: %s",
+  "charm.oval": "%s: %s",
+  "charm.exp": "%s: %s",
+  "charm.catching": "%s: %s",
+  "charm.exp_all": "%s: %s",
+
+  "key.cobblemon_quick_battle.quick_battle": "快速战斗",
+
+  "block.coblemon_ts.lucky_block": "幸运方块",
+  "block.coblemon_ts.legendary_lucky_block": "传说幸运方块",
+  "block.coblemon_ts.ultra_beast_lucky_block": "究极异兽幸运方块",
+  "block.coblemon_ts.boss_lucky_block": "闪光幸运方块",
+  "block.coblemon_ts.item_lucky_block": "物品幸运方块",
+
+  "tag.item.coblemon_ts.lucky_drops": "幸运掉落物",
+
+  "coblemon_ts.pc.deposited": "§a已将宝可梦存入电脑！",
+  "coblemon_ts.pc.full": "§c电脑盒子已满，无法存入！",
+  "coblemon_ts.pc.last_pokemon": "§c不能存入最后一只宝可梦！"
+}

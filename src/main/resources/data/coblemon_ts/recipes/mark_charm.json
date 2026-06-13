@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ABA",
+    "BCB",
+    "ABA"
+  ],
+  "key": {
+    "A": { "item": "minecraft:air" },
+    "B": { "item": "minecraft:air" },
+    "C": { "item": "minecraft:air" }
+  },
+  "result": {
+    "item": "coblemon_ts:mark_charm",
+    "count": 1
+  }
+}
