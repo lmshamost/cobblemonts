@@ -1618,12 +1618,14 @@ public class CobblemonBridge {
             }
         }
 
-        // 经验值修改 —— 正常修改
+        // 经验值修改 —— 直接字段写入绕过 setExperience$common 满级覆盖
         if (modifiedFields.contains("experience")) {
             try {
                 int expToSet = Math.max(0, pkt.experience());
-                pokemon.setExperience$common(expToSet);
-                PokemonEditorDebug.logEditor("experience: {}", expToSet);
+                java.lang.reflect.Field expField = pokemon.getClass().getDeclaredField("experience");
+                expField.setAccessible(true);
+                expField.setInt(pokemon, expToSet);
+                PokemonEditorDebug.logEditor("experience: {} (direct field write)", expToSet);
             } catch (Throwable e) {
                 PokemonEditorDebug.warnEditor("setExperience failed: {}", e.getMessage());
             }

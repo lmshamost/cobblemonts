@@ -41,6 +41,14 @@
   "charm.exp": "%s: %s",
   "charm.catching": "%s: %s",
   "charm.exp_all": "%s: %s",
+  "charm.gold_crown": "%s: %s",
+
+  "tooltip.coblemon_ts.shiny_charm": "§7功能：§f闪光几率加成",
+  "tooltip.coblemon_ts.oval_charm": "§7功能：§f孵化加速",
+  "tooltip.coblemon_ts.exp_charm": "§7功能：§f经验值加成",
+  "tooltip.coblemon_ts.catching_charm": "§7功能：§f捕获率加成",
+  "tooltip.coblemon_ts.exp_all": "§7功能：§f全队共享经验",
+  "tooltip.coblemon_ts.gold_crown": "§7功能：§f完美个体（不修改原个体值）",
 
   "key.cobblemon_quick_battle.quick_battle": "快速战斗",
 

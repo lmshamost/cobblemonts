@@ -1,6 +1,7 @@
 package com.cobblemon_ts.mod.mixin;
 
 import com.cobblemon_ts.mod.CharmPlayerData;
+import com.cobblemon_ts.mod.CharmConfig;
 import com.cobblemon_ts.mod.CharmState;
 import com.cobblemon_ts.mod.CharmType;
 import com.cobblemon_ts.mod.CobblemonTS;
@@ -120,8 +121,8 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
         if (Boolean.TRUE.equals(CobblemonTSConfig.HIDE_TOGGLE_BUTTONS.get())) return;
 
         boolean isHovering = mouseX >= x && mouseX <= x + size && mouseY >= y && mouseY <= y + size;
-        // 外框
-        guiGraphics.fill(x - 1, y - 1, x + size + 1, y + size + 1, 0xFF000000);
+        // 外框：半透明黑，不再用完全不透明0xFF000000
+        guiGraphics.fill(x - 1, y - 1, x + size + 1, y + size + 1, 0x44000000);
         // 内部：绿色=开启，红色=关闭
         int innerColor;
         if (active) {
@@ -179,17 +180,17 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
                                 PartyUIState.State state) {
         int panelWidth = PartyUIState.PARTY_WIDTH;
 
-        // JAR L235-L236: 外框 -856295947, 内框 -855638017 (浅色亮色面板)
-        guiGraphics.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, -856295947);
-        guiGraphics.fill(panelX + 1, panelY + 1, panelX + panelWidth - 1, panelY + panelHeight - 1, -855638017);
+        // 面板底色（亮色/暗色主题）
+        PartyUIState.drawPanelBg(guiGraphics, panelX, panelY, panelWidth, panelHeight);
 
         if (PartyUIState.debugParty()) {
             guiGraphics.fill(panelX + 1, panelY + 1, panelX + panelWidth - 1, panelY + panelHeight - 1, 0x44FFFFFF);
         }
 
         // JAR L82-L104: 居中标题 "队伍"
+        int textColor = PartyUIState.getPanelTextColor();
         guiGraphics.drawCenteredString(this.font, "\u961f\u4f0d",
-                panelX + panelWidth / 2, panelY + 4, 0xFFFFFFFF);
+                panelX + panelWidth / 2, panelY + 4, textColor);
 
         // JAR L105-L111: 获取队伍列表（使用缓存）
         List<Pokemon> party = PartyUIState.getCachedPartyList();
@@ -365,19 +366,17 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
         int totalHeight = PartyUIState.CHARM_HEADER_HEIGHT + 1 * (PartyUIState.SLOT_SIZE + PartyUIState.SLOT_SPACING)
                 + PartyUIState.CHARM_TYPES.length * PartyUIState.CHARM_CELL_HEIGHT + PartyUIState.SLOT_SPACING;
 
-        // 外框 -856295947, 内框 -855638017（与精灵面板同款浅色）
-        guiGraphics.fill(drawerX, charmDrawerY,
-                drawerX + drawerWidth + 2, charmDrawerY + totalHeight, -856295947);
-        guiGraphics.fill(drawerX + 1, charmDrawerY + 1,
-                drawerX + drawerWidth + 1, charmDrawerY + totalHeight - 1, -855638017);
+        // 面板底色（亮色/暗色主题）
+        PartyUIState.drawPanelBg(guiGraphics, drawerX, charmDrawerY, drawerWidth + 2, totalHeight);
 
         // 只有抽屉宽度 > CHARM_DRAWER_MIN_VISIBLE(40) 时才显示内容
         if (drawerWidth <= PartyUIState.CHARM_DRAWER_MIN_VISIBLE) return;
 
         // ===== 顶部标题："护符"（对齐精灵栏"队伍"） =====
         String title = "\u62a4\u7b26";
+        int textColor = PartyUIState.getPanelTextColor();
         int titleX = drawerX + (drawerWidth - this.font.width(title)) / 2;
-        guiGraphics.drawString(this.font, title, titleX, charmDrawerY + 4, 0xFFFFFFFF);
+        guiGraphics.drawString(this.font, title, titleX, charmDrawerY + 4, textColor);
         // 标题下方留 1 个精灵槽位大小的空白（对应精灵1的位置）
 
         // ===== 绘制护符列表：从精灵2的位置开始，每个护符单元 = 31px（与精灵槽位+间距同高） =====
@@ -393,15 +392,15 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
             int cellSize = PartyUIState.CHARM_CELL_HEIGHT;  // = 31
 
             if (charmState != CharmState.DISABLED) {
-                // 名称（单元上半部分，居中，按宽度自然截断，不再限制3字）
-                String displayName = type.getDisplayName();
+                // 名称 + 加成值（如"防晃: 1.5"、"学习: 50%"）
+                String displayName = getCharmDisplayName(type);
                 int maxDrawWidth = drawerWidth - 4;
                 if (this.font.width(displayName) > maxDrawWidth) {
                     displayName = this.font.plainSubstrByWidth(displayName, maxDrawWidth);
                 }
                 int nameX = drawerX + (drawerWidth - this.font.width(displayName)) / 2;
                 int nameY = cellY + 3;  // 名称在单元顶部附近
-                guiGraphics.drawString(this.font, displayName, nameX, nameY, 0xFFFFFFFF);
+                guiGraphics.drawString(this.font, displayName, nameX, nameY, textColor);
 
                 // 图标（单元下半部分，居中，标准16px大小，不需要缩小）
                 ItemStack icon = new ItemStack(type.getItem());
@@ -421,7 +420,8 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
                 // DISABLED 状态：显示 "?" 居中
                 int questionX = drawerX + (drawerWidth - this.font.width("?")) / 2;
                 int questionY = cellY + cellSize / 2 - 4;
-                guiGraphics.drawString(this.font, "?", questionX, questionY, 0xFF666666);
+                int dimColor = PartyUIState.isLightTheme() ? 0xFF_999999 : 0xFF_666666;
+                guiGraphics.drawString(this.font, "?", questionX, questionY, dimColor);
             }
         }
     }
@@ -474,5 +474,16 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
         }
 
         poseStack.popPose();
+    }
+
+    // 护符显示名称 + 加成值
+    private static String getCharmDisplayName(CharmType type) {
+        return switch (type) {
+            case SHINY    -> "闪耀: " + CharmConfig.SHINY_CHARM_BOOST.get();
+            case OVAL     -> "圆形: " + CharmConfig.OVAL_CHARM_HATCH_BOOST.get();
+            case EXP      -> "经验: " + CharmConfig.EXP_CHARM_BOOST.get();
+            case CATCHING -> "防晃: " + CharmConfig.CATCHING_CHARM_BOOST.get();
+            case EXP_ALL  -> "学习: " + CharmConfig.EXP_ALL_PERCENT.get().intValue() + "%";
+        };
     }
 }

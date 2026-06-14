@@ -31,6 +31,13 @@
 
   "gui.coblemon_ts.held_items": "Held Items",
 
+  "tooltip.coblemon_ts.shiny_charm": "§7Function: §fShiny encounter boost",
+  "tooltip.coblemon_ts.oval_charm": "§7Function: §fHatch speed boost",
+  "tooltip.coblemon_ts.exp_charm": "§7Function: §fEXP boost",
+  "tooltip.coblemon_ts.catching_charm": "§7Function: §fCatch rate boost",
+  "tooltip.coblemon_ts.exp_all": "§7Function: §fFull team EXP share",
+  "tooltip.coblemon_ts.gold_crown": "§7Function: §fPerfect IVs (no base IV change)",
+
   "tag.item.coblemon_ts.lucky_drops": "Lucky Drops",
 
   "coblemon_ts.pc.deposited": "§aPokemon sent to PC!",

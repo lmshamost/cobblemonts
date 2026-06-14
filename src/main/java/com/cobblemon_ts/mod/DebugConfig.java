@@ -20,10 +20,10 @@ public class DebugConfig {
                 .define("debug_party", false);
         DEBUG_CLICK = BUILDER
                 .comment("点击检测调试：mouseClicked 入口、inPartyArea 范围、右键菜单")
-                .define("debug_click", true);
+                .define("debug_click", false);
         DEBUG_CHARM = BUILDER
                 .comment("护符栏调试：箭头渲染、箭头点击、抽屉切换、点击拦截")
-                .define("debug_charm", true);
+                .define("debug_charm", false);
         DEBUG_SLOT = BUILDER
                 .comment("槽位物品调试：左键点击、拖拽、使用物品、heldItem、mouseReleased")
                 .define("debug_slot", false);

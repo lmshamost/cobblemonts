@@ -9,10 +9,12 @@ import com.cobblemon_ts.mod.CharmSlotManager;
 import com.cobblemon_ts.mod.CharmState;
 import com.cobblemon_ts.mod.CharmType;
 import com.cobblemon_ts.mod.CobblemonTS;
+import com.cobblemon_ts.mod.CobblemonTSConfig;
 import com.cobblemon_ts.mod.DebugConfig;
 import com.cobblemon_ts.mod.network.PartyToPCPacket;
 import com.cobblemon_ts.mod.network.ReleasePokemonPacket;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -55,6 +57,34 @@ public class PartyUIState {
     public static final int CHARM_HEADER_HEIGHT = HEADER_HEIGHT;
 
     public static final CharmType[] CHARM_TYPES = CharmType.values();
+
+    // ===== 面板主题：亮色白底 / 暗色深灰 =====
+    public static final int VANILLA_WHITE_BG = 0xFF_F0F0F0;
+    public static final int PANEL_BORDER_GRAY = 0xFF_AAAAAA;
+    // 暗色面板颜色（与原有 JAR 一致）
+    public static final int DARK_OUTER = 0xCC_0B0B0B;  // -856295947
+    public static final int DARK_INNER = 0xCC_161616;  // -855638017
+
+    public static boolean isLightTheme() {
+        return CobblemonTSConfig.LIGHT_PANEL_THEME.get();
+    }
+
+    public static void drawPanelBg(GuiGraphics graphics, int x, int y, int w, int h) {
+        if (isLightTheme()) {
+            graphics.fill(x, y, x + w, y + h, VANILLA_WHITE_BG);
+            graphics.hLine(x, x + w - 1, y, PANEL_BORDER_GRAY);
+            graphics.hLine(x, x + w - 1, y + h - 1, PANEL_BORDER_GRAY);
+            graphics.vLine(x, y, y + h - 1, PANEL_BORDER_GRAY);
+            graphics.vLine(x + w - 1, y, y + h - 1, PANEL_BORDER_GRAY);
+        } else {
+            graphics.fill(x, y, x + w, y + h, DARK_OUTER);
+            graphics.fill(x + 1, y + 1, x + w - 1, y + h - 1, DARK_INNER);
+        }
+    }
+
+    public static int getPanelTextColor() {
+        return isLightTheme() ? 0xFF_333333 : 0xFF_FFFFFF;
+    }
 
     /** 面板总高度 = HEADER_HEIGHT + 6 * (SLOT_SIZE + SLOT_SPACING) + SLOT_SPACING = 205 */
     public static int getPanelHeight() {

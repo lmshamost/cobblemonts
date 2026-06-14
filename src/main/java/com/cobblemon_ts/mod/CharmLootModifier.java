@@ -23,7 +23,8 @@ public class CharmLootModifier extends LootModifier {
             new ItemStack(CharmItems.OVAL_CHARM.get()),
             new ItemStack(CharmItems.EXP_CHARM.get()),
             new ItemStack(CharmItems.CATCHING_CHARM.get()),
-            new ItemStack(CharmItems.EXP_ALL.get())
+            new ItemStack(CharmItems.EXP_ALL.get()),
+            new ItemStack(CharmItems.GOLD_CROWN.get())
     );
 
     public CharmLootModifier(LootItemCondition[] conditions) {

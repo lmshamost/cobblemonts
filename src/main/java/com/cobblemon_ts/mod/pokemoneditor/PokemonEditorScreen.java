@@ -94,7 +94,7 @@ public class PokemonEditorScreen extends Screen {
     private Button genderCycleBtn;
     // ========== 深色/亮色主题切换按钮 ==========
     private Button themeToggleBtn;
-    // 主题由 PokemonEditorConfig.BRIGHT_THEME 控制，退出游戏再打开也保持
+    // 主题由 CobblemonTSConfig.LIGHT_EDITOR_THEME 控制，退出游戏再打开也保持
     // ========== 保存后自动关闭开关（小方块，红=关/不自动关闭，绿=开/自动关闭） ==========
     private Button editorAutoCloseBtn;
     // ========== IV/EV 快捷按钮 ==========
@@ -874,11 +874,11 @@ public class PokemonEditorScreen extends Screen {
                 .build();
 
         // 主题切换按钮（第1个）
-        themeToggleBtn = Button.builder(Component.literal(PokemonEditorConfig.BRIGHT_THEME.get() ? "  \uD83C\uDF19 深色  " : "  \u2600\uFE0F 亮色  "),
+        themeToggleBtn = Button.builder(Component.literal(CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? "  \uD83C\uDF19 深色  " : "  \u2600\uFE0F 亮色  "),
                 btn -> {
-                    boolean newVal = !PokemonEditorConfig.BRIGHT_THEME.get();
-                    PokemonEditorConfig.BRIGHT_THEME.set(newVal);
-                    PokemonEditorConfig.BRIGHT_THEME.save(); // 立即写入配置文件
+                    boolean newVal = !CobblemonTSConfig.LIGHT_EDITOR_THEME.get();
+                    CobblemonTSConfig.LIGHT_EDITOR_THEME.set(newVal);
+                    CobblemonTSConfig.LIGHT_EDITOR_THEME.save(); // 立即写入配置文件
                     btn.setMessage(Component.literal(newVal ? "  \uD83C\uDF19 深色  " : "  \u2600\uFE0F 亮色  "));
                 })
                 .pos(btnStartX, btnY)
@@ -1790,7 +1790,7 @@ public class PokemonEditorScreen extends Screen {
         updateSaveButtonState();
 
         // ========== 主题颜色：亮色=亮蓝，深色=暗灰（读取配置文件，跨启动保存） ==========
-        int labelColor = PokemonEditorConfig.BRIGHT_THEME.get() ? 0xFF3B82F6 : 0xFF1E293B;
+        int labelColor = CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? 0xFF3B82F6 : 0xFF1E293B;
 
         // ========== Tab 可见性控制：根据 activeTab 显示/隐藏组件 ==========
         // 概要 Tab (activeTab==0): 显示物种/等级/昵称/性格/特性/亲密度/形态/携带物/性别/闪光
@@ -1959,7 +1959,7 @@ public class PokemonEditorScreen extends Screen {
             if (selectedSlot >= 0 && selectedSlot < partyData.size()) {
                 int gv = parseOrDefault(genderField, 2);
                 String genderText = " (" + (gv == 0 ? "\u2642 雄性" : gv == 1 ? "\u2640 雌性" : "\u26AA 无性别") + ")";
-                int genderTextColor = PokemonEditorConfig.BRIGHT_THEME.get() ? 0xFFCBD5E1 : 0xFF475569;
+                int genderTextColor = CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? 0xFFCBD5E1 : 0xFF475569;
                 guiGraphics.drawString(this.font, genderText, editX + 50 + 10 + 65 + 100, rowY + rowStep * 8 + 4, genderTextColor, true);
             }
 
@@ -2007,11 +2007,11 @@ public class PokemonEditorScreen extends Screen {
                     int cardW = 120;
                     int cardH = 130;
                     // 卡片外框
-                    int frameColor = PokemonEditorConfig.BRIGHT_THEME.get() ? 0xFFCBD5E1 : 0xFF475569;
-                    int bgColor = PokemonEditorConfig.BRIGHT_THEME.get() ? 0xFFFCFDFE : 0xFF1E293B;
-                    int topBarColor = PokemonEditorConfig.BRIGHT_THEME.get() ? 0xFF3B82F6 : 0xFF2563EB;
-                    int labelGrey = PokemonEditorConfig.BRIGHT_THEME.get() ? 0xFF94A3B8 : 0xFF64748B;
-                    int valueColor = PokemonEditorConfig.BRIGHT_THEME.get() ? 0xFFE2E8F0 : 0xFF1E293B;
+                    int frameColor = CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? 0xFFCBD5E1 : 0xFF475569;
+                    int bgColor = CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? 0xFFFCFDFE : 0xFF1E293B;
+                    int topBarColor = CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? 0xFF3B82F6 : 0xFF2563EB;
+                    int labelGrey = CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? 0xFF94A3B8 : 0xFF64748B;
+                    int valueColor = CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? 0xFFE2E8F0 : 0xFF1E293B;
                     guiGraphics.fill(cardX - 1, cardY - 1, cardX + cardW + 1, cardY + cardH + 1, frameColor);
                     guiGraphics.fill(cardX, cardY, cardX + cardW, cardY + cardH, bgColor);
                     // 卡片顶部蓝色横条
@@ -2358,7 +2358,7 @@ public class PokemonEditorScreen extends Screen {
             int padY = 4;
             int lineH = 10;
 
-            boolean bright = PokemonEditorConfig.BRIGHT_THEME.get();
+            boolean bright = CobblemonTSConfig.LIGHT_EDITOR_THEME.get();
             int boxBg = bright ? 0xFFFCFDFE : 0xFF1E293B;
             int boxFrame = bright ? 0xFFB8C7DA : 0xFF475569;
             int boxTopFocus = bright ? 0xFF3B82F6 : 0xFF2563EB;
@@ -2581,7 +2581,7 @@ public class PokemonEditorScreen extends Screen {
             int dlgX = (this.width - dlgW) / 2;
             int dlgY = (this.height - dlgH) / 2;
 
-            boolean bright = PokemonEditorConfig.BRIGHT_THEME.get();
+            boolean bright = CobblemonTSConfig.LIGHT_EDITOR_THEME.get();
             int dlgBg = bright ? 0xFFF1F5F9 : 0xFF0F172A;
             int dlgFrame = bright ? 0xFF94A3B8 : 0xFF334155;
             int dlgTitleBg = bright ? 0xFF3B82F6 : 0xFF2563EB;

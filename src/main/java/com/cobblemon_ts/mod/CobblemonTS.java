@@ -291,7 +291,7 @@ public class CobblemonTS {
         }
         if (event.getConfig().getSpec() == LuckyConfig.SPEC) {
             LOGGER.info("CobblemonTS: LuckyConfig reloaded, recipes={}, minLevel={}, maxLevel={}",
-                    LuckyConfig.LUCKY_RECIPES_ENABLED.get(),
+                    CobblemonTSConfig.LUCKY_RECIPES_ENABLED_TS.get(),
                     LuckyConfig.MIN_SPAWN_LEVEL.get(),
                     LuckyConfig.MAX_SPAWN_LEVEL.get());
         }

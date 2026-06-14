@@ -2042,7 +2042,20 @@ public class PokemonNameMap {
         } catch (Throwable ignored) {}
         // [线性-L14fix] 移出try块：getAllSpeciesIds失败时也必须用硬编码物种填充列表
         SPECIES_ZH_LIST.clear();
-        SPECIES_ZH_LIST.addAll(ZH_TO_EN.keySet());
+        // [线性-L16] 按全国图鉴编号重新排序，确保下拉列表是图鉴顺序
+        for (Map.Entry<Integer, String> entry : NUMBER_TO_ID.entrySet()) {
+            String enId = entry.getValue();
+            String zhName = toChinese(enId);
+            if (zhName != null && !zhName.isEmpty() && !SPECIES_ZH_LIST.contains(zhName)) {
+                SPECIES_ZH_LIST.add(zhName);
+            }
+        }
+        // 补充：没有图鉴编号的物种（如幻兽、地区形态）追加到末尾
+        for (String zhName : ZH_TO_EN.keySet()) {
+            if (!SPECIES_ZH_LIST.contains(zhName)) {
+                SPECIES_ZH_LIST.add(zhName);
+            }
+        }
         dynamicSpeciesInitialized = true;
     }
 

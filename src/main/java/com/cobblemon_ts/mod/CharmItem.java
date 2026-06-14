@@ -5,6 +5,8 @@ import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 
 public class CharmItem extends Item {
@@ -51,5 +53,12 @@ public class CharmItem extends Item {
     
     public CharmType getCharmType() {
         return charmType;
+    }
+    
+    @Override
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, java.util.List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, context, tooltip, flag);
+        String key = "tooltip.coblemon_ts." + charmType.getItemId();
+        tooltip.add(Component.translatable(key));
     }
 }
