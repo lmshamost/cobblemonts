@@ -923,26 +923,24 @@ public class PartyUIState {
         if (pokemon == null || cursorStack.isEmpty()) return;
         try {
             boolean altHeld = net.minecraft.client.gui.screens.Screen.hasAltDown();
+            boolean shiftHeld = net.minecraft.client.gui.screens.Screen.hasShiftDown();
             int useCount = Math.min(altHeld ? cursorStack.getCount() : 1, cursorStack.getCount());
             UUID pokemonUuid = pokemon.getUuid();
+            boolean allMoves = shiftHeld &&
+                    BuiltInRegistries.ITEM.getKey(cursorStack.getItem()).toString()
+                            .equals("cobblemon:pp_max");
             com.cobblemon_ts.mod.network.UseItemOnPokemonPacket packet =
                     new com.cobblemon_ts.mod.network.UseItemOnPokemonPacket(pokemonUuid,
-                            BuiltInRegistries.ITEM.getKey(cursorStack.getItem()).toString(), useCount);
+                            BuiltInRegistries.ITEM.getKey(cursorStack.getItem()).toString(), useCount, allMoves);
             net.neoforged.neoforge.network.PacketDistributor.sendToServer(packet);
 
-            net.minecraft.world.entity.player.Player player = Minecraft.getInstance().player;
-            if (player != null) {
-                ItemStack carried = player.containerMenu.getCarried();
-                if (!carried.isEmpty()) {
-                    carried.shrink(useCount);
-                    if (carried.isEmpty()) {
-                        player.containerMenu.setCarried(ItemStack.EMPTY);
-                    }
-                }
-            }
+            // ★ 修复假消耗：不再在客户端抢先shrink
+            // 物品消耗统一由服务端UseItemOnPokemonPacket.handleServerSide处理
+            // 服务端确认消耗后，背包同步机制会自动更新客户端显示
 
             if (debugSlot()) {
-                CobblemonTS.LOGGER.info("[PartyUI] useItem sent slot={} count={}", slotIndex, useCount);
+                CobblemonTS.LOGGER.info("[PartyUI] useItem sent slot={} count={} shift={} allMoves={}",
+                        slotIndex, useCount, shiftHeld, allMoves);
             }
             state.ticksTillClick = 10;
         } catch (Exception e) {
