@@ -31,6 +31,7 @@ public class PokemonEditorScreen extends Screen {
 
     private int selectedSlot = -1;
     private int activeTab = 0; // 0=概要, 1=对战, 2=能力, 3=高级
+    private int pendingDeleteSlot = -1; // 标记待删除的槽位（点击"删除"时标记，保存时才真正删除）
 
     // ========== 概要 Tab 字段 ==========
     private EditBox sumSpeciesField, sumLevelField, sumNameField;
@@ -93,6 +94,8 @@ public class PokemonEditorScreen extends Screen {
     // ========== 深色/亮色主题切换按钮 ==========
     private Button themeToggleBtn;
     // 主题由 PokemonEditorConfig.BRIGHT_THEME 控制，退出游戏再打开也保持
+    // ========== 保存后自动关闭开关（小方块，红=关/不自动关闭，绿=开/自动关闭） ==========
+    private Button editorAutoCloseBtn;
     // ========== IV/EV 快捷按钮 ==========
     private Button maxIvButton;
     private Button clearEvButton;
@@ -810,6 +813,22 @@ public class PokemonEditorScreen extends Screen {
         int totalBtnW = btnW * 4 + btnGap * 3;
         int btnStartX = panelX + panelW / 2 - totalBtnW / 2;
 
+        // 自动关闭开关（小正方形，红色=关闭（不自动关闭），绿色=开启（自动关闭），位于主题按钮上方）
+        boolean autoClose = PokemonEditorConfig.EDITOR_AUTO_CLOSE.get();
+        editorAutoCloseBtn = Button.builder(
+                Component.literal(autoClose ? "\u25A0" : "\u25A0")
+                        .withStyle(autoClose ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.RED),
+                btn -> {
+                    boolean newVal = !PokemonEditorConfig.EDITOR_AUTO_CLOSE.get();
+                    PokemonEditorConfig.EDITOR_AUTO_CLOSE.set(newVal);
+                    PokemonEditorConfig.EDITOR_AUTO_CLOSE.save();
+                    btn.setMessage(Component.literal("\u25A0")
+                            .withStyle(newVal ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.RED));
+                })
+                .pos(btnStartX + btnW - 26, btnY - 26)
+                .size(22, 22)
+                .build();
+
         // 主题切换按钮（第1个）
         themeToggleBtn = Button.builder(Component.literal(PokemonEditorConfig.BRIGHT_THEME.get() ? "  \uD83C\uDF19 深色  " : "  \u2600\uFE0F 亮色  "),
                 btn -> {
@@ -837,6 +856,7 @@ public class PokemonEditorScreen extends Screen {
                 .pos(btnStartX + btnW * 3 + btnGap * 3, btnY)
                 .size(btnW, btnH)
                 .build();
+        this.addRenderableWidget(editorAutoCloseBtn);
         this.addRenderableWidget(themeToggleBtn);
         this.addRenderableWidget(saveButton);
         this.addRenderableWidget(deleteButton);
@@ -946,6 +966,11 @@ public class PokemonEditorScreen extends Screen {
     private void selectSlot(int slot) {
         this.selectedSlot = slot;
         this.viewingAllTeam = false; // 切回单只模式
+        // 切换槽位时清除待删除标记（避免误删）
+        if (pendingDeleteSlot >= 0 && pendingDeleteSlot != slot) {
+            PokemonEditorDebug.logEditor("[Screen] selectSlot {} clears pendingDeleteSlot {}", slot, pendingDeleteSlot);
+            pendingDeleteSlot = -1;
+        }
         for (int i = 0; i < Math.min(6, partySize); i++) {
             updateSlotButtonLabel(i);
         }
@@ -1153,6 +1178,24 @@ public class PokemonEditorScreen extends Screen {
 
     private void saveChanges() {
         if (selectedSlot < 0 || selectedSlot >= partyData.size()) return;
+
+        // 检查是否有待删除的槽位（点击"删除"标记，保存时才真正执行）
+        if (pendingDeleteSlot >= 0 && pendingDeleteSlot == selectedSlot) {
+            PokemonEditorDebug.logEditor("[Screen] Save triggers pending delete for slot {}", selectedSlot);
+            net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                    new PokemonEditorNetwork.DeletePokemonPacket(selectedSlot, targetPlayerUUID));
+            if (Minecraft.getInstance().player != null) {
+                Minecraft.getInstance().player.sendSystemMessage(
+                        Component.literal("[宝可梦编辑器] 已删除队伍 " + (selectedSlot + 1)));
+            }
+            pendingDeleteSlot = -1; // 清除标记
+            // 关闭编辑器（根据 EDITOR_AUTO_CLOSE 配置决定）
+            if (PokemonEditorConfig.EDITOR_AUTO_CLOSE.get()) {
+                onClose();
+            }
+            return;
+        }
+
         PokemonData d = partyData.get(selectedSlot);
 
         // 物种字段：中文 → 英文（Cobblemon需要英文名）
@@ -1354,10 +1397,24 @@ public class PokemonEditorScreen extends Screen {
         if (selectedSlot < 0 || selectedSlot >= partyData.size()) return;
         if (d == null) return;
 
-        // 空物种名 = 删除该槽位
+        // 空物种名 = 删除该槽位（标记待删除，下次保存时执行）
+        // 高级Tab的"保存"按钮直接执行删除
         boolean isDelete = (d.speciesName == null || d.speciesName.isEmpty());
         if (isDelete) {
-            deletePokemon();
+            PokemonEditorDebug.logEditor("[Screen] savePokemonData: delete for slot {}", selectedSlot);
+            net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                    new PokemonEditorNetwork.DeletePokemonPacket(selectedSlot, targetPlayerUUID));
+            if (Minecraft.getInstance().player != null) {
+                Minecraft.getInstance().player.sendSystemMessage(
+                        Component.literal("[宝可梦编辑器] 已删除队伍 " + (selectedSlot + 1)));
+            }
+            pendingDeleteSlot = -1;
+            // 清除本地数据
+            PokemonData emptyData = new PokemonData();
+            emptyData.exists = false;
+            partyData.set(selectedSlot, emptyData);
+            refreshEditFields();
+            updateSlotButtonLabel(selectedSlot);
             return;
         }
 
@@ -1418,6 +1475,7 @@ public class PokemonEditorScreen extends Screen {
             }
         }
 
+        // 发送 UpdatePokemonPacket（使用 combinedRawData 包含 modifiedFields）
         net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                 new PokemonEditorNetwork.UpdatePokemonPacket(
                         selectedSlot, targetPlayerUUID,
@@ -1435,12 +1493,22 @@ public class PokemonEditorScreen extends Screen {
                         combinedRawData,    // rawJsonData（包含 modifiedFields 头）
                         d.status));          // status
 
+        // 更新原始快照为当前数据（保存后视为新的原始状态）
+        originalSnapshots.set(selectedSlot, d.snapshot());
+
         updateSlotButtonLabel(selectedSlot);
         if (Minecraft.getInstance().player != null) {
             Minecraft.getInstance().player.sendSystemMessage(
                     Component.literal("[宝可梦编辑器] 已保存队伍 " + (selectedSlot + 1)));
         }
         PokemonEditorDebug.logEditor("[Screen] Packet sent for slot {}", selectedSlot);
+        
+        // 关闭编辑器（根据 EDITOR_AUTO_CLOSE 配置决定是否自动关闭）
+        if (PokemonEditorConfig.EDITOR_AUTO_CLOSE.get()) {
+            onClose();
+        } else {
+            PokemonEditorDebug.logEditor("[Screen] auto-close disabled, keeping editor open");
+        }
     }
 
     private void deletePokemon() {
@@ -1448,14 +1516,14 @@ public class PokemonEditorScreen extends Screen {
         PokemonData d = partyData.get(selectedSlot);
         if (!d.exists) return;
 
-        // 发送删除请求到服务端
-        net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-                new PokemonEditorNetwork.DeletePokemonPacket(selectedSlot, targetPlayerUUID));
+        // 标记待删除（不立即发包，保存时才真正删除）
+        pendingDeleteSlot = selectedSlot;
+        PokemonEditorDebug.logEditor("[Screen] Delete marker set for slot {} (pending, will delete on save)", selectedSlot);
+
         if (Minecraft.getInstance().player != null) {
             Minecraft.getInstance().player.sendSystemMessage(
-                    Component.literal("[宝可梦编辑器] 已删除队伍 " + (selectedSlot + 1)));
+                    Component.literal("[宝可梦编辑器] 已标记队伍 " + (selectedSlot + 1) + " 待删除（点击保存生效）"));
         }
-        PokemonEditorDebug.logEditor("[Screen] Delete requested for slot {}", selectedSlot);
 
         // 客户端立即清空本地数据并刷新 UI，显示空槽位
         PokemonData emptyData = new PokemonData();
@@ -2266,11 +2334,9 @@ public class PokemonEditorScreen extends Screen {
                 }
             }
 
-            // 5. 滚动逻辑：选中起始行滚到第一行；否则跟随光标
+            // 5. 滚动逻辑：选中时跟随光标位置（而非选中起点），光标超出可视区才滚动
             int maxOffset = Math.max(0, lines.size() - maxVisibleLines);
-            if (hasSelection && advRawField.isFocused()) {
-                advRawScrollOffset = Math.max(0, Math.min(maxOffset, selStartDisplayLine));
-            } else if (advRawField.isFocused()) {
+            if (advRawField.isFocused()) {
                 if (cursorDisplayLine < advRawScrollOffset) {
                     advRawScrollOffset = cursorDisplayLine;
                 } else if (cursorDisplayLine >= advRawScrollOffset + maxVisibleLines) {

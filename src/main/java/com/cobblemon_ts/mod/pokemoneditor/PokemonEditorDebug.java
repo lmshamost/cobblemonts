@@ -112,6 +112,46 @@ public class PokemonEditorDebug {
         }
     }
 
+    // ================ 状态修改日志（受 debug_editor 控制） ================
+
+    public static void infoStatus(String format, Object... args) {
+        if (isDebugEnabled()) {
+            CobblemonTS.LOGGER.info("[Bridge][Status] " + fmt(format, args));
+        }
+    }
+
+    public static void warnStatus(String format, Object... args) {
+        if (isDebugEnabled()) {
+            CobblemonTS.LOGGER.warn("[Bridge][Status] " + fmt(format, args));
+        }
+    }
+
+    public static void errorStatus(String format, Object... args) {
+        if (isDebugEnabled()) {
+            CobblemonTS.LOGGER.error("[Bridge][Status] " + fmt(format, args));
+        }
+    }
+
+    // ================ PP修改日志（受 debug_editor 控制） ================
+
+    public static void infoPP(String format, Object... args) {
+        if (isDebugEnabled()) {
+            CobblemonTS.LOGGER.info("[Bridge][PP] " + fmt(format, args));
+        }
+    }
+
+    public static void warnPP(String format, Object... args) {
+        if (isDebugEnabled()) {
+            CobblemonTS.LOGGER.warn("[Bridge][PP] " + fmt(format, args));
+        }
+    }
+
+    public static void errorPP(String format, Object... args) {
+        if (isDebugEnabled()) {
+            CobblemonTS.LOGGER.error("[Bridge][PP] " + fmt(format, args));
+        }
+    }
+
     // ================ 错误级别（始终输出，不受开关控制） ================
 
     public static void logError(String message, Throwable throwable) {

@@ -1982,7 +1982,80 @@ public class PokemonNameMap {
                 return key;
             }
         }
+        // 4. ★ 扩展：从 Cobblemon 的 Abilities 注册表获取所有特性 ID，反向 lang 查找
+        //    这解决了"solar_power→太阳之力"这类只有 lang 翻译但没有硬编码映射的特性
+        try {
+            Object abilitiesInstance = com.cobblemon.mod.common.api.abilities.Abilities.class.getField("INSTANCE").get(null);
+            // 尝试多种可能的方法签名来获取所有已注册的特性模板
+            for (java.lang.reflect.Method m : abilitiesInstance.getClass().getMethods()) {
+                String name = m.getName();
+                Class<?> ret = m.getReturnType();
+                // 查找返回 Map/Collection/Iterable 的方法（可能是注册表）
+                if ((name.equals("getAbilities") || name.startsWith("get") || name.equals("values"))
+                        && (java.util.Map.class.isAssignableFrom(ret)
+                            || java.util.Collection.class.isAssignableFrom(ret)
+                            || java.lang.Iterable.class.isAssignableFrom(ret))) {
+                    try {
+                        Object result = m.invoke(abilitiesInstance);
+                        if (result == null) continue;
+                        // 从返回值中提取所有可能的特性 ID
+                        java.util.Set<String> candidateIds = new java.util.LinkedHashSet<>();
+                        if (result instanceof java.util.Map<?, ?> map) {
+                            for (Object k : map.keySet()) {
+                                if (k != null) candidateIds.add(k.toString());
+                            }
+                        } else if (result instanceof java.util.Collection<?> col) {
+                            for (Object v : col) {
+                                if (v != null) {
+                                    // 可能是 AbilityTemplate，尝试获取 name/showdownId
+                                    String id = extractAbilityIdFromTemplate(v);
+                                    if (id != null) candidateIds.add(id);
+                                }
+                            }
+                        } else if (result instanceof java.lang.Iterable<?> it) {
+                            for (Object v : it) {
+                                if (v != null) {
+                                    String id = extractAbilityIdFromTemplate(v);
+                                    if (id != null) candidateIds.add(id);
+                                }
+                            }
+                        }
+                        // 从候选 ID 中查找中文匹配
+                        for (String id : candidateIds) {
+                            String cleaned = id.toLowerCase();
+                            if (ABILITY_EN_TO_ZH.containsKey(cleaned)) continue; // 已在硬编码中检查过
+                            String translated = tryLang("cobblemon.ability." + cleaned, null);
+                            if (translated != null && translated.trim().equals(trimmed)) {
+                                return cleaned;
+                            }
+                        }
+                    } catch (Throwable ignored) {}
+                }
+            }
+        } catch (Throwable ignored) {}
         return zh;
+    }
+
+    // 辅助方法：从 AbilityTemplate 对象中尝试提取特性 ID（通过 getName/showdownId 等字段）
+    private static String extractAbilityIdFromTemplate(Object template) {
+        if (template == null) return null;
+        try {
+            for (java.lang.reflect.Method m : template.getClass().getMethods()) {
+                if (m.getParameterCount() == 0
+                        && (m.getName().equals("getName")
+                            || m.getName().equals("name")
+                            || m.getName().equals("getShowdownId")
+                            || m.getName().equals("showdownId")
+                            || m.getName().equals("getId")
+                            || m.getName().equals("id"))) {
+                    try {
+                        Object val = m.invoke(template);
+                        if (val != null) return val.toString();
+                    } catch (Throwable ignored) {}
+                }
+            }
+        } catch (Throwable ignored) {}
+        return null;
     }
 
     public static List<String> abilityList() {
