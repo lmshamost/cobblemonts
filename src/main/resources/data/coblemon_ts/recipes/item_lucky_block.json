@@ -7,14 +7,13 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "a": { "item": "cobblemon:ultra_ball" },
-    "b": { "item": "minecraft:diamond" },
-    "c": { "item": "minecraft:ancient_debris" }
+    "a": { "item": "minecraft:diamond_block" },
+    "b": { "item": "minecraft:gold_block" }
   },
   "pattern": [
+    "aaa",
     "aba",
-    "bcb",
-    "aba"
+    "aaa"
   ],
   "result": {
     "count": 1,

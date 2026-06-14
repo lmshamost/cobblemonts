@@ -80,8 +80,13 @@ public class CobblemonTS {
     public static final DeferredRegister<MapCodec<? extends ICondition>> CONDITION_SERIALIZERS =
             DeferredRegister.create(NeoForgeRegistries.CONDITION_SERIALIZERS, MODID);
 
+    // [线性-L06] 战利品修饰器注册
+    public static final DeferredRegister<MapCodec<? extends net.neoforged.neoforge.common.loot.IGlobalLootModifier>> LOOT_MODIFIER_SERIALIZERS =
+            DeferredRegister.create(NeoForgeRegistries.GLOBAL_LOOT_MODIFIER_SERIALIZERS, MODID);
+
     static {
         CONDITION_SERIALIZERS.register("lucky_recipes_enabled", () -> LuckyRecipeCondition.CODEC);
+        LOOT_MODIFIER_SERIALIZERS.register("charm_loot", () -> CharmLootModifier.CODEC); // [线性-L06] 护符战利品
     }
 
     public CobblemonTS(IEventBus modEventBus, ModContainer modContainer) {
@@ -93,6 +98,7 @@ public class CobblemonTS {
         CREATIVE_MODE_TABS.register(modEventBus);
         LuckyBlocks.register(modEventBus);
         CONDITION_SERIALIZERS.register(modEventBus);
+        LOOT_MODIFIER_SERIALIZERS.register(modEventBus); // [线性-L06] 注册战利品修饰器
         ModContainers.MENU_TYPES.register(modEventBus);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, CharmConfig.SPEC, MODID + "-common.toml");

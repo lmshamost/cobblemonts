@@ -26,6 +26,10 @@ public class CobblemonTSConfig {
     public static final ModConfigSpec.BooleanValue HUD_ABSORPTION_OVERLAY;
     public static final ModConfigSpec.BooleanValue HUD_SATURATION_OVERLAY;
 
+    // [线性-L06] 护符获取与幸运方块配方开关
+    public static final ModConfigSpec.BooleanValue CHARM_LOOT_ENABLED;
+    public static final ModConfigSpec.BooleanValue LUCKY_RECIPES_ENABLED_TS;
+
     static {
         BUILDER.comment("初始精灵设置").push("starter");
         STARTER_IS_SHINY = BUILDER
@@ -58,19 +62,29 @@ public class CobblemonTSConfig {
         // [线性-L04] 自定义血条/饥饿条/盔甲条开关
         HUD_CUSTOM_HEALTH_BAR = BUILDER
                 .comment("是否启用自定义血条(true=自定义血条+吸收心金条覆盖, false=原版心形)")
-                .define("custom_health_bar", true);
+                .define("custom_health_bar", false);
         HUD_CUSTOM_FOOD_BAR = BUILDER
                 .comment("是否启用自定义饥饿条(true=自定义饥饿条+饱腹金条覆盖, false=原版鸡腿)")
-                .define("custom_food_bar", true);
+                .define("custom_food_bar", false);
         HUD_CUSTOM_ARMOR_BAR = BUILDER
                 .comment("是否启用自定义盔甲条(true=自定义盔甲条, false=原版盔甲图标)")
-                .define("custom_armor_bar", true);
+                .define("custom_armor_bar", false);
         HUD_ABSORPTION_OVERLAY = BUILDER
                 .comment("是否在血条上显示伤害吸收金条覆盖(true=显示金条, false=仅显示红血条)")
-                .define("absorption_overlay", true);
+                .define("absorption_overlay", false);
         HUD_SATURATION_OVERLAY = BUILDER
                 .comment("是否在饥饿条上显示饱腹值金条覆盖(true=显示金条, false=仅显示饥饿条)")
-                .define("saturation_overlay", true);
+                .define("saturation_overlay", false);
+        BUILDER.pop();
+
+        // [线性-L06] 护符获取与幸运方块配方开关
+        BUILDER.comment("战利品与配方设置").push("loot_recipes");
+        CHARM_LOOT_ENABLED = BUILDER
+                .comment("是否允许护符从战利品箱子中获取(猪灵堡垒、末地城，低权重随机，true=可获取, false=仅创造模式)")
+                .define("charm_loot_enabled", false);
+        LUCKY_RECIPES_ENABLED_TS = BUILDER
+                .comment("是否启用幸运方块合成配方(true=启用配方, false=关闭配方)")
+                .define("lucky_recipes_enabled", false);
         BUILDER.pop();
     }
 

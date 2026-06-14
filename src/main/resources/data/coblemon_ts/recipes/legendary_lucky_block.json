@@ -4,16 +4,11 @@
       "type": "coblemon_ts:lucky_recipes_enabled"
     }
   ],
-  "type": "minecraft:crafting_shaped",
+  "type": "minecraft:crafting_shapeless",
   "category": "misc",
-  "key": {
-    "a": { "item": "minecraft:nether_star" },
-    "b": { "item": "cobblemon:master_ball" }
-  },
-  "pattern": [
-    "bbb",
-    "bab",
-    "bbb"
+  "ingredients": [
+    { "item": "minecraft:nether_star" },
+    { "item": "cobblemon:master_ball" }
   ],
   "result": {
     "count": 1,
