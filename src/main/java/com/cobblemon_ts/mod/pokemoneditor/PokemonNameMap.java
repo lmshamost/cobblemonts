@@ -16,7 +16,7 @@ public class PokemonNameMap {
     // ============================================================
     // lang 翻译：优先用 Minecraft 的语言系统（zh_cn.lang），失败才回落硬编码映射
     // ============================================================
-    private static String tryLang(String key, String fallback) {
+    public static String tryLang(String key, String fallback) {
         try {
             String translated = Component.translatable(key).getString();
             // 没有翻译时会返回 key 本身（例如 "cobblemon.move.tackle"）
@@ -32,6 +32,9 @@ public class PokemonNameMap {
     public static final Map<String, String> ZH_TO_EN = new LinkedHashMap<>();
 
     static {
+        // 自动添加缺失的103个物种
+        MissingSpecies.addMissingSpecies();
+        
         // ========== 关都地区 1-151 ==========
         add("bulbasaur", "妙蛙种子");
         add("ivysaur", "妙蛙草");
@@ -61,10 +64,10 @@ public class PokemonNameMap {
         add("raichu", "雷丘");
         add("sandshrew", "穿山鼠");
         add("sandslash", "穿山王");
-        add("nidoran_f", "尼多兰");
+        add("nidoranf", "尼多兰");
         add("nidorina", "尼多娜");
         add("nidoqueen", "尼多后");
-        add("nidoran_m", "尼多朗");
+        add("nidoranm", "尼多朗");
         add("nidorino", "尼多力诺");
         add("nidoking", "尼多王");
         add("clefairy", "皮皮");
@@ -154,7 +157,7 @@ public class PokemonNameMap {
         add("seaking", "金鱼王");
         add("staryu", "海星星");
         add("starmie", "宝石海星");
-        add("mr_mime", "魔墙人偶");
+        add("mrmime", "魔墙人偶");
         add("scyther", "飞天螳螂");
         add("jynx", "迷唇姐");
         add("electabuzz", "电击兽");
@@ -284,7 +287,7 @@ public class PokemonNameMap {
         add("pupitar", "沙基拉");
         add("tyranitar", "班基拉斯");
         add("lugia", "洛奇亚");
-        add("ho_oh", "凤王");
+        add("hooh", "凤王");
         add("celebi", "时拉比");
 
         // ========== 丰缘地区 252-386 ==========
@@ -475,7 +478,7 @@ public class PokemonNameMap {
         add("bronzor", "铜镜怪");
         add("bronzong", "青铜钟");
         add("bonsly", "爱哭树");
-        add("mime_jr", "魔尼尼");
+        add("mimejr", "魔尼尼");
         add("happiny", "好运蛋");
         add("chatot", "聒噪鸟");
         add("spiritomb", "花岩怪");
@@ -510,7 +513,7 @@ public class PokemonNameMap {
         add("glaceon", "冰伊布");
         add("gliscor", "天蝎王");
         add("mamoswine", "象牙猪");
-        add("porygon_z", "多边兽Z");
+        add("porygonz", "多边兽Z");
         add("gallade", "艾路雷朵");
         add("probopass", "大朝北鼻");
         add("dusknoir", "黑夜魔灵");
@@ -814,7 +817,7 @@ public class PokemonNameMap {
         add("sandygast", "沙丘娃");
         add("palossand", "噬沙堡爷");
         add("pyukumuku", "拳海参");
-        add("type_null", "属性:空");
+        add("typenull", "属性:空");
         add("silvally", "银伴战兽");
         add("minior", "小陨星");
         add("komala", "树枕尾熊");
@@ -824,13 +827,13 @@ public class PokemonNameMap {
         add("bruxish", "磨牙彩皮鱼");
         add("drampa", "老翁龙");
         add("dhelmise", "破破舵轮");
-        add("jangmo_o", "心鳞宝");
-        add("hakamo_o", "鳞甲龙");
-        add("kommo_o", "杖尾鳞甲龙");
-        add("tapu_koko", "卡璞·鸣鸣");
-        add("tapu_lele", "卡璞·蝶蝶");
-        add("tapu_bulu", "卡璞·哞哞");
-        add("tapu_fini", "卡璞·鳍鳍");
+        add("jangmoo", "心鳞宝");
+        add("hakamoo", "鳞甲龙");
+        add("kommoo", "杖尾鳞甲龙");
+        add("tapukoko", "卡璞·鸣鸣");
+        add("tapulele", "卡璞·蝶蝶");
+        add("tapubulu", "卡璞·哞哞");
+        add("tapufini", "卡璞·鳍鳍");
         add("cosmog", "科斯莫古");
         add("cosmoem", "科斯莫姆");
         add("solgaleo", "索尔迦雷欧");
@@ -910,7 +913,7 @@ public class PokemonNameMap {
         add("perrserker", "喵头目");
         add("cursola", "噬沙堡");
         add("sirfetchd", "葱游兵");
-        add("mr_rime", "踏冰人偶");
+        add("mrrime", "踏冰人偶");
         add("runerigus", "死神板");
         add("milcery", "小仙奶");
         add("alcremie", "霜奶仙");
@@ -985,28 +988,28 @@ public class PokemonNameMap {
         add("bellibolt", "电肚蛙");
         add("wugtrio", "三海地鼠");
         add("bombirdier", "坠石鸟");
-        add("great_tusk", "雄伟牙");
-        add("scream_tail", "猛雷鼓");
-        add("brute_bonnet", "沙铁皮");
-        add("flutter_mane", "狂舞挥");
-        add("slither_wing", "爬地翅");
-        add("sandy_shocks", "沙电兽");
-        add("iron_treads", "铁辙迹");
-        add("iron_bundle", "铁包袱");
-        add("iron_hands", "铁臂膀");
-        add("iron_jugulis", "铁脖颈");
-        add("iron_moth", "铁毒蛾");
-        add("iron_thorns", "铁荆棘");
+        add("greattusk", "雄伟牙");
+        add("screamtail", "猛雷鼓");
+        add("brutebonnet", "沙铁皮");
+        add("fluttermane", "狂舞挥");
+        add("slitherwing", "爬地翅");
+        add("sandyshocks", "沙电兽");
+        add("irontreads", "铁辙迹");
+        add("ironbundle", "铁包袱");
+        add("ironhands", "铁臂膀");
+        add("ironjugulis", "铁脖颈");
+        add("ironmoth", "铁毒蛾");
+        add("ironthorns", "铁荆棘");
         add("frigibax", "冻脊龙");
         add("arctibax", "戟脊龙");
         add("baxcalibur", "冰脊龙");
         add("gimmighoul", "索财灵");
         add("gholdengo", "赛富豪");
-        add("wo_chien", "古简蜗");
-        add("chien_pao", "古剑豹");
-        add("ting_lu", "古鼎鹿");
-        add("chi_yu", "古玉鱼");
-        add("treasures_of_ruin", "灾厄之器");
+        add("wochien", "古简蜗");
+        add("chienpao", "古剑豹");
+        add("tinglu", "古鼎鹿");
+        add("chiyu", "古玉鱼");
+        add("treasuresofruin", "灾厄之器");
         add("koraidon", "故勒顿");
         add("miraidon", "密勒顿");
     }
@@ -1072,11 +1075,6 @@ public class PokemonNameMap {
             if (translated != null && translated.trim().equals(trimmed)) {
                 return key;
             }
-        }
-        // 4. 也尝试用中文作为 key 调 lang（某些 mod 可能用中文 ID）
-        String reverse = tryLang("cobblemon.nature." + lower, null);
-        if (reverse != null && !reverse.equals("cobblemon.nature." + lower)) {
-            // 这返回的是中文翻译...没用
         }
         return zh;
     }
@@ -1716,14 +1714,35 @@ public class PokemonNameMap {
     // 解决重启后技能名变成键值名导致无法修改的问题
     public static String moveToEnglish(String zh) {
         if (zh == null || zh.isEmpty()) return zh;
-        // [线性-L03a] 先尝试中文→英文映射
-        String en = MOVE_ZH_TO_EN.get(zh.trim());
+        String trimmed = zh.trim();
+        // [线性-L14] 1. 先尝试中文→英文映射
+        String en = MOVE_ZH_TO_EN.get(trimmed);
         if (en != null) return en;
-        // [线性-L03b] 输入可能已经是英文内部名（如pound），直接返回
-        if (MOVE_EN_TO_ZH.containsKey(zh.toLowerCase().trim())) return zh.toLowerCase().trim();
-        // [线性-L03c] 输入可能是langKey（如cobblemon.move.pound）或包含命名空间，清洗后再查
-        String cleaned = cleanItemName(zh);
-        if (!cleaned.equals(zh.trim())) {
+        // [线性-L14] 2. 输入可能已经是英文内部名（如pound），直接返回
+        String lower = trimmed.toLowerCase();
+        if (MOVE_EN_TO_ZH.containsKey(lower)) return lower;
+        // [线性-L14] 3. ★ Lang键值反向查找：遍历所有已知招式ID，检查cobblemon.move.<id>翻译是否匹配
+        for (String key : MOVE_EN_TO_ZH.keySet()) {
+            String translated = tryLang("cobblemon.move." + key, null);
+            if (translated != null && translated.trim().equals(trimmed)) {
+                return key;
+            }
+        }
+        // [线性-L14] 4. ★ 扩展：通过Cobblemon注册表枚举所有招式ID，lang反向查找
+        try {
+            List<String> allIds = CobblemonBridge.getAllMoveIds();
+            for (String id : allIds) {
+                if (id == null || id.isEmpty()) continue;
+                if (MOVE_EN_TO_ZH.containsKey(id)) continue;
+                String translated = tryLang("cobblemon.move." + id, null);
+                if (translated != null && translated.trim().equals(trimmed)) {
+                    return id;
+                }
+            }
+        } catch (Throwable ignored) {}
+        // [线性-L14] 5. 输入可能是langKey（如cobblemon.move.pound）或包含命名空间，清洗后再查
+        String cleaned = cleanItemName(trimmed);
+        if (!cleaned.equals(trimmed)) {
             String en2 = MOVE_ZH_TO_EN.get(cleaned);
             if (en2 != null) return en2;
             if (MOVE_EN_TO_ZH.containsKey(cleaned.toLowerCase().trim())) return cleaned.toLowerCase().trim();
@@ -1748,10 +1767,10 @@ public class PokemonNameMap {
         addAbility("sniper", "狙击手");
         addAbility("run_away", "逃跑");
         addAbility("guts", "毅力");
-        addAbility("hustle", "强行");
+        addAbility("hustle", "活力"); // [线性-L10a] 活力≠强行(sheer_force)
         addAbility("intimidate", "威吓");
         addAbility("static", "静电");
-        addAbility("volt_absorb", "避雷针");
+        addAbility("volt_absorb", "蓄电"); // [线性-L10b] 蓄电≠避雷针(lightning_rod)
         addAbility("sand_veil", "沙隐");
         addAbility("sand_rush", "拨沙");
         addAbility("oblivious", "迟钝");
@@ -1762,8 +1781,8 @@ public class PokemonNameMap {
         addAbility("poison_point", "毒刺");
         addAbility("rivalry", "斗争心");
         addAbility("sturdy", "结实");
-        addAbility("rock_head", "硬壳盔甲");
-        addAbility("smoke_screen", "雪隐");
+        addAbility("rock_head", "石头脑袋"); // [线性-L10c] 石头脑袋≠硬壳盔甲
+        addAbility("smoke_screen", "烟幕"); // [线性-L10d] 烟幕≠雪隐(snow_cloak)
         addAbility("inner_focus", "精神力");
         addAbility("sticky_hold", "黏着");
         addAbility("synchronize", "同步");
@@ -1812,7 +1831,7 @@ public class PokemonNameMap {
         addAbility("water_absorb", "储水");
         addAbility("thick_fat", "厚脂肪");
         addAbility("stench", "恶臭");
-        addAbility("trace", "追踪");
+        addAbility("trace", "复制"); // [线性-L10l] 复制≠追踪(追踪不存在)
         addAbility("quick_feet", "飞毛腿");
         addAbility("immunity", "免疫");
         addAbility("white_smoke", "白烟");
@@ -1825,19 +1844,19 @@ public class PokemonNameMap {
         addAbility("moody", "性情多变");
         addAbility("tangled_feet", "蹒跚");
         addAbility("solid_rock", "坚实");
-        addAbility("quick_draw", "快速防守");
+        addAbility("quick_draw", "快速拔出"); // [线性-L10e] 快速拔出≠快速防守
         addAbility("unburden", "轻装");
         addAbility("gravity", "重力");
-        addAbility("scrappy", "破格");
-        addAbility("aroma_veil", "芳香幕");
-        addAbility("flower_veil", "花幕");
+        addAbility("scrappy", "胆量"); // [线性-L10f] 胆量≠破格(mold_breaker)
+        addAbility("aroma_veil", "芳香薄雾"); // [线性-L10g] 芳香薄雾
+        addAbility("flower_veil", "花之幕"); // [线性-L10h] 花之幕
         addAbility("cheek_pouch", "颊囊");
         addAbility("stamina", "持久力");
-        addAbility("wimp_out", "软弱");
-        addAbility("emergency_exit", "紧急撤退");
+        addAbility("wimp_out", "懦弱"); // [线性-L10i] 懦弱≠软弱
+        addAbility("emergency_exit", "危急回避"); // [线性-L10j] 危急回避≠紧急撤退
         addAbility("disguise", "伪装");
         addAbility("battle_bond", "牵绊变身");
-        addAbility("power_of_alchemy", "炼金术之力");
+        addAbility("power_of_alchemy", "化学之力"); // [线性-L10k] 化学之力≠炼金术之力
         addAbility("dazzling", "耀眼");
         addAbility("soul_heart", "魂心");
         addAbility("tangling_hair", "缠绕发");
@@ -1964,7 +1983,7 @@ public class PokemonNameMap {
         return ABILITY_EN_TO_ZH.getOrDefault(id, en);
     }
     // ===== 物种名称映射辅助方法
-    private static void add(String en, String zh) {
+    public static void add(String en, String zh) {
         String key = en.toLowerCase();
         if (!EN_TO_ZH.containsKey(key)) {
             EN_TO_ZH.put(key, zh);
@@ -1975,88 +1994,151 @@ public class PokemonNameMap {
     public static String toChinese(String en) {
         if (en == null || en.isEmpty()) return en;
         String id = en.toLowerCase().trim();
-        // 1. 优先 lang 翻译（Cobblemon 物种 key：cobblemon.species.<id>）
-        String fromLang = tryLang("cobblemon.species." + id, null);
+        // 1. 优先 lang 翻译（Cobblemon 物种 key：cobblemon.species.<id>.name）
+        String fromLang = tryLang("cobblemon.species." + id + ".name", null);
         if (fromLang != null) return fromLang;
         // 2. 回落硬编码映射
         return EN_TO_ZH.getOrDefault(id, en);
     }
 
+    // [线性-L14] 动态初始化物种列表（从Cobblemon注册表 + lang键值，补全硬编码映射中缺失的物种）
+    private static boolean dynamicSpeciesInitialized = false;
+    private static final List<String> SPECIES_ZH_LIST = new ArrayList<>();
+    // [线性-L15] 图鉴编号映射：全国图鉴编号 ↔ 物种英文ID（showdownId格式）
+    private static final java.util.Map<Integer, String> NUMBER_TO_ID = new java.util.LinkedHashMap<>();
+    private static final java.util.Map<String, Integer> ID_TO_NUMBER = new java.util.LinkedHashMap<>();
+
+    private static void ensureDynamicSpecies() {
+        if (dynamicSpeciesInitialized) return;
+        // [线性-L15] ★ 优先硬编码表构建图鉴编号映射（EN_TO_ZH的LinkedHashMap插入顺序=全国图鉴顺序）
+        int dex = 1;
+        for (String id : EN_TO_ZH.keySet()) {
+            NUMBER_TO_ID.put(dex, id);
+            ID_TO_NUMBER.put(id, dex);
+            dex++;
+        }
+        // 补充：对不在硬编码表中的物种，从Cobblemon API获取编号
+        try {
+            java.util.Map<Integer, String> apiNumMap = CobblemonBridge.getNationalDexNumberMap();
+            for (java.util.Map.Entry<Integer, String> e : apiNumMap.entrySet()) {
+                String id = e.getValue();
+                if (!ID_TO_NUMBER.containsKey(id)) {
+                    NUMBER_TO_ID.put(e.getKey(), id);
+                    ID_TO_NUMBER.put(id, e.getKey());
+                }
+            }
+        } catch (Throwable ignored) {}
+        // 动态覆盖翻译（lang系统的值覆盖硬编码，但顺序不变）
+        try {
+            List<String> allIds = CobblemonBridge.getAllSpeciesIds();
+            for (String id : allIds) {
+                if (id == null || id.isEmpty()) continue;
+                String lowerId = id.toLowerCase().trim();
+                String zh = tryLang("cobblemon.species." + lowerId + ".name", null);
+                if (zh == null || zh.isEmpty()) zh = lowerId;
+                EN_TO_ZH.put(lowerId, zh);
+                ZH_TO_EN.put(zh, lowerId);
+            }
+        } catch (Throwable ignored) {}
+        // [线性-L14fix] 移出try块：getAllSpeciesIds失败时也必须用硬编码物种填充列表
+        SPECIES_ZH_LIST.clear();
+        SPECIES_ZH_LIST.addAll(ZH_TO_EN.keySet());
+        dynamicSpeciesInitialized = true;
+    }
+
+    public static List<String> speciesList() {
+        ensureDynamicSpecies();
+        return SPECIES_ZH_LIST;
+    }
+
+    // [线性-L15] 通过图鉴编号获取中文名（用于序号搜索）
+    public static String getSpeciesByNumber(int number) {
+        ensureDynamicSpecies();
+        String id = NUMBER_TO_ID.get(number);
+        if (id != null) {
+            return toChinese(id);
+        }
+        return null;
+    }
+
+    // [线性-L15] 通过图鉴编号获取英文ID
+    public static String getSpeciesIdByNumber(int number) {
+        ensureDynamicSpecies();
+        return NUMBER_TO_ID.get(number);
+    }
+
+    // [线性-L15] 通过物种ID获取图鉴编号
+    public static int getNumberBySpeciesId(String id) {
+        ensureDynamicSpecies();
+        return ID_TO_NUMBER.getOrDefault(id.toLowerCase(), -1);
+    }
+
     public static String toEnglish(String zh) {
         if (zh == null || zh.isEmpty()) return zh;
-        String en = ZH_TO_EN.get(zh.trim());
+        String trimmed = zh.trim();
+        // [线性-L14] 1. 如果输入本身就是英文 ID，直接返回
+        String lower = trimmed.toLowerCase();
+        if (EN_TO_ZH.containsKey(lower)) return lower;
+        // [线性-L14] 2. 精确硬编码映射
+        String en = ZH_TO_EN.get(trimmed);
         if (en != null) return en;
-        if (EN_TO_ZH.containsKey(zh.toLowerCase().trim())) return zh.toLowerCase().trim();
+        // [线性-L14] 3. ★ Lang键值反向查找：遍历所有已知物种ID，检查cobblemon.species.<id>.name翻译是否匹配
+        for (String key : EN_TO_ZH.keySet()) {
+            String translated = tryLang("cobblemon.species." + key + ".name", null);
+            if (translated != null && translated.trim().equals(trimmed)) {
+                return key;
+            }
+        }
+        // [线性-L14] 4. ★ 扩展：通过Cobblemon注册表枚举所有物种ID，lang反向查找
+        //    解决了仅存在于lang系统但不在硬编码映射中的物种（如mod新增物种）
+        try {
+            List<String> allIds = CobblemonBridge.getAllSpeciesIds();
+            for (String id : allIds) {
+                if (id == null || id.isEmpty()) continue;
+                if (EN_TO_ZH.containsKey(id)) continue; // 已在步骤3中检查过
+                String translated = tryLang("cobblemon.species." + id + ".name", null);
+                if (translated != null && translated.trim().equals(trimmed)) {
+                    return id;
+                }
+            }
+        } catch (Throwable ignored) {}
+        // [线性-L14] 5. 全部失败，返回原始输入（保留用于错误日志追踪）
         return zh;
     }
 
     public static String abilityToEnglish(String zh) {
         if (zh == null || zh.isEmpty()) return zh;
         String trimmed = zh.trim();
-        // 1. 精确硬编码映射
-        String en = ABILITY_ZH_TO_EN.get(trimmed);
-        if (en != null) return en;
-        // 2. 如果输入本身就是英文 ID
+        // [线性-L10] 1. 如果输入本身就是英文 ID，直接返回
         String lower = trimmed.toLowerCase();
         if (ABILITY_EN_TO_ZH.containsKey(lower)) return lower;
-        // 3. 反向 lang 查找：遍历所有硬编码 key，看 lang 翻译是否等于中文
+        // [线性-L10] 2. ★ Lang反向查找优先：遍历所有已知特性ID，检查lang翻译是否匹配
+        //    这解决了硬编码映射与lang翻译不一致的核心问题
+        //    例如：volt_absorb硬编码为"避雷针"但lang为"蓄电"，用户选"蓄电"时lang优先匹配
         for (String key : ABILITY_EN_TO_ZH.keySet()) {
             String translated = tryLang("cobblemon.ability." + key, null);
             if (translated != null && translated.trim().equals(trimmed)) {
                 return key;
             }
         }
-        // 4. ★ 扩展：从 Cobblemon 的 Abilities 注册表获取所有特性 ID，反向 lang 查找
-        //    这解决了"solar_power→太阳之力"这类只有 lang 翻译但没有硬编码映射的特性
+        // [线性-L10] 3. ★ Lang键值反向查找：通过反射枚举 Abilities 注册表获取所有特性ID
+        //    直接用 tryLang("cobblemon.ability.<id>") 匹配中文，不再依赖硬编码翻译
+        //    解决了"心灵感应→telepathy"等只有lang翻译而无硬编码映射的特性
         try {
-            Object abilitiesInstance = com.cobblemon.mod.common.api.abilities.Abilities.class.getField("INSTANCE").get(null);
-            // 尝试多种可能的方法签名来获取所有已注册的特性模板
-            for (java.lang.reflect.Method m : abilitiesInstance.getClass().getMethods()) {
-                String name = m.getName();
-                Class<?> ret = m.getReturnType();
-                // 查找返回 Map/Collection/Iterable 的方法（可能是注册表）
-                if ((name.equals("getAbilities") || name.startsWith("get") || name.equals("values"))
-                        && (java.util.Map.class.isAssignableFrom(ret)
-                            || java.util.Collection.class.isAssignableFrom(ret)
-                            || java.lang.Iterable.class.isAssignableFrom(ret))) {
-                    try {
-                        Object result = m.invoke(abilitiesInstance);
-                        if (result == null) continue;
-                        // 从返回值中提取所有可能的特性 ID
-                        java.util.Set<String> candidateIds = new java.util.LinkedHashSet<>();
-                        if (result instanceof java.util.Map<?, ?> map) {
-                            for (Object k : map.keySet()) {
-                                if (k != null) candidateIds.add(k.toString());
-                            }
-                        } else if (result instanceof java.util.Collection<?> col) {
-                            for (Object v : col) {
-                                if (v != null) {
-                                    // 可能是 AbilityTemplate，尝试获取 name/showdownId
-                                    String id = extractAbilityIdFromTemplate(v);
-                                    if (id != null) candidateIds.add(id);
-                                }
-                            }
-                        } else if (result instanceof java.lang.Iterable<?> it) {
-                            for (Object v : it) {
-                                if (v != null) {
-                                    String id = extractAbilityIdFromTemplate(v);
-                                    if (id != null) candidateIds.add(id);
-                                }
-                            }
-                        }
-                        // 从候选 ID 中查找中文匹配
-                        for (String id : candidateIds) {
-                            String cleaned = id.toLowerCase();
-                            if (ABILITY_EN_TO_ZH.containsKey(cleaned)) continue; // 已在硬编码中检查过
-                            String translated = tryLang("cobblemon.ability." + cleaned, null);
-                            if (translated != null && translated.trim().equals(trimmed)) {
-                                return cleaned;
-                            }
-                        }
-                    } catch (Throwable ignored) {}
+            List<String> allIds = CobblemonBridge.getAllAbilityIds();
+            for (String id : allIds) {
+                if (id == null || id.isEmpty()) continue;
+                if (ABILITY_EN_TO_ZH.containsKey(id)) continue; // 已在步骤2中检查过
+                String translated = tryLang("cobblemon.ability." + id, null);
+                if (translated != null && translated.trim().equals(trimmed)) {
+                    return id;
                 }
             }
         } catch (Throwable ignored) {}
+        // [线性-L10] 4. ★ 硬编码映射作为最后回退（仅当lang系统完全不可用时生效）
+        String en = ABILITY_ZH_TO_EN.get(trimmed);
+        if (en != null) return en;
+        // [线性-L10] 5. 全部失败，返回原始输入（保留用于错误日志追踪）
         return zh;
     }
 
@@ -2083,15 +2165,40 @@ public class PokemonNameMap {
     }
 
     public static List<String> abilityList() {
+        ensureDynamicAbilities();
+        if (ABILITY_LIST.isEmpty()) {
+            ABILITY_LIST.addAll(ABILITY_ZH_TO_EN.keySet());
+        }
         return ABILITY_LIST;
     }
 
+    // [线性-L12] 动态初始化特性列表（从Cobblemon注册表 + lang键值，不再依赖硬编码）
+    private static boolean dynamicAbilitiesInitialized = false;
+    private static void ensureDynamicAbilities() {
+        if (dynamicAbilitiesInitialized) return;
+        try {
+            List<String> allAbilityIds = CobblemonBridge.getAllAbilityIds();
+            for (String id : allAbilityIds) {
+                if (id == null || id.isEmpty()) continue;
+                String lowerId = id.toLowerCase().trim();
+                String zh = tryLang("cobblemon.ability." + lowerId, null);
+                if (zh == null || zh.isEmpty()) zh = lowerId;
+                if (!ABILITY_EN_TO_ZH.containsKey(lowerId)) {
+                    ABILITY_EN_TO_ZH.put(lowerId, zh);
+                    ABILITY_ZH_TO_EN.put(zh, lowerId);
+                }
+            }
+            ABILITY_LIST.clear();
+            ABILITY_LIST.addAll(ABILITY_ZH_TO_EN.keySet());
+        } catch (Throwable ignored) {}
+        dynamicAbilitiesInitialized = true;
+    }
+
+    // [线性-L07] 缓存性格列表，避免每次调用都new ArrayList
+    private static final List<String> NATURE_LIST = new ArrayList<>(NATURE_ZH_TO_EN.keySet());
+
     public static List<String> natureList() {
-        List<String> list = new ArrayList<>();
-        for (String zh : NATURE_ZH_TO_EN.keySet()) {
-            list.add(zh);
-        }
-        return list;
+        return NATURE_LIST;
     }
 
     // ===== 招式完整列表（动态从 Cobblemon 获取 + 优先 lang 翻译） =====
@@ -2130,7 +2237,7 @@ public class PokemonNameMap {
     // 为简化，提供按物种查找的特性列表功能（用户也可以手动输入）
     public static List<String> abilitiesForSpecies(String speciesEn) {
         if (speciesEn == null || speciesEn.isEmpty()) return new ArrayList<>();
-        // 优先返回全部特性列表供下拉选择（用户也可手动输入）
+        ensureDynamicAbilities(); // [线性-L12] 动态初始化，确保包含所有lang翻译的特性
         return new ArrayList<>(ABILITY_ZH_TO_EN.keySet());
     }
 }

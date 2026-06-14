@@ -2097,18 +2097,41 @@ public class PokemonEditorScreen extends Screen {
                     autocompleteScrollOffset = 0;
                     // ====== 重建列表内容（只在搜索条件变化时构建一次）
                     if (newActiveField == 0) {
+                        java.util.List<String> species = PokemonNameMap.speciesList();
                         if (!q.isEmpty()) {
-                            for (Map.Entry<String, String> entry : PokemonNameMap.EN_TO_ZH.entrySet()) {
-                                String enName = entry.getKey();
-                                String zhName = entry.getValue();
-                                if (zhName.contains(q) || enName.contains(q)) {
-                                    autocompleteItems.add(zhName);
+                            // [线性-L15] 图鉴序号搜索：输入纯数字时匹配全国图鉴编号
+                            if (q.matches("\\d+")) {
+                                int num = Integer.parseInt(q);
+                                String zh = PokemonNameMap.getSpeciesByNumber(num);
+                                if (zh != null) autocompleteItems.add(zh);
+                                // 模糊匹配：以输入数字开头的图鉴编号（如输入"1"匹配1,10-19,100-199）
+                                try {
+                                    java.util.Map<Integer, String> numMap = CobblemonBridge.getNationalDexNumberMap();
+                                    for (java.util.Map.Entry<Integer, String> e : numMap.entrySet()) {
+                                        int dexNum = e.getKey();
+                                        if (dexNum != num && String.valueOf(dexNum).startsWith(q)) {
+                                            String z = PokemonNameMap.toChinese(e.getValue());
+                                            if (z != null && !autocompleteItems.contains(z)) autocompleteItems.add(z);
+                                        }
+                                    }
+                                } catch (Throwable ignored) {}
+                            }
+                            for (String zh : species) {
+                                String enName = PokemonNameMap.toEnglish(zh);
+                                if (zh.contains(q) || (enName != null && enName.contains(q))) {
+                                    if (!autocompleteItems.contains(zh)) autocompleteItems.add(zh);
+                                }
+                                // [线性-L15] 拼音搜索：利用 jecharacters 的 PinIn 引擎
+                                if (!autocompleteItems.contains(zh)) {
+                                    try {
+                                        if (me.towdium.jecharacters.utils.Match.contains(zh, q)) {
+                                            autocompleteItems.add(zh);
+                                        }
+                                    } catch (Throwable ignored) {}
                                 }
                             }
                         } else {
-                            for (Map.Entry<String, String> entry : PokemonNameMap.EN_TO_ZH.entrySet()) {
-                                autocompleteItems.add(entry.getValue());
-                            }
+                            autocompleteItems.addAll(species);
                         }
                     } else if (newActiveField == 1) {
                         java.util.List<String> natures = PokemonNameMap.natureList();
@@ -2297,7 +2320,15 @@ public class PokemonEditorScreen extends Screen {
                             String enName = PokemonNameMap.moveToEnglish(zhName);
                             // 中文搜索 + 英文搜索
                             if (zhName.contains(q) || (enName != null && enName.contains(lowerQ))) {
-                                autocompleteItems.add(zhName);
+                                if (!autocompleteItems.contains(zhName)) autocompleteItems.add(zhName);
+                            }
+                            // [线性-L15] 拼音搜索：利用 jecharacters 的 PinIn 引擎
+                            if (!autocompleteItems.contains(zhName)) {
+                                try {
+                                    if (me.towdium.jecharacters.utils.Match.contains(zhName, q)) {
+                                        autocompleteItems.add(zhName);
+                                    }
+                                } catch (Throwable ignored) {}
                             }
                         }
                     }

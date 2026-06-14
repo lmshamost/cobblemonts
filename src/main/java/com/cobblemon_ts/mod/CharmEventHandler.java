@@ -48,6 +48,9 @@ public class CharmEventHandler {
     // rctmod
     private static Class<?> levelUtilsClass;
     private static Method levelCapMethod;
+    // [线性-L07] Priority 反射缓存
+    private static Class<?> cachedPriorityClass;
+    private static Field cachedNormalField;
     // 缓存是否已初始化
     private static boolean reflectionCacheInitialized = false;
 
@@ -200,8 +203,17 @@ public class CharmEventHandler {
             if (params.length == 1) {
                 method.invoke(eventBus, handler);
             } else if (params.length == 2) {
-                Class<?> priorityClass = Class.forName("com.cobblemon.mod.common.api.Priority");
-                Field normalField = priorityClass.getDeclaredField("NORMAL");
+                // [线性-L07] 缓存 Priority 类和 NORMAL 字段，避免每次事件调用都反射
+                Class<?> priorityClass = cachedPriorityClass;
+                if (priorityClass == null) {
+                    priorityClass = Class.forName("com.cobblemon.mod.common.api.Priority");
+                    cachedPriorityClass = priorityClass;
+                }
+                Field normalField = cachedNormalField;
+                if (normalField == null) {
+                    normalField = priorityClass.getDeclaredField("NORMAL");
+                    cachedNormalField = normalField;
+                }
                 method.invoke(eventBus, normalField.get(null), handler);
             }
         } catch (Exception ignored) {}

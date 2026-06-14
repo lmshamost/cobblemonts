@@ -128,68 +128,64 @@ public class CobblemonTS {
     }
 
     // ========== 客户端 Tick：同步 Cobblemon ClientStorageManager.this.party ← partyStores ==========
-    // 问题：Cobblemon sendTo() 发送的 InitializePartyPacket 只更新 partyStores，不更新 this.party
-    // 而 Cobblemon 原生精灵栏 overlay 读的是 this.party，导致显示旧数据
-    // 解决：每 tick 检查并同步
-    @net.neoforged.api.distmarker.OnlyIn(Dist.CLIENT)
-    public static void onClientTick(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
-        if (Minecraft.getInstance().player == null) return;
+    // [线性-L07] 反射缓存：每tick高频调用，必须缓存避免GC压力
+    private static Class<?> cachedStorageClass;
+    private static Object cachedStorageInstance;
+    private static java.lang.reflect.Field cachedPartyStoresField;
+    private static java.lang.reflect.Field cachedPartyField;
+    private static boolean tickCacheInitialized;
 
+    private static void initTickCache() {
+        if (tickCacheInitialized) return;
         try {
-            // 1. 获取 Cobblemon ClientStorageManager 单例
-            Class<?> storageCls = Class.forName("com.cobblemon.mod.common.client.storage.ClientStorageManager");
-            Object storage = null;
-            // 先找静态字段 INSTANCE / instance / 单例字段
-            for (java.lang.reflect.Field f : storageCls.getFields()) {
+            cachedStorageClass = Class.forName("com.cobblemon.mod.common.client.storage.ClientStorageManager");
+            // 查找单例
+            for (java.lang.reflect.Field f : cachedStorageClass.getFields()) {
                 if ((f.getName().equals("INSTANCE") || f.getName().equals("instance") || f.getName().equals("Companion"))
                         && java.lang.reflect.Modifier.isStatic(f.getModifiers())) {
-                    try {
-                        storage = f.get(null);
-                        break;
-                    } catch (Throwable ignored) {}
+                    cachedStorageInstance = f.get(null);
+                    break;
                 }
             }
-            if (storage == null) {
-                // 尝试静态方法 getINSTANCE / getInstance / instance()
-                for (Method m : storageCls.getMethods()) {
+            if (cachedStorageInstance == null) {
+                for (Method m : cachedStorageClass.getMethods()) {
                     if ((m.getName().equals("getINSTANCE") || m.getName().equals("getInstance") || m.getName().equals("instance"))
                             && m.getParameterCount() == 0
                             && java.lang.reflect.Modifier.isStatic(m.getModifiers())) {
-                        try {
-                            storage = m.invoke(null);
-                            break;
-                        } catch (Throwable ignored) {}
+                        cachedStorageInstance = m.invoke(null);
+                        break;
                     }
                 }
             }
-            if (storage == null) return;
-
-            // 2. 获取 partyStores 和 this.party
-            java.lang.reflect.Field partyStoresF = null;
-            java.lang.reflect.Field partyF = null;
-            for (java.lang.reflect.Field f : storageCls.getDeclaredFields()) {
-                if (f.getName().equals("partyStores")) partyStoresF = f;
-                if (f.getName().equals("party")) partyF = f;
+            if (cachedStorageInstance == null) return;
+            // 缓存字段
+            for (java.lang.reflect.Field f : cachedStorageClass.getDeclaredFields()) {
+                if (f.getName().equals("partyStores")) { cachedPartyStoresField = f; f.setAccessible(true); }
+                if (f.getName().equals("party")) { cachedPartyField = f; f.setAccessible(true); }
             }
-            if (partyStoresF == null || partyF == null) return;
-            partyStoresF.setAccessible(true);
-            partyF.setAccessible(true);
+            tickCacheInitialized = true;
+        } catch (Throwable ignored) {}
+    }
 
-            Object storesObj = partyStoresF.get(storage);
+    @net.neoforged.api.distmarker.OnlyIn(Dist.CLIENT)
+    public static void onClientTick(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
+        if (Minecraft.getInstance().player == null) return;
+        initTickCache(); // [线性-L07] 首次调用初始化缓存，后续直接复用
+        if (cachedStorageInstance == null || cachedPartyStoresField == null || cachedPartyField == null) return;
+
+        try {
+            Object storesObj = cachedPartyStoresField.get(cachedStorageInstance);
             if (!(storesObj instanceof Map)) return;
             @SuppressWarnings("unchecked")
             Map<UUID, Object> partyStores = (Map<UUID, Object>) storesObj;
-            Object currentParty = partyF.get(storage);
+            Object currentParty = cachedPartyField.get(cachedStorageInstance);
 
             UUID playerUUID = Minecraft.getInstance().player.getUUID();
             Object fromStore = partyStores.get(playerUUID);
             if (fromStore != null && currentParty != fromStore) {
-                // partyStores 中有更新但 this.party 没更新 → 同步
-                partyF.set(storage, fromStore);
+                cachedPartyField.set(cachedStorageInstance, fromStore);
             }
-        } catch (Throwable ignored) {
-            // 静默失败：找不到类/方法/字段时不影响游戏
-        }
+        } catch (Throwable ignored) {}
     }
 
     private void registerKeyBindings(net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent event) {
