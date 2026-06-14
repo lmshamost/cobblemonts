@@ -9,6 +9,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
@@ -104,6 +105,15 @@ public class PokemonEditorScreen extends Screen {
     private Button[] ivDownButtons = new Button[6];
     private Button[] evUpButtons = new Button[6];
     private Button[] evDownButtons = new Button[6];
+    // ★ 金色王冠：图标位置 + 开关按钮位置（分离设计，避免按钮自带渲染覆盖）
+    private int crownIconX, crownIconY;
+    private int crownToggleX, crownToggleY;
+    private boolean crownVisible = true;
+    private static final int CROWN_SIZE = 20;
+    private static final int TOGGLE_SIZE = 20;
+    // ★ 觉醒力量计算器按钮 + 显示文字
+    private Button hiddenPowerBtn;
+    private String hiddenPowerType = ""; // 当前觉醒力量属性ID
 
     public PokemonEditorScreen(UUID targetPlayerUUID, String targetPlayerName, int partySize) {
         super(Component.literal("宝可梦编辑器"));
@@ -148,6 +158,7 @@ public class PokemonEditorScreen extends Screen {
         d.experience = pkt.experience();
         d.friendship = pkt.friendship();
         d.shiny = pkt.shiny();
+        d.goldenBottleCap = pkt.goldenBottleCap();
 
         // 4. 6 项个体值 (IV) 和 6 项努力值 (EV)
         d.ivHp = pkt.ivHp(); d.ivAtk = pkt.ivAtk(); d.ivDef = pkt.ivDef();
@@ -458,6 +469,13 @@ public class PokemonEditorScreen extends Screen {
         ivSpA = makeIntBox(ivColX + ivLabelW + 10, ivStartY + statRowH * 3, valueW, 0, 31);
         ivSpD = makeIntBox(ivColX + ivLabelW + 10, ivStartY + statRowH * 4, valueW, 0, 31);
         ivSpe = makeIntBox(ivColX + ivLabelW + 10, ivStartY + statRowH * 5, valueW, 0, 31);
+        // ★ 觉醒力量实时计算：IV输入框值变化时自动刷新（事件驱动，非每帧轮询）
+        ivHp.setResponder(s -> refreshHiddenPower());
+        ivAtk.setResponder(s -> refreshHiddenPower());
+        ivDef.setResponder(s -> refreshHiddenPower());
+        ivSpA.setResponder(s -> refreshHiddenPower());
+        ivSpD.setResponder(s -> refreshHiddenPower());
+        ivSpe.setResponder(s -> refreshHiddenPower());
         // IV的上下箭头 + 一键满IV按钮（支持快捷键：Shift=±10，Ctrl=±100，Ctrl+Shift=到上限
         EditBox[] ivBoxes = {ivHp, ivAtk, ivDef, ivSpA, ivSpD, ivSpe};
         for (int i = 0; i < 6; i++) {
@@ -500,6 +518,31 @@ public class PokemonEditorScreen extends Screen {
                 .pos(ivColX + 5, ivStartY + statRowH * 6 + 16)
                 .size(140, 22)
                 .build();
+
+        // ★ 金色王冠：图标(静态材质) + 开关按钮(红色=关，绿色=开) 分离设计
+        int ivTitleW = this.font.width("IV (0-31)");
+        crownIconX = ivColX + 60 + ivTitleW / 2 + 5;
+        crownIconY = editY + 11;
+        crownToggleX = crownIconX + CROWN_SIZE + 4; // 紧挨图标右边
+        crownToggleY = crownIconY;
+
+    // ★ 觉醒力量计算器（与满IV按钮左边对齐，Y不变）
+    int hpCalcY = ivStartY + statRowH * 6 + 16 + 28; // 满IV按钮下方
+    hiddenPowerBtn = Button.builder(Component.literal("觉醒力量"),
+            btn -> {
+                if (selectedSlot < 0) return;
+                // ★ 从编辑器输入框读取当前IV值，实时计算觉醒力量
+                int hp  = parseOrDefault(ivHp, 0);
+                int atk = parseOrDefault(ivAtk, 0);
+                int def = parseOrDefault(ivDef, 0);
+                int spa = parseOrDefault(ivSpA, 0);
+                int spd = parseOrDefault(ivSpD, 0);
+                int spe = parseOrDefault(ivSpe, 0);
+                hiddenPowerType = calcHiddenPowerType(hp, atk, def, spa, spd, spe);
+            })
+            .pos(ivColX + 5, hpCalcY) // ★ 与满IV按钮左边对齐
+            .size(80, 20)
+            .build();
         // EV 右列
         int evColX = editX + 260;
         evHp  = makeIntBox(evColX + ivLabelW + 10, ivStartY + statRowH * 0, valueW, 0, 252);
@@ -789,6 +832,7 @@ public class PokemonEditorScreen extends Screen {
         this.addRenderableWidget(maxIvButton);
         this.addRenderableWidget(clearEvButton);
         if (fullEvButton != null) this.addRenderableWidget(fullEvButton);
+        this.addRenderableWidget(hiddenPowerBtn);     // ★ 觉醒力量计算器按钮
         for (int i = 0; i < 6; i++) {
             if (ivUpButtons[i] != null) this.addRenderableWidget(ivUpButtons[i]);
             if (ivDownButtons[i] != null) this.addRenderableWidget(ivDownButtons[i]);
@@ -899,6 +943,8 @@ public class PokemonEditorScreen extends Screen {
         maxIvButton.visible = statsVisible;
         if (clearEvButton != null) clearEvButton.visible = statsVisible;
         if (fullEvButton != null) fullEvButton.visible = statsVisible;
+        crownVisible = statsVisible;
+        if (hiddenPowerBtn != null) hiddenPowerBtn.visible = statsVisible;
         // 每个属性的 +/- 按钮
         for (int i = 0; i < 6; i++) {
             if (ivUpButtons[i] != null) ivUpButtons[i].visible = statsVisible;
@@ -966,6 +1012,7 @@ public class PokemonEditorScreen extends Screen {
     private void selectSlot(int slot) {
         this.selectedSlot = slot;
         this.viewingAllTeam = false; // 切回单只模式
+        this.hiddenPowerType = "";    // ★ 清空觉醒力量计算结果
         // 切换槽位时清除待删除标记（避免误删）
         if (pendingDeleteSlot >= 0 && pendingDeleteSlot != slot) {
             PokemonEditorDebug.logEditor("[Screen] selectSlot {} clears pendingDeleteSlot {}", slot, pendingDeleteSlot);
@@ -1105,6 +1152,8 @@ public class PokemonEditorScreen extends Screen {
         // 保存按钮：已有精灵总是可保存；空槽位需要物种字段非空
         updateSaveButtonState();
         deleteButton.active = d.exists;
+        // ★ 切换槽位后刷新觉醒力量（IV输入框已全部加载完毕）
+        refreshHiddenPower();
     }
 
     private void updateSaveButtonState() {
@@ -1481,6 +1530,7 @@ public class PokemonEditorScreen extends Screen {
                         selectedSlot, targetPlayerUUID,
                         d.speciesName, d.formName,
                         d.level, d.experience, d.displayName, d.shiny, d.friendship,
+                        d.goldenBottleCap,
                         d.ivHp, d.ivAtk, d.ivDef, d.ivSpA, d.ivSpD, d.ivSpe,
                         d.evHp, d.evAtk, d.evDef, d.evSpA, d.evSpD, d.evSpe,
                         d.nature, d.ability,
@@ -1547,6 +1597,7 @@ public class PokemonEditorScreen extends Screen {
         sb.append("level=").append(d.level).append("\n");
         sb.append("friendship=").append(d.friendship).append("\n");
         sb.append("shiny=").append(d.shiny ? "true" : "false").append("\n");
+        sb.append("goldenBottleCap=").append(d.goldenBottleCap ? "true" : "false").append("\n");
         sb.append("gender=").append(d.gender).append("\n");
         sb.append("nature=").append(d.nature).append("\n");
         sb.append("ability=").append(d.ability).append("\n");
@@ -1623,6 +1674,7 @@ public class PokemonEditorScreen extends Screen {
                                 case "species": if (!val.isEmpty()) d.speciesName = val; break;
                                 case "level": d.level = Math.max(1, Math.min(900, Integer.parseInt(val))); break;
                                 case "shiny": d.shiny = val.equalsIgnoreCase("true") || val.equalsIgnoreCase("1"); break;
+                                case "goldenbottlecap": d.goldenBottleCap = val.equalsIgnoreCase("true") || val.equalsIgnoreCase("1"); break;
                                 case "gender": d.gender = Math.max(0, Math.min(2, Integer.parseInt(val))); break;
                                 case "nature": if (!val.isEmpty()) d.nature = val; break;
                                 case "ability": if (!val.isEmpty()) d.ability = val; break;
@@ -1779,6 +1831,8 @@ public class PokemonEditorScreen extends Screen {
             if (maxIvButton != null) maxIvButton.visible = show;
             if (clearEvButton != null) clearEvButton.visible = show;
             if (fullEvButton != null) fullEvButton.visible = show;
+            crownVisible = show;
+            if (hiddenPowerBtn != null) hiddenPowerBtn.visible = show;
         }
         if (currentHpField != null) {
             boolean show = isTab1;
@@ -2119,6 +2173,52 @@ public class PokemonEditorScreen extends Screen {
             int sumY = ivStartY + statRowH * 6 - 4;
             int evCap = CobblemonTSConfig.getEVTotalCap();
             guiGraphics.drawString(this.font, "EV总和: " + evSum + "/" + evCap, evColX, sumY, (evSum <= evCap ? 0xFF3B82F6 : 0xFFEF4444), true);
+
+            // ★ 金色王冠：图标(静态材质) + 开关按钮(红色=关，绿色=开) 分离渲染
+        if (selectedSlot >= 0 && crownVisible) {
+            PokemonData d = partyData.get(selectedSlot);
+            int bgColor = d.goldenBottleCap ? 0xFF55FF55 : 0xFFFF5555; // 亮绿=开，亮红=关
+            
+            // ① 绘制金色王冠材质图标
+            ResourceLocation crownIcon = ResourceLocation.fromNamespaceAndPath("coblemon_ts", "textures/item/gold_crown.png");
+            guiGraphics.pose().pushPose();
+            guiGraphics.pose().translate(0, 0, 400);
+            guiGraphics.blit(crownIcon, crownIconX, crownIconY, 0, 0, CROWN_SIZE, CROWN_SIZE, CROWN_SIZE, CROWN_SIZE);
+            guiGraphics.pose().popPose();
+            
+            // ② 绘制开关按钮(有色矩形，紧挨图标右边)
+            guiGraphics.fill(crownToggleX, crownToggleY, crownToggleX + TOGGLE_SIZE, crownToggleY + TOGGLE_SIZE, 0xFF000000 | bgColor);
+            // 按钮内文字：ON/OFF
+            String toggleText = d.goldenBottleCap ? "ON" : "OFF";
+            int textW = this.font.width(toggleText);
+            guiGraphics.drawString(this.font, toggleText,
+                    crownToggleX + (TOGGLE_SIZE - textW) / 2,
+                    crownToggleY + (TOGGLE_SIZE - 8) / 2,
+                    0xFFFFFFFF, false);
+        }
+
+        // ★ 觉醒力量显示文本
+        if (selectedSlot >= 0 && hiddenPowerType != null && !hiddenPowerType.isEmpty()) {
+            int hpCalcY = ivStartY + statRowH * 6 + 16 + 28;
+            String zhName = getHiddenPowerTypeZh();
+            String display = zhName + " ";
+            int textW = this.font.width(display);
+            int textX = ivColX + 5 + 80 + 10; // 按钮右边
+            guiGraphics.drawString(this.font, display, textX, hpCalcY + 2, labelColor, true);
+            // ★ 绘制类型图标（紧挨文字右边，使用cobblemon的types_small精灵图）
+            try {
+                Object elementalType = Class.forName("com.cobblemon.mod.common.api.types.ElementalTypes")
+                        .getMethod("get", String.class).invoke(null, hiddenPowerType);
+                if (elementalType != null) {
+                    int texX = (int) elementalType.getClass().getMethod("getTextureXMultiplier").invoke(elementalType);
+                    ResourceLocation sheet = ResourceLocation.fromNamespaceAndPath("cobblemon", "textures/gui/types_small.png");
+                    guiGraphics.pose().pushPose();
+                    guiGraphics.pose().translate(0, 0, 400);
+                    guiGraphics.blit(sheet, textX + textW, hpCalcY + 1, texX * 18, 0, 18, 18, 324, 18);
+                    guiGraphics.pose().popPose();
+                }
+            } catch (Exception ignored) {}
+        }
         } else if (activeTab == 1) {
             int battleY = editY + 15;
             guiGraphics.drawString(this.font, "当前HP:", editX, battleY + 4, labelColor, true);
@@ -2829,6 +2929,17 @@ public class PokemonEditorScreen extends Screen {
                 }
             }
         }
+        // ★ 金色王冠开关按钮点击检测
+        if (selectedSlot >= 0 && crownVisible) {
+            int mx = (int) mouseX, my = (int) mouseY;
+            if (mx >= crownToggleX && mx < crownToggleX + TOGGLE_SIZE
+                    && my >= crownToggleY && my < crownToggleY + TOGGLE_SIZE) {
+                PokemonData d = partyData.get(selectedSlot);
+                d.goldenBottleCap = !d.goldenBottleCap;
+                d.markModified("goldenBottleCap");
+                return true;
+            }
+        }
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
@@ -2986,5 +3097,63 @@ public class PokemonEditorScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    // =====================================================================
+    // ★ 觉醒力量属性计算器 (Gen 2-7 公式)
+    // 公式: typeIdx = floor(((ivHp%2) + 2*(ivAtk%2) + 4*(ivDef%2) + 8*(ivSpe%2) + 16*(ivSpA%2) + 32*(ivSpD%2)) * 15 / 63)
+    // 结果索引 → cobblemon type ID 映射
+    // =====================================================================
+    private static final String[] HIDDEN_POWER_TYPE_TABLE = {
+            "fighting",  // 0
+            "flying",    // 1
+            "poison",    // 2
+            "ground",    // 3
+            "rock",      // 4
+            "bug",       // 5
+            "ghost",     // 6
+            "steel",     // 7
+            "fire",      // 8
+            "water",     // 9
+            "grass",     // 10
+            "electric",  // 11
+            "psychic",   // 12
+            "ice",       // 13
+            "dragon",    // 14
+            "dark"       // 15
+    };
+
+    private static final String[] HIDDEN_POWER_TYPE_ZH = {
+            "格斗", "飞行", "毒", "地面", "岩石", "虫", "幽灵",
+            "钢", "火", "水", "草", "电", "超能力", "冰", "龙", "恶"
+    };
+
+    private void refreshHiddenPower() {
+        if (selectedSlot < 0) return;
+        int hp  = parseOrDefault(ivHp, 0);
+        int atk = parseOrDefault(ivAtk, 0);
+        int def = parseOrDefault(ivDef, 0);
+        int spa = parseOrDefault(ivSpA, 0);
+        int spd = parseOrDefault(ivSpD, 0);
+        int spe = parseOrDefault(ivSpe, 0);
+        hiddenPowerType = calcHiddenPowerType(hp, atk, def, spa, spd, spe);
+    }
+
+    private String calcHiddenPowerType(int ivHp, int ivAtk, int ivDef, int ivSpA, int ivSpD, int ivSpe) {
+        int raw = (ivHp & 1) + 2 * (ivAtk & 1) + 4 * (ivDef & 1) + 8 * (ivSpe & 1) + 16 * (ivSpA & 1) + 32 * (ivSpD & 1);
+        int typeIdx = (raw * 15) / 63;
+        if (typeIdx < 0) typeIdx = 0;
+        if (typeIdx > 15) typeIdx = 15;
+        return HIDDEN_POWER_TYPE_TABLE[typeIdx];
+    }
+
+    private String getHiddenPowerTypeZh() {
+        if (hiddenPowerType == null || hiddenPowerType.isEmpty()) return "";
+        for (int i = 0; i < HIDDEN_POWER_TYPE_TABLE.length; i++) {
+            if (HIDDEN_POWER_TYPE_TABLE[i].equals(hiddenPowerType)) {
+                return HIDDEN_POWER_TYPE_ZH[i];
+            }
+        }
+        return hiddenPowerType;
     }
 }

@@ -2,6 +2,7 @@ package com.cobblemon_ts.mod.network;
 
 import com.cobblemon_ts.mod.CobblemonTS;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
@@ -89,6 +90,13 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
                         if ("cobblemon:pp_max".equals(packet.itemId())) {
                             if (handlePPMax(serverPlayer, pokemon, packet)) {
                                 // 物品已在handlePPMax内部消耗
+                            }
+                            break;
+                        }
+                        // ★ 金色王冠特殊处理：切换金色王冠状态（NBT持久化），无需选择技能UI
+                        if ("coblemon_ts:gold_crown".equals(packet.itemId())) {
+                            if (handleGoldenBottleCap(serverPlayer, pokemon, packet)) {
+                                // 物品已在handleGoldenBottleCap内部消耗
                             }
                             break;
                         }
@@ -487,6 +495,68 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
             return s.toLowerCase().trim();
         } catch (Throwable ignored) {}
         return "";
+    }
+
+    // ★ 金色王冠特殊处理 —— 线性逻辑树:
+    //   ├─ pokemon.getIvs() → IVs对象
+    //   ├─ 调用cobblemon内置 isHyperTrained(Stats.HP) → 判断是否已激活
+    //   ├─ 未激活 → setHyperTrainedIV(HP,31) x6 → 所有个体值按31计算（原始IV不变）
+    //   └─ 已激活 → 反射获取hyperTrainedIVs Map → clear() → 关闭王冠
+    //   消耗1个金色王冠
+    private static boolean handleGoldenBottleCap(ServerPlayer player, Object pokemon, UseItemOnPokemonPacket packet) {
+        try {
+            var getIvsMethod = pokemon.getClass().getMethod("getIvs");
+            Object ivs = getIvsMethod.invoke(pokemon);
+            if (ivs == null) {
+                CobblemonTS.LOGGER.warn("handleGoldenBottleCap: ivs is null");
+                return false;
+            }
+
+            var isHyperTrainedMethod = ivs.getClass().getMethod("isHyperTrained",
+                    Class.forName("com.cobblemon.mod.common.api.pokemon.stats.Stat"));
+            var setHyperTrainedIVMethod = ivs.getClass().getMethod("setHyperTrainedIV",
+                    Class.forName("com.cobblemon.mod.common.api.pokemon.stats.Stat"), int.class);
+
+            var statsClass = Class.forName("com.cobblemon.mod.common.api.pokemon.stats.Stats");
+            var hpStat = statsClass.getField("HP").get(null);
+            var attackStat = statsClass.getField("ATTACK").get(null);
+            var defenceStat = statsClass.getField("DEFENCE").get(null);
+            var spAtkStat = statsClass.getField("SPECIAL_ATTACK").get(null);
+            var spDefStat = statsClass.getField("SPECIAL_DEFENCE").get(null);
+            var speedStat = statsClass.getField("SPEED").get(null);
+            Object[] allStats = {hpStat, attackStat, defenceStat, spAtkStat, spDefStat, speedStat};
+
+            boolean allHyperTrained = true;
+            for (Object stat : allStats) {
+                if (!(boolean) isHyperTrainedMethod.invoke(ivs, stat)) {
+                    allHyperTrained = false;
+                    break;
+                }
+            }
+
+            if (allHyperTrained) {
+                // ★ 关闭金色王冠：反射获取hyperTrainedIVs Map并清空
+                var htField = ivs.getClass().getDeclaredField("hyperTrainedIVs");
+                htField.setAccessible(true);
+                @SuppressWarnings("unchecked")
+                java.util.Map<Object, Object> htMap = (java.util.Map<Object, Object>) htField.get(ivs);
+                if (htMap != null) htMap.clear();
+                player.sendSystemMessage(Component.literal("§e已关闭金色王冠"));
+            } else {
+                // ★ 开启金色王冠：所有六项个体值按31计算（原始IV不变）
+                for (Object stat : allStats) {
+                    setHyperTrainedIVMethod.invoke(ivs, stat, 31);
+                }
+                player.sendSystemMessage(Component.literal("§a已开启金色王冠"));
+            }
+
+            consumeItems(player, 1);
+            CobblemonTS.LOGGER.info("handleGoldenBottleCap: golden_crown active={}", !allHyperTrained);
+            return true;
+        } catch (Exception e) {
+            CobblemonTS.LOGGER.error("handleGoldenBottleCap: 金色王冠处理失败 - {}", e.getMessage());
+            return false;
+        }
     }
 
     // ★ 按指定数量消耗玩家手持物品（服务端确认后方可消耗）

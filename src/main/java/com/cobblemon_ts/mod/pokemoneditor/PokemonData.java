@@ -58,6 +58,7 @@ public class PokemonData {
     public String heldItem = DEFAULT_HELD_ITEM;
     public String status = DEFAULT_STATUS; // 状态名称：""/"poison"/"paralysis"/"burn"/"freeze"/"sleep"/"bad_poison"
     public int gender = DEFAULT_GENDER; // 0=雄性 1=雌性 2=无性别
+    public boolean goldenBottleCap = false; // ★ 金色王冠：按满个体计算但不变更IV值（觉醒力量等判定用原始IV）
     public List<String> possibleAbilities = new ArrayList<>(); // 该物种可能拥有的特性ID
 
     // ★ 追踪本次编辑器打开期间，用户手动修改了哪些字段
@@ -165,6 +166,7 @@ public class PokemonData {
         c.heldItem = this.heldItem;
         c.status = this.status;
         c.gender = this.gender;
+        c.goldenBottleCap = this.goldenBottleCap;
         c.possibleAbilities = new ArrayList<>(this.possibleAbilities);
         return c;
     }
@@ -213,6 +215,7 @@ public class PokemonData {
         if (maxHp != base.maxHp) diff.add("maxHp");
         if (!safeEquals(heldItem, base.heldItem)) diff.add("heldItem");
         if (gender != base.gender) diff.add("gender");
+        if (goldenBottleCap != base.goldenBottleCap) diff.add("goldenBottleCap");
         if (!safeEquals(status, base.status)) diff.add("status");
         return diff;
     }

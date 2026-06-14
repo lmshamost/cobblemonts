@@ -35,7 +35,7 @@ public class LuckyBlocks {
                     .sound(SoundType.STONE)
                     .lightLevel(state -> 6)));
 
-    public static final DeferredBlock<Block> BOSS_LUCKY_BLOCK = registerBlock("boss_lucky_block",
+    public static final DeferredBlock<Block> SHINY_LUCKY_BLOCK = registerBlock("shiny_lucky_block",
             () -> new ShinyPokemonBlock(BlockBehaviour.Properties.of()
                     .instabreak()
                     .sound(SoundType.STONE)

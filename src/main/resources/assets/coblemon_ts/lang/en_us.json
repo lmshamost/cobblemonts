@@ -7,6 +7,7 @@
   "item.coblemon_ts.exp_charm": "Exp. Charm",
   "item.coblemon_ts.catching_charm": "Catching Charm",
   "item.coblemon_ts.mark_charm": "Mark Charm",
+  "item.coblemon_ts.gold_crown": "Gold Crown",
   "item.coblemon_ts.pokemon_editor": "Pokemon Editor",
   "item.coblemon_ts.pokemon_editor.tooltip.one": "Creative-mode only tool",
   "item.coblemon_ts.pokemon_editor.tooltip.two": "Right-click to edit your party",
@@ -25,7 +26,7 @@
   "block.coblemon_ts.lucky_block": "Lucky Block",
   "block.coblemon_ts.legendary_lucky_block": "Legendary Lucky Block",
   "block.coblemon_ts.ultra_beast_lucky_block": "Ultra Beast Lucky Block",
-  "block.coblemon_ts.boss_lucky_block": "Shiny Lucky Block",
+  "block.coblemon_ts.shiny_lucky_block": "Shiny Lucky Block",
   "block.coblemon_ts.item_lucky_block": "Item Lucky Block",
 
   "gui.coblemon_ts.held_items": "Held Items",

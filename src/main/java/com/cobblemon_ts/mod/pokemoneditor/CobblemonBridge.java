@@ -11,6 +11,7 @@ import com.cobblemon_ts.mod.CobblemonTSConfig;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
@@ -222,6 +223,19 @@ public class CobblemonBridge {
                 else if (gn.contains("FEMALE")) data.gender = 1;
                 else data.gender = 2;
             }
+
+            // ★ 读取金色王冠状态（通过cobblemon内置的isHyperTrained判断，全部反射避免KMappedMarker问题）
+            try {
+                var getIvsMethod = pokemon.getClass().getMethod("getIvs");
+                var ivs = getIvsMethod.invoke(pokemon);
+                if (ivs != null) {
+                    var statClass = Class.forName("com.cobblemon.mod.common.api.pokemon.stats.Stat");
+                    var isHyperTrainedMethod = ivs.getClass().getMethod("isHyperTrained", statClass);
+                    var statsClass = Class.forName("com.cobblemon.mod.common.api.pokemon.stats.Stats");
+                    var hpStat = statsClass.getField("HP").get(null);
+                    data.goldenBottleCap = (boolean) isHyperTrainedMethod.invoke(ivs, hpStat);
+                }
+            } catch (Throwable ignored) {}
 
             try {
                 Object nick = pokemon.getNickname();
@@ -458,6 +472,38 @@ public class CobblemonBridge {
                     }
                 }
             }
+
+            // ★ 写入金色王冠状态（通过cobblemon内置的setHyperTrainedIV，全部反射避免KMappedMarker问题）
+            try {
+                var getIvsMethod = pokemon.getClass().getMethod("getIvs");
+                var ivs = getIvsMethod.invoke(pokemon);
+                if (ivs != null) {
+                    var statClass = Class.forName("com.cobblemon.mod.common.api.pokemon.stats.Stat");
+                    var setHyperTrainedIVMethod = ivs.getClass().getMethod("setHyperTrainedIV",
+                            statClass, int.class);
+                    var statsClass = Class.forName("com.cobblemon.mod.common.api.pokemon.stats.Stats");
+                    var hpStat = statsClass.getField("HP").get(null);
+                    var attackStat = statsClass.getField("ATTACK").get(null);
+                    var defenceStat = statsClass.getField("DEFENCE").get(null);
+                    var spAtkStat = statsClass.getField("SPECIAL_ATTACK").get(null);
+                    var spDefStat = statsClass.getField("SPECIAL_DEFENCE").get(null);
+                    var speedStat = statsClass.getField("SPEED").get(null);
+                    Object[] allStats = {hpStat, attackStat, defenceStat, spAtkStat, spDefStat, speedStat};
+
+                    if (pkt.goldenBottleCap()) {
+                        for (Object stat : allStats) {
+                            setHyperTrainedIVMethod.invoke(ivs, stat, 31);
+                        }
+                    } else {
+                        var htField = ivs.getClass().getDeclaredField("hyperTrainedIVs");
+                        htField.setAccessible(true);
+                        @SuppressWarnings("unchecked")
+                        java.util.Map<Object, Object> htMap = (java.util.Map<Object, Object>) htField.get(ivs);
+                        if (htMap != null) htMap.clear();
+                    }
+                    PokemonEditorDebug.logEditor("goldenBottleCap set to {}", pkt.goldenBottleCap());
+                }
+            } catch (Throwable ignored) {}
 
             try {
                 Method updateM = pokemon.getClass().getMethod("update");

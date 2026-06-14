@@ -71,6 +71,7 @@ public class PokemonEditorNetwork {
     public record PokemonDataPacket(int slot, boolean exists, UUID pokemonUUID,
                                     String speciesName, String displayName, String formName,
                                     int level, int experience, int friendship, boolean shiny,
+                                    boolean goldenBottleCap,
                                     int ivHp, int ivAtk, int ivDef, int ivSpA, int ivSpD, int ivSpe,
                                     int evHp, int evAtk, int evDef, int evSpA, int evSpD, int evSpe,
                                     String nature, String ability,
@@ -86,8 +87,8 @@ public class PokemonEditorNetwork {
         private record Group1(int slot, boolean exists, UUID pokemonUUID) {}
         // Group2: 物种信息 (3 项)
         private record Group2(String speciesName, String displayName, String formName) {}
-        // Group3: 等级/经验/亲密度/闪光 (4 项)
-        private record Group3(int level, int experience, int friendship, boolean shiny) {}
+        // Group3: 等级/经验/亲密度/闪光/金色王冠 (5 项)
+        private record Group3(int level, int experience, int friendship, boolean shiny, boolean goldenBottleCap) {}
         // Group4: 能力/招式 (nature + ability + moves4 = 6 项)
         private record Group4(String nature, String ability, Moves4 moves) {}
         // Group5: HP/道具/性别/特性列表/movePP/status
@@ -119,6 +120,7 @@ public class PokemonEditorNetwork {
                 ByteBufCodecs.VAR_INT, Group3::experience,
                 ByteBufCodecs.VAR_INT, Group3::friendship,
                 ByteBufCodecs.BOOL, Group3::shiny,
+                ByteBufCodecs.BOOL, Group3::goldenBottleCap,
                 Group3::new
         );
         // Group4 内部再嵌套一层：nature + ability + (moves4 的 StreamCodec)
@@ -161,7 +163,7 @@ public class PokemonEditorNetwork {
         public static final StreamCodec<ByteBuf, PokemonDataPacket> STREAM_CODEC = StreamCodec.composite(
                 G1_CODEC, p -> new Group1(p.slot, p.exists, p.pokemonUUID),
                 G2_CODEC, p -> new Group2(p.speciesName, p.displayName, p.formName),
-                G3_CODEC, p -> new Group3(p.level, p.experience, p.friendship, p.shiny),
+                G3_CODEC, p -> new Group3(p.level, p.experience, p.friendship, p.shiny, p.goldenBottleCap),
                 STATS_CODEC, p -> new Stats6(p.ivHp, p.ivAtk, p.ivDef, p.ivSpA, p.ivSpD, p.ivSpe),
                 STATS_CODEC, p -> new Stats6(p.evHp, p.evAtk, p.evDef, p.evSpA, p.evSpD, p.evSpe),
                 G45_CODEC, p -> new Group45(
@@ -176,6 +178,7 @@ public class PokemonEditorNetwork {
                         g1.slot, g1.exists, g1.pokemonUUID,
                         g2.speciesName, g2.displayName, g2.formName,
                         g3.level, g3.experience, g3.friendship, g3.shiny,
+                        g3.goldenBottleCap,
                         iv.hp, iv.atk, iv.def, iv.spA, iv.spD, iv.spe,
                         ev.hp, ev.atk, ev.def, ev.spA, ev.spD, ev.spe,
                         g45.g4.nature, g45.g4.ability,
@@ -197,6 +200,7 @@ public class PokemonEditorNetwork {
     public record UpdatePokemonPacket(int slot, UUID targetPlayerUUID,
                                       String speciesName, String formName,
                                       int level, int experience, String displayName, boolean shiny, int friendship,
+                                      boolean goldenBottleCap,
                                       int ivHp, int ivAtk, int ivDef, int ivSpA, int ivSpD, int ivSpe,
                                       int evHp, int evAtk, int evDef, int evSpA, int evSpD, int evSpe,
                                       String nature, String ability,
@@ -210,7 +214,7 @@ public class PokemonEditorNetwork {
         // ---- 内部嵌套分组 ----
         private record UGroup1(int slot, UUID targetPlayerUUID, String pokemonUUID, String rawJsonData) {}
         private record UGroup2(String speciesName, String formName) {}
-        private record UGroup3(int level, int experience, String displayName, boolean shiny, int friendship) {}
+        private record UGroup3(int level, int experience, String displayName, boolean shiny, int friendship, boolean goldenBottleCap) {}
         private record UGroup4(String nature, String ability, Moves4 moves) {}
         private record UGroup4a(String nature, String ability) {}
         private record UGroup5StatusItem(String status, String heldItem) {}
@@ -239,6 +243,7 @@ public class PokemonEditorNetwork {
                 ByteBufCodecs.STRING_UTF8, UGroup3::displayName,
                 ByteBufCodecs.BOOL, UGroup3::shiny,
                 ByteBufCodecs.VAR_INT, UGroup3::friendship,
+                ByteBufCodecs.BOOL, UGroup3::goldenBottleCap,
                 UGroup3::new
         );
         private static final StreamCodec<ByteBuf, UGroup4a> UG4A_CODEC = StreamCodec.composite(
@@ -275,7 +280,7 @@ public class PokemonEditorNetwork {
         public static final StreamCodec<ByteBuf, UpdatePokemonPacket> STREAM_CODEC = StreamCodec.composite(
                 UG1_CODEC, p -> new UGroup1(p.slot, p.targetPlayerUUID, p.pokemonUUID, p.rawJsonData),
                 UG2_CODEC, p -> new UGroup2(p.speciesName, p.formName),
-                UG3_CODEC, p -> new UGroup3(p.level, p.experience, p.displayName, p.shiny, p.friendship),
+                UG3_CODEC, p -> new UGroup3(p.level, p.experience, p.displayName, p.shiny, p.friendship, p.goldenBottleCap),
                 STATS_CODEC, p -> new Stats6(p.ivHp, p.ivAtk, p.ivDef, p.ivSpA, p.ivSpD, p.ivSpe),
                 STATS_CODEC, p -> new Stats6(p.evHp, p.evAtk, p.evDef, p.evSpA, p.evSpD, p.evSpe),
                 UG45_CODEC, p -> new UGroup45(
@@ -290,6 +295,7 @@ public class PokemonEditorNetwork {
                         g1.slot, g1.targetPlayerUUID,
                         g2.speciesName, g2.formName,
                         g3.level, g3.experience, g3.displayName, g3.shiny, g3.friendship,
+                        g3.goldenBottleCap,
                         iv.hp, iv.atk, iv.def, iv.spA, iv.spD, iv.spe,
                         ev.hp, ev.atk, ev.def, ev.spA, ev.spD, ev.spe,
                         g45.g4.nature, g45.g4.ability,
@@ -336,6 +342,7 @@ public class PokemonEditorNetwork {
                     i, data.exists, uuid,
                     data.speciesName, data.displayName, data.formName,
                     data.level, data.experience, data.friendship, data.shiny,
+                    data.goldenBottleCap,
                     data.ivHp, data.ivAtk, data.ivDef, data.ivSpA, data.ivSpD, data.ivSpe,
                     data.evHp, data.evAtk, data.evDef, data.evSpA, data.evSpD, data.evSpe,
                     data.nature, data.ability,
@@ -373,6 +380,7 @@ public class PokemonEditorNetwork {
                             pkt.slot(), empty.exists, uuid,
                             empty.speciesName, empty.displayName, empty.formName,
                             empty.level, empty.experience, empty.friendship, empty.shiny,
+                            empty.goldenBottleCap,
                             empty.ivHp, empty.ivAtk, empty.ivDef, empty.ivSpA, empty.ivSpD, empty.ivSpe,
                             empty.evHp, empty.evAtk, empty.evDef, empty.evSpA, empty.evSpD, empty.evSpe,
                             empty.nature, empty.ability,
@@ -397,6 +405,7 @@ public class PokemonEditorNetwork {
                         pkt.slot(), refreshed.exists, rUuid,
                         refreshed.speciesName, refreshed.displayName, refreshed.formName,
                         refreshed.level, refreshed.experience, refreshed.friendship, refreshed.shiny,
+                        refreshed.goldenBottleCap,
                         refreshed.ivHp, refreshed.ivAtk, refreshed.ivDef, refreshed.ivSpA, refreshed.ivSpD, refreshed.ivSpe,
                         refreshed.evHp, refreshed.evAtk, refreshed.evDef, refreshed.evSpA, refreshed.evSpD, refreshed.evSpe,
                         refreshed.nature, refreshed.ability,

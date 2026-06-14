@@ -1,6 +1,6 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "coblemon_ts:item/gold_bottle_cap"
+    "layer0": "coblemon_ts:item/gold_crown"
   }
 }

@@ -67,11 +67,11 @@ public class CobblemonTS {
                 output.accept(CharmItems.EXP_CHARM);
                 output.accept(CharmItems.CATCHING_CHARM);
                 output.accept(CharmItems.EXP_ALL);
-                output.accept(CharmItems.GOLD_BOTTLE_CAP);
+                output.accept(CharmItems.GOLD_CROWN);
                 output.accept(LuckyBlocks.LUCKY_BLOCK);
                 output.accept(LuckyBlocks.LEGENDARY_LUCKY_BLOCK);
                 output.accept(LuckyBlocks.ULTRA_BEAST_LUCKY_BLOCK);
-                output.accept(LuckyBlocks.BOSS_LUCKY_BLOCK);
+                output.accept(LuckyBlocks.SHINY_LUCKY_BLOCK);
                 output.accept(LuckyBlocks.ITEM_LUCKY_BLOCK);
                 output.accept(PokemonEditorItems.POKEMON_EDITOR);
                 output.accept(CharmItems.TEST_BUILD);
@@ -256,7 +256,7 @@ public class CobblemonTS {
             event.accept(CharmItems.EXP_CHARM);
             event.accept(CharmItems.CATCHING_CHARM);
             event.accept(CharmItems.EXP_ALL);
-            event.accept(CharmItems.GOLD_BOTTLE_CAP);
+            event.accept(CharmItems.GOLD_CROWN);
             event.accept(PokemonEditorItems.POKEMON_EDITOR);
             event.accept(CharmItems.TEST_BUILD);
         }
@@ -264,7 +264,7 @@ public class CobblemonTS {
             event.accept(LuckyBlocks.LUCKY_BLOCK);
             event.accept(LuckyBlocks.LEGENDARY_LUCKY_BLOCK);
             event.accept(LuckyBlocks.ULTRA_BEAST_LUCKY_BLOCK);
-            event.accept(LuckyBlocks.BOSS_LUCKY_BLOCK);
+            event.accept(LuckyBlocks.SHINY_LUCKY_BLOCK);
             event.accept(LuckyBlocks.ITEM_LUCKY_BLOCK);
         }
     }

@@ -7,6 +7,7 @@
   "item.coblemon_ts.exp_charm": "经验护符",
   "item.coblemon_ts.catching_charm": "防晃护符",
   "item.coblemon_ts.mark_charm": "标记护符",
+  "item.coblemon_ts.gold_crown": "金色王冠",
   "item.coblemon_ts.exp_all": "高级学习装置",
   "item.coblemon_ts.pokemon_editor": "宝可梦编辑器",
   "item.coblemon_ts.pokemon_editor.tooltip.one": "仅限创造模式使用",
@@ -46,7 +47,7 @@
   "block.coblemon_ts.lucky_block": "幸运方块",
   "block.coblemon_ts.legendary_lucky_block": "传说幸运方块",
   "block.coblemon_ts.ultra_beast_lucky_block": "究极异兽幸运方块",
-  "block.coblemon_ts.boss_lucky_block": "闪光幸运方块",
+  "block.coblemon_ts.shiny_lucky_block": "闪光幸运方块",
   "block.coblemon_ts.item_lucky_block": "物品幸运方块",
 
   "tag.item.coblemon_ts.lucky_drops": "幸运掉落物",
