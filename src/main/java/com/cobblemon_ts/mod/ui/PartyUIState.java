@@ -84,6 +84,10 @@ public class PartyUIState {
     private static Class<?> summaryClass;                 // Summary.class，用于直接构造实例
     private static boolean basicReflectionReady;
 
+    // [优化-P01] 缓存 getPartyList 中的高频反射方法
+    private static java.lang.reflect.Method cachedClientGetSlotsMethod;  // ClientParty.getSlots()
+    private static java.lang.reflect.Method cachedClientGetIntMethod;    // ClientParty.get(int)
+
     public static final Set<String> HEALING_ITEMS = new HashSet<>();
     public static final Set<String> STATUS_CURE_ITEMS = new HashSet<>();
     public static final Set<String> REVIVE_ITEMS = new HashSet<>();
@@ -517,8 +521,11 @@ public class PartyUIState {
 
             // 3. ClientParty.getSlots() → List<Pokemon>
             try {
-                java.lang.reflect.Method getSlotsMethod = clientParty.getClass().getMethod("getSlots");
-                Object rawList = getSlotsMethod.invoke(clientParty);
+                // [优化-P01] 缓存getSlots方法，避免每帧反射查找
+                if (cachedClientGetSlotsMethod == null) {
+                    cachedClientGetSlotsMethod = clientParty.getClass().getMethod("getSlots");
+                }
+                Object rawList = cachedClientGetSlotsMethod.invoke(clientParty);
                 if (rawList instanceof List<?>) {
                     for (Object o : (List<?>) rawList) {
                         result.add((Pokemon) o);
@@ -530,10 +537,13 @@ public class PartyUIState {
 
             // 回退：ClientParty.get(int)
             if (result.isEmpty()) {
+                // [优化-P01] 缓存get(int)方法
+                if (cachedClientGetIntMethod == null) {
+                    cachedClientGetIntMethod = clientParty.getClass().getMethod("get", int.class);
+                }
                 for (int i = 0; i < 6; i++) {
                     try {
-                        java.lang.reflect.Method getIntMethod = clientParty.getClass().getMethod("get", int.class);
-                        Pokemon p = (Pokemon) getIntMethod.invoke(clientParty, i);
+                        Pokemon p = (Pokemon) cachedClientGetIntMethod.invoke(clientParty, i);
                         result.add(p);
                     } catch (Throwable e) {
                         result.add(null);
@@ -926,9 +936,10 @@ public class PartyUIState {
             boolean shiftHeld = net.minecraft.client.gui.screens.Screen.hasShiftDown();
             int useCount = Math.min(altHeld ? cursorStack.getCount() : 1, cursorStack.getCount());
             UUID pokemonUuid = pokemon.getUuid();
-            boolean allMoves = shiftHeld &&
-                    BuiltInRegistries.ITEM.getKey(cursorStack.getItem()).toString()
-                            .equals("cobblemon:pp_max");
+            // [修复-F01] PP Max 的 allMoves 改为 alt/shift 均可触发，与其他物品操作逻辑一致
+            boolean isPPMax = BuiltInRegistries.ITEM.getKey(cursorStack.getItem()).toString()
+                    .equals("cobblemon:pp_max");
+            boolean allMoves = (shiftHeld || altHeld) && isPPMax;
             com.cobblemon_ts.mod.network.UseItemOnPokemonPacket packet =
                     new com.cobblemon_ts.mod.network.UseItemOnPokemonPacket(pokemonUuid,
                             BuiltInRegistries.ITEM.getKey(cursorStack.getItem()).toString(), useCount, allMoves);

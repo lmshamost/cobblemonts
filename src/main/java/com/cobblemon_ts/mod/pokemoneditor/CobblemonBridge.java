@@ -31,6 +31,7 @@ public class CobblemonBridge {
 
     private static final Map<String, Object> registryCache = new HashMap<>();
     private static final Gson GSON = new Gson();
+    private static final int REGISTRY_CACHE_MAX = 500; // [优化-C01] registryCache上限，防止无限增长
 
     // [线性-L07] 高频反射缓存：避免pokemonToData/writePokemonToSlot中重复Class.forName
     private static Class<?> cachedStatClass;
@@ -55,6 +56,28 @@ public class CobblemonBridge {
             cachedGenderClass = Class.forName("com.cobblemon.mod.common.pokemon.Gender");
             bridgeCacheInit = true;
         } catch (Throwable ignored) {}
+    }
+
+    // [优化-B01] 高频反射 Method 缓存：writePokemonToSlot / deletePokemonFromSlot / pokemonToData 复用
+    private static Method cachedPartyGetSlotsMethod;       // party.getSlots()
+    private static Method cachedPartyGetIntMethod;          // party.get(int)
+    private static Method cachedPartySendToMethod;          // party.sendTo(ServerPlayer)
+    private static Method cachedPartyNotifyChangedMethod;   // party.onPokemonChanged(Pokemon)
+    private static Method cachedPartySetAtPositionMethod;   // party.setAtPosition(PartyPosition, Pokemon)
+    private static Method cachedPokemonUpdateMethod;        // pokemon.update()
+    private static Method cachedMoveSetUpdateMethod;        // moveSet.update()
+    private static Method cachedIsHyperTrainedMethod;       // ivs.isHyperTrained(Stat)
+    private static java.lang.reflect.Field cachedStatsHPField, cachedStatsATKField, cachedStatsDEFField;
+    private static java.lang.reflect.Field cachedStatsSPAField, cachedStatsSPDField, cachedStatsSPEField;
+    private static java.lang.reflect.Constructor<?> cachedMoveCtor; // Move(MoveTemplate, int, int)
+    private static List<String> cachedAllMoveIds;           // [优化-C03] getAllMoveIds 结果缓存
+    private static List<String> cachedAllAbilityIds;        // [优化-C03] getAllAbilityIds 结果缓存
+    // [优化-C01] registryCache 安全写入：超限时清空避免无限增长
+    private static void putToRegistryCache(String key, Object value) {
+        if (registryCache.size() >= REGISTRY_CACHE_MAX) {
+            registryCache.clear();
+        }
+        registryCache.put(key, value);
     }
 
     public static int getPartySize(ServerPlayer serverPlayer, UUID targetUUID) {
@@ -253,28 +276,31 @@ public class CobblemonBridge {
 
             // ★ 读取金色王冠状态（通过cobblemon内置的isHyperTrained判断，全部反射避免KMappedMarker问题）
             try {
-                // [线性-L07] 缓存getIvs方法，避免每次pokemonToData都反射
+                // [优化-B01] 缓存getIvs方法 + isHyperTrained方法 + 6个Stats字段，避免每次pokemonToData都反射
                 if (cachedGetIvsMethod == null) {
                     cachedGetIvsMethod = pokemon.getClass().getMethod("getIvs");
                 }
                 var ivs = cachedGetIvsMethod.invoke(pokemon);
                 if (ivs != null) {
-                    initBridgeCache(); // [线性-L07] 确保Stat/Stats类已缓存
-                    var isHyperTrainedMethod = ivs.getClass().getMethod("isHyperTrained", cachedStatClass);
-                    // [线性-L08] 修复: 读取全部6项HyperTrained，而非仅HP
-                    var hpStat = cachedStatsClass.getField("HP").get(null);
-                    var atkStat = cachedStatsClass.getField("ATTACK").get(null);
-                    var defStat = cachedStatsClass.getField("DEFENCE").get(null);
-                    var spaStat = cachedStatsClass.getField("SPECIAL_ATTACK").get(null);
-                    var spdStat = cachedStatsClass.getField("SPECIAL_DEFENCE").get(null);
-                    var speStat = cachedStatsClass.getField("SPEED").get(null);
-                    boolean allHyperTrained = true;
-                    for (Object stat : new Object[]{hpStat, atkStat, defStat, spaStat, spdStat, speStat}) {
-                        if (!(boolean) isHyperTrainedMethod.invoke(ivs, stat)) {
-                            allHyperTrained = false;
-                            break;
-                        }
+                    initBridgeCache();
+                    if (cachedIsHyperTrainedMethod == null) {
+                        cachedIsHyperTrainedMethod = ivs.getClass().getMethod("isHyperTrained", cachedStatClass);
                     }
+                    // 缓存6个Stats常量Field
+                    if (cachedStatsHPField == null) {
+                        cachedStatsHPField = cachedStatsClass.getField("HP");
+                        cachedStatsATKField = cachedStatsClass.getField("ATTACK");
+                        cachedStatsDEFField = cachedStatsClass.getField("DEFENCE");
+                        cachedStatsSPAField = cachedStatsClass.getField("SPECIAL_ATTACK");
+                        cachedStatsSPDField = cachedStatsClass.getField("SPECIAL_DEFENCE");
+                        cachedStatsSPEField = cachedStatsClass.getField("SPEED");
+                    }
+                    boolean allHyperTrained = (boolean) cachedIsHyperTrainedMethod.invoke(ivs, cachedStatsHPField.get(null))
+                        && (boolean) cachedIsHyperTrainedMethod.invoke(ivs, cachedStatsATKField.get(null))
+                        && (boolean) cachedIsHyperTrainedMethod.invoke(ivs, cachedStatsDEFField.get(null))
+                        && (boolean) cachedIsHyperTrainedMethod.invoke(ivs, cachedStatsSPAField.get(null))
+                        && (boolean) cachedIsHyperTrainedMethod.invoke(ivs, cachedStatsSPDField.get(null))
+                        && (boolean) cachedIsHyperTrainedMethod.invoke(ivs, cachedStatsSPEField.get(null));
                     data.goldenBottleCap = allHyperTrained;
                 }
             } catch (Throwable ignored) {}
@@ -314,17 +340,18 @@ public class CobblemonBridge {
             int targetSlot = pkt.slot();
 
             try {
-                Method getSlotsM = null;
-                Class<?> cls = party.getClass();
-                while (cls != null && getSlotsM == null) {
-                    try {
-                        getSlotsM = cls.getDeclaredMethod("getSlots");
-                    } catch (NoSuchMethodException ignored) {}
-                    cls = cls.getSuperclass();
+                // [优化-B02] 使用缓存的getSlots方法，避免每次while遍历父类查找
+                if (cachedPartyGetSlotsMethod == null) {
+                    Class<?> cls = party.getClass();
+                    while (cls != null && cachedPartyGetSlotsMethod == null) {
+                        try { cachedPartyGetSlotsMethod = cls.getDeclaredMethod("getSlots"); }
+                        catch (NoSuchMethodException ignored) {}
+                        cls = cls.getSuperclass();
+                    }
+                    if (cachedPartyGetSlotsMethod != null) cachedPartyGetSlotsMethod.setAccessible(true);
                 }
-                if (getSlotsM != null) {
-                    getSlotsM.setAccessible(true);
-                    java.util.List<?> slotsList = (java.util.List<?>) getSlotsM.invoke(party);
+                if (cachedPartyGetSlotsMethod != null) {
+                    java.util.List<?> slotsList = (java.util.List<?>) cachedPartyGetSlotsMethod.invoke(party);
                     if (targetSlot >= 0 && targetSlot < slotsList.size()) {
                         Object result = slotsList.get(targetSlot);
                         if (result instanceof Pokemon) pokemon = (Pokemon) result;
@@ -364,8 +391,11 @@ public class CobblemonBridge {
 
             if (pokemon == null) {
                 try {
-                    Method getM = party.getClass().getMethod("get", int.class);
-                    Object result = getM.invoke(party, targetSlot);
+                    // [优化-B02] 缓存party.get(int)
+                    if (cachedPartyGetIntMethod == null) {
+                        cachedPartyGetIntMethod = party.getClass().getMethod("get", int.class);
+                    }
+                    Object result = cachedPartyGetIntMethod.invoke(party, targetSlot);
                     if (result instanceof Pokemon) pokemon = (Pokemon) result;
                     PokemonEditorDebug.logEditor("write get(int) fallback, result={}", pokemon != null ? "pokemon" : "null");
                 } catch (Throwable t) {
@@ -483,8 +513,11 @@ public class CobblemonBridge {
             }
 
             try {
-                Method onChangedM = party.getClass().getMethod("onPokemonChanged", Pokemon.class);
-                onChangedM.invoke(party, pokemon);
+                // [优化-B04] 缓存 party.onPokemonChanged(Pokemon)
+                if (cachedPartyNotifyChangedMethod == null) {
+                    cachedPartyNotifyChangedMethod = party.getClass().getMethod("onPokemonChanged", Pokemon.class);
+                }
+                cachedPartyNotifyChangedMethod.invoke(party, pokemon);
                 PokemonEditorDebug.logEditor("party.onPokemonChanged(pokemon) OK");
             } catch (Throwable t) {
                 try {
@@ -498,8 +531,11 @@ public class CobblemonBridge {
 
             boolean syncOK = false;
             try {
-                Method sendToM = party.getClass().getMethod("sendTo", ServerPlayer.class);
-                sendToM.invoke(party, targetPlayer);
+                // [优化-B03] 缓存party.sendTo(ServerPlayer)
+                if (cachedPartySendToMethod == null) {
+                    cachedPartySendToMethod = party.getClass().getMethod("sendTo", ServerPlayer.class);
+                }
+                cachedPartySendToMethod.invoke(party, targetPlayer);
                 syncOK = true;
                 PokemonEditorDebug.logEditor("party.sendTo(ServerPlayer) OK - update pushed to client");
             } catch (Throwable t) {
@@ -534,16 +570,22 @@ public class CobblemonBridge {
             }
 
             try {
-                Method updateM = pokemon.getClass().getMethod("update");
-                updateM.invoke(pokemon);
+                // [优化-B05] 缓存 pokemon.update()
+                if (cachedPokemonUpdateMethod == null) {
+                    cachedPokemonUpdateMethod = pokemon.getClass().getMethod("update");
+                }
+                cachedPokemonUpdateMethod.invoke(pokemon);
                 PokemonEditorDebug.logEditor("pokemon.update() OK");
             } catch (Throwable ignored) {}
 
             try {
                 Object moveSetObj = pokemon.getMoveSet();
                 if (moveSetObj != null) {
-                    Method moveSetUpdateM = moveSetObj.getClass().getMethod("update");
-                    moveSetUpdateM.invoke(moveSetObj);
+                    // [优化-B05] 缓存 moveSet.update()
+                    if (cachedMoveSetUpdateMethod == null) {
+                        cachedMoveSetUpdateMethod = moveSetObj.getClass().getMethod("update");
+                    }
+                    cachedMoveSetUpdateMethod.invoke(moveSetObj);
                     PokemonEditorDebug.logEditor("moveSet.update() OK");
                 }
             } catch (Throwable ignored) {}
@@ -572,17 +614,18 @@ public class CobblemonBridge {
 
             Object pokemon = null;
             try {
-                Method getSlotsM = null;
-                Class<?> cls = party.getClass();
-                while (cls != null && getSlotsM == null) {
-                    try {
-                        getSlotsM = cls.getDeclaredMethod("getSlots");
-                    } catch (NoSuchMethodException ignored) {}
-                    cls = cls.getSuperclass();
+                // [优化-B06] 复用缓存的getSlots方法
+                if (cachedPartyGetSlotsMethod == null) {
+                    Class<?> cls = party.getClass();
+                    while (cls != null && cachedPartyGetSlotsMethod == null) {
+                        try { cachedPartyGetSlotsMethod = cls.getDeclaredMethod("getSlots"); }
+                        catch (NoSuchMethodException ignored) {}
+                        cls = cls.getSuperclass();
+                    }
+                    if (cachedPartyGetSlotsMethod != null) cachedPartyGetSlotsMethod.setAccessible(true);
                 }
-                if (getSlotsM != null) {
-                    getSlotsM.setAccessible(true);
-                    java.util.List<?> slotsList = (java.util.List<?>) getSlotsM.invoke(party);
+                if (cachedPartyGetSlotsMethod != null) {
+                    java.util.List<?> slotsList = (java.util.List<?>) cachedPartyGetSlotsMethod.invoke(party);
                     if (slot >= 0 && slot < slotsList.size()) {
                         pokemon = slotsList.get(slot);
                     }
@@ -620,8 +663,11 @@ public class CobblemonBridge {
 
             if (pokemon == null) {
                 try {
-                    Method getM = party.getClass().getMethod("get", int.class);
-                    pokemon = getM.invoke(party, slot);
+                    // [优化-B06] 复用缓存的get(int)
+                    if (cachedPartyGetIntMethod == null) {
+                        cachedPartyGetIntMethod = party.getClass().getMethod("get", int.class);
+                    }
+                    pokemon = cachedPartyGetIntMethod.invoke(party, slot);
                     PokemonEditorDebug.logEditor("get(int) fallback, result={}", pokemon != null ? "pokemon" : "null");
                 } catch (Throwable t) {
                     PokemonEditorDebug.warnEditor("get(int) failed: {}", t.getMessage());
@@ -634,20 +680,21 @@ public class CobblemonBridge {
             PokemonEditorDebug.logEditor("Found pokemon to delete: {}", ((Pokemon) pokemon).getSpecies().toString());
 
             try {
-                initBridgeCache(); // [线性-L07] 使用缓存的PartyPosition
+                initBridgeCache(); // [优化-B07] 使用缓存的PartyPosition
                 Object position = cachedPartyPositionCtor.newInstance(slot);
 
-                Method setAtPosM = null;
-                Class<?> cls = party.getClass();
-                while (cls != null && setAtPosM == null) {
-                    try {
-                        setAtPosM = cls.getDeclaredMethod("setAtPosition", cachedPartyPositionClass, Pokemon.class);
-                    } catch (NoSuchMethodException ignored) {}
-                    cls = cls.getSuperclass();
+                // [优化-B07] 缓存 setAtPosition
+                if (cachedPartySetAtPositionMethod == null) {
+                    Class<?> cls = party.getClass();
+                    while (cls != null && cachedPartySetAtPositionMethod == null) {
+                        try { cachedPartySetAtPositionMethod = cls.getDeclaredMethod("setAtPosition", cachedPartyPositionClass, Pokemon.class); }
+                        catch (NoSuchMethodException ignored) {}
+                        cls = cls.getSuperclass();
+                    }
+                    if (cachedPartySetAtPositionMethod != null) cachedPartySetAtPositionMethod.setAccessible(true);
                 }
-                if (setAtPosM != null) {
-                    setAtPosM.setAccessible(true);
-                    setAtPosM.invoke(party, position, null);
+                if (cachedPartySetAtPositionMethod != null) {
+                    cachedPartySetAtPositionMethod.invoke(party, position, null);
                     PokemonEditorDebug.logEditor("setAtPosition(slot={}, null) OK", slot);
                 } else {
                     throw new RuntimeException("setAtPosition not found");
@@ -664,8 +711,11 @@ public class CobblemonBridge {
             }
 
             try {
-                Method sendToM = party.getClass().getMethod("sendTo", ServerPlayer.class);
-                sendToM.invoke(party, targetPlayer);
+                // [优化-B07] 复用缓存的sendTo
+                if (cachedPartySendToMethod == null) {
+                    cachedPartySendToMethod = party.getClass().getMethod("sendTo", ServerPlayer.class);
+                }
+                cachedPartySendToMethod.invoke(party, targetPlayer);
                 PokemonEditorDebug.logEditor("party.sendTo(player) OK - synced to client");
             } catch (Throwable t) {
                 PokemonEditorDebug.errorEditor("party.sendTo(player) FAILED: {}", t.toString());
@@ -807,7 +857,7 @@ public class CobblemonBridge {
             } catch (Throwable ignored) {}
         }
 
-        registryCache.put(key, result);
+        putToRegistryCache(key, result);  // [优化-C01] 使用上限保护的写入
         if (result != null) {
             PokemonEditorDebug.infoMoves("[MoveLookup] lookup('{}') -> FOUND template '{}' (pp={})",
                     name, result.getName(), result.getPp());
@@ -1084,27 +1134,19 @@ public class CobblemonBridge {
         PokemonEditorDebug.infoPP("[constructMove] template='{}' basePP={} finalPP={} raised={}",
                 tpl.getName(), tpl.getPp(), finalPP, raised);
         try {
-            java.lang.reflect.Constructor<?> ctor = null;
-            PokemonEditorDebug.infoPP("[constructMove] Move.class.getDeclaredConstructors() count={}",
-                    Move.class.getDeclaredConstructors().length);
-            for (java.lang.reflect.Constructor<?> c : Move.class.getDeclaredConstructors()) {
-                Class<?>[] pts = c.getParameterTypes();
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < pts.length; i++) {
-                    if (i > 0) sb.append(", ");
-                    sb.append(pts[i].getSimpleName());
-                }
-                PokemonEditorDebug.infoPP("[constructMove]   ctor({}) params=[{}]",
-                        pts.length, sb.toString());
-                if (pts.length == 3 && pts[1] == int.class && pts[2] == int.class) {
-                    ctor = c;
-                    PokemonEditorDebug.infoPP("[constructMove]   MATCHED! using this ctor");
-                    break;
+            // [优化-C02] 缓存Move(MoveTemplate, int, int)构造函数
+            if (cachedMoveCtor == null) {
+                for (java.lang.reflect.Constructor<?> c : Move.class.getDeclaredConstructors()) {
+                    Class<?>[] pts = c.getParameterTypes();
+                    if (pts.length == 3 && pts[1] == int.class && pts[2] == int.class) {
+                        cachedMoveCtor = c;
+                        cachedMoveCtor.setAccessible(true);
+                        break;
+                    }
                 }
             }
-            if (ctor != null) {
-                ctor.setAccessible(true);
-                Move result = (Move) ctor.newInstance(tpl, finalPP, raised);
+            if (cachedMoveCtor != null) {
+                Move result = (Move) cachedMoveCtor.newInstance(tpl, finalPP, raised);
                 PokemonEditorDebug.infoPP("[constructMove] SUCCESS: created Move, getMaxPp={} getCurrentPp={}",
                         result.getMaxPp(), result.getCurrentPp());
                 return result;
@@ -1240,8 +1282,9 @@ public class CobblemonBridge {
         return false;
     }
 
-    // [线性-L08] 清理: allMoveTemplatesCache 声明但从未使用，已删除
+    // [优化-C03] 缓存allMoveIds，游戏运行期间不变
     public static List<String> getAllMoveIds() {
+        if (cachedAllMoveIds != null) return cachedAllMoveIds;
         List<String> result = new ArrayList<>();
         try {
             Object companion = MoveTemplate.class.getField("Companion").get(null);
@@ -1341,12 +1384,14 @@ public class CobblemonBridge {
         for (String s : result) {
             if (s != null && !s.isEmpty()) unique.add(s);
         }
-        return new ArrayList<>(unique);
+        cachedAllMoveIds = new ArrayList<>(unique);  // [优化-C03] 缓存结果
+        return cachedAllMoveIds;
     }
 
     // [线性-L12] 获取所有Cobblemon特性ID（模仿getAllMoveIds模式，直接用反射枚举Abilities注册表）
     //    通过lang键值(cobblemon.ability.<id>)反向查找，不再依赖硬编码翻译
     public static List<String> getAllAbilityIds() {
+        if (cachedAllAbilityIds != null) return cachedAllAbilityIds;  // [优化-C03] 缓存
         List<String> result = new ArrayList<>();
         initBridgeCache();
         // 1. AbilityTemplate.Companion (Kotlin companion object)
@@ -1436,7 +1481,8 @@ public class CobblemonBridge {
         for (String s : result) {
             if (s != null && !s.isEmpty()) unique.add(s);
         }
-        return new ArrayList<>(unique);
+        cachedAllAbilityIds = new ArrayList<>(unique);  // [优化-C03] 缓存结果
+        return cachedAllAbilityIds;
     }
 
     // [线性-L14fix] 获取所有Cobblemon物种ID — 用showdownId()而非getName()
@@ -1461,7 +1507,27 @@ public class CobblemonBridge {
     }
 
     // [线性-L15] 获取图鉴编号→物种ID映射（用于序号搜索）
+    // [优化-C04] 缓存结果，游戏运行期间图鉴映射不变
+    private static java.util.Map<Integer, String> cachedNationalDexNumberMap;
+    // [优化-C05] 缓存Jecharacters Match.contains反射方法，避免每次搜索都Class.forName
+    private static java.lang.reflect.Method cachedMatchContainsMethod;
+    private static boolean matchContainsLookupFailed;
+
+    public static boolean pinyinContains(String zh, String q) {
+        if (matchContainsLookupFailed) return false;
+        try {
+            if (cachedMatchContainsMethod == null) {
+                Class<?> matchClass = Class.forName("me.towdium.jecharacters.utils.Match");
+                cachedMatchContainsMethod = matchClass.getMethod("contains", CharSequence.class, CharSequence.class);
+            }
+            return Boolean.TRUE.equals(cachedMatchContainsMethod.invoke(null, zh, q));
+        } catch (Throwable t) {
+            matchContainsLookupFailed = true;
+            return false;
+        }
+    }
     public static java.util.Map<Integer, String> getNationalDexNumberMap() {
+        if (cachedNationalDexNumberMap != null) return cachedNationalDexNumberMap;
         java.util.Map<Integer, String> result = new java.util.LinkedHashMap<>();
         try {
             Collection<Species> allSpecies = PokemonSpecies.getSpecies();
@@ -1479,6 +1545,7 @@ public class CobblemonBridge {
         } catch (Throwable t) {
             PokemonEditorDebug.warnEditor("getNationalDexNumberMap failed: {}", t.getMessage());
         }
+        cachedNationalDexNumberMap = result;  // [优化-C04]
         return result;
     }
 
@@ -1531,38 +1598,35 @@ public class CobblemonBridge {
             } catch (Throwable ignored) {}
         }
 
-        // 等级修改
-        boolean levelChanged = false;
+        // 等级修改 —— 保存旧经验 → setLevel → 恢复旧经验
+        //   setLevel() 内部会调用 setExperience$common 重算经验值
+        //   setExperience$common 在满级时又强制覆盖，所以用直接字段写入绕过
         if (modifiedFields.contains("level") || modifiedFields.isEmpty()) {
             try {
                 int oldLevel = pokemon.getLevel();
+                int oldExp = pokemon.getExperience();
                 pokemon.setLevel(pkt.level());
-                PokemonEditorDebug.logEditor("level: {} -> {}", oldLevel, pkt.level());
-                levelChanged = true;
+                if (!modifiedFields.contains("experience")) {
+                    // 直接写 experience 字段，绕过 setExperience$common 的满级覆盖
+                    java.lang.reflect.Field f = pokemon.getClass().getDeclaredField("experience");
+                    f.setAccessible(true);
+                    f.setInt(pokemon, oldExp);
+                    PokemonEditorDebug.logEditor("level: {} -> {} (exp preserved: {})", oldLevel, pkt.level(), oldExp);
+                }
             } catch (Throwable e) {
                 PokemonEditorDebug.warnEditor("setLevel failed: {}", e.getMessage());
             }
         }
 
-        // 经验值修改
-        if (modifiedFields.contains("experience") || modifiedFields.isEmpty()) {
+        // 经验值修改 —— 正常修改
+        if (modifiedFields.contains("experience")) {
             try {
-                int expToSet;
-                if (pkt.experience() <= 0) {
-                    expToSet = 0;
-                } else {
-                    expToSet = Math.max(0, Math.min(Integer.MAX_VALUE, pkt.experience()));
-                }
-                try {
-                    pokemon.getClass().getMethod("setExperience$common", int.class).invoke(pokemon, expToSet);
-                    PokemonEditorDebug.logEditor("experience: {}", expToSet);
-                } catch (Throwable e) {
-                    try {
-                        pokemon.setExperienceAndUpdateLevel(expToSet);
-                        PokemonEditorDebug.logEditor("experience (fallback): {}", expToSet);
-                    } catch (Throwable ignored) {}
-                }
-            } catch (Throwable ignored) {}
+                int expToSet = Math.max(0, pkt.experience());
+                pokemon.setExperience$common(expToSet);
+                PokemonEditorDebug.logEditor("experience: {}", expToSet);
+            } catch (Throwable e) {
+                PokemonEditorDebug.warnEditor("setExperience failed: {}", e.getMessage());
+            }
         }
 
         // 亲密度修改
@@ -1843,6 +1907,7 @@ public class CobblemonBridge {
             int hp = pkt.currentHp();
             
             // 自动补满HP：当物种或等级改变，且用户未手动修改HP时
+            boolean levelChanged = modifiedFields.contains("level") || modifiedFields.isEmpty();
             boolean shouldAutoFillHp = (speciesChanged || levelChanged) && !modifiedFields.contains("currentHp");
             if (shouldAutoFillHp) {
                 hp = currentMaxHp;
@@ -1859,17 +1924,25 @@ public class CobblemonBridge {
         // ★ 金色王冠状态写入（modifiedFields校验 + 直接操作hyperTrainedIVs Map绕过setHyperTrainedIV优化）
         if (modifiedFields.contains("goldenBottleCap") || modifiedFields.isEmpty()) {
             try {
-                var getIvsMethod = pokemon.getClass().getMethod("getIvs");
-                var ivs = getIvsMethod.invoke(pokemon);
+                // [优化-B08] 复用缓存的getIvs + Stats字段
+                if (cachedGetIvsMethod == null) {
+                    cachedGetIvsMethod = pokemon.getClass().getMethod("getIvs");
+                }
+                var ivs = cachedGetIvsMethod.invoke(pokemon);
                 if (ivs != null) {
-                    initBridgeCache(); // [线性-L07] 使用缓存的Stat/Stats类
-                    var hpStat = cachedStatsClass.getField("HP").get(null);
-                    var attackStat = cachedStatsClass.getField("ATTACK").get(null);
-                    var defenceStat = cachedStatsClass.getField("DEFENCE").get(null);
-                    var spAtkStat = cachedStatsClass.getField("SPECIAL_ATTACK").get(null);
-                    var spDefStat = cachedStatsClass.getField("SPECIAL_DEFENCE").get(null);
-                    var speedStat = cachedStatsClass.getField("SPEED").get(null);
-                    Object[] allStats = {hpStat, attackStat, defenceStat, spAtkStat, spDefStat, speedStat};
+                    initBridgeCache();
+                    // 确保Stats字段已缓存
+                    if (cachedStatsHPField == null) {
+                        cachedStatsHPField = cachedStatsClass.getField("HP");
+                        cachedStatsATKField = cachedStatsClass.getField("ATTACK");
+                        cachedStatsDEFField = cachedStatsClass.getField("DEFENCE");
+                        cachedStatsSPAField = cachedStatsClass.getField("SPECIAL_ATTACK");
+                        cachedStatsSPDField = cachedStatsClass.getField("SPECIAL_DEFENCE");
+                        cachedStatsSPEField = cachedStatsClass.getField("SPEED");
+                    }
+                    Object[] allStats = {cachedStatsHPField.get(null), cachedStatsATKField.get(null),
+                        cachedStatsDEFField.get(null), cachedStatsSPAField.get(null),
+                        cachedStatsSPDField.get(null), cachedStatsSPEField.get(null)};
 
                     var htField = ivs.getClass().getDeclaredField("hyperTrainedIVs");
                     htField.setAccessible(true);
@@ -1878,7 +1951,7 @@ public class CobblemonBridge {
 
                     if (pkt.goldenBottleCap()) {
                         for (Object stat : allStats) {
-                            htMap.put(stat, 31); // [线性-L08] hyperTrainedIVs存储Integer(31=镀金), isHyperTrained内部检查==31
+                            htMap.put(stat, 31);
                         }
                     } else {
                         if (htMap != null) htMap.clear();
@@ -2213,7 +2286,7 @@ public class CobblemonBridge {
             } catch (Throwable ignored) {}
         }
 
-        registryCache.put(cacheKey, result);
+        putToRegistryCache(cacheKey, result);  // [优化-C01]
         return result;
     }
 
@@ -2301,7 +2374,7 @@ public class CobblemonBridge {
             } catch (Throwable ignored) {}
         }
 
-        registryCache.put(cacheKey, result);
+        putToRegistryCache(cacheKey, result);  // [优化-C01]
         return result;
     }
 
@@ -2416,7 +2489,7 @@ public class CobblemonBridge {
             PokemonEditorDebug.errorStatus("[lookupStatus] ALL methods FAILED for '{}'", lowerName);
         } else {
             PokemonEditorDebug.infoStatus("[lookupStatus] RESULT: {} (class={})", result, result.getClass().getName());
-            registryCache.put(cacheKey, result); // 只缓存非null结果，避免null缓存阻止重试
+            putToRegistryCache(cacheKey, result);  // [优化-C01] 只缓存非null结果
         }
         return result;
     }
@@ -2449,7 +2522,7 @@ public class CobblemonBridge {
                 }
             } catch (Throwable ignored) {}
         }
-        registryCache.put(cacheKey, result);
+        putToRegistryCache(cacheKey, result);  // [优化-C01]
         return result;
     }
 

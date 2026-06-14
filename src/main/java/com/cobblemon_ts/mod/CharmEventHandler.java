@@ -48,9 +48,49 @@ public class CharmEventHandler {
     // rctmod
     private static Class<?> levelUtilsClass;
     private static Method levelCapMethod;
+    // [优化-H01] 高频反射Method缓存：避免invokeMethod/setEventValue/getPlayerFromPokemon每调用都getMethod
+    private static final java.util.Map<String, Method> cachedEventHandlerMethods = new java.util.HashMap<>();
+    private static final int EVENT_METHOD_CACHE_MAX = 100; // [优化-H01] 上限防止无限增长
     // [线性-L07] Priority 反射缓存
     private static Class<?> cachedPriorityClass;
     private static Field cachedNormalField;
+
+    private static Method getCachedMethod(Object obj, String methodName) {
+        String key = obj.getClass().getName() + "#" + methodName;
+        Method m = cachedEventHandlerMethods.get(key);
+        if (m == null) {
+            try {
+                m = obj.getClass().getMethod(methodName);
+                // [优化-C01] 缓存上限保护
+                if (cachedEventHandlerMethods.size() >= EVENT_METHOD_CACHE_MAX) {
+                    cachedEventHandlerMethods.clear();
+                }
+                cachedEventHandlerMethods.put(key, m);
+            } catch (Exception ignored) {}
+        }
+        return m;
+    }
+
+    private static Method getCachedMethodWithTypes(Object obj, String methodName, Class<?>... paramTypes) {
+        StringBuilder keyBuilder = new StringBuilder(obj.getClass().getName() + "#" + methodName + "(");
+        for (int i = 0; i < paramTypes.length; i++) {
+            if (i > 0) keyBuilder.append(",");
+            keyBuilder.append(paramTypes[i].getName());
+        }
+        keyBuilder.append(")");
+        String key = keyBuilder.toString();
+        Method m = cachedEventHandlerMethods.get(key);
+        if (m == null) {
+            try {
+                m = obj.getClass().getMethod(methodName, paramTypes);
+                if (cachedEventHandlerMethods.size() >= EVENT_METHOD_CACHE_MAX) {
+                    cachedEventHandlerMethods.clear();
+                }
+                cachedEventHandlerMethods.put(key, m);
+            } catch (Exception ignored) {}
+        }
+        return m;
+    }
     // 缓存是否已初始化
     private static boolean reflectionCacheInitialized = false;
 
@@ -558,30 +598,16 @@ public class CharmEventHandler {
     }
 
     private static Player getPlayerFromPokemon(Object pokemon) {
-        try {
-            Method getOwnerEntityMethod = pokemon.getClass().getMethod("getOwnerEntity");
-            Object owner = getOwnerEntityMethod.invoke(pokemon);
-            if (owner instanceof Player p) {
-                return p;
-            }
-        } catch (Exception ignored) {}
-
-        try {
-            Method getOwnerPlayerMethod = pokemon.getClass().getMethod("getOwnerPlayer");
-            Object player = getOwnerPlayerMethod.invoke(pokemon);
-            if (player instanceof Player p) {
-                return p;
-            }
-        } catch (Exception ignored) {}
-
-        try {
-            Method getOwnerMethod = pokemon.getClass().getMethod("getOwner");
-            Object owner = getOwnerMethod.invoke(pokemon);
-            if (owner instanceof Player p) {
-                return p;
-            }
-        } catch (Exception ignored) {}
-
+        // [优化-H01] 使用缓存获取3个owner方法
+        for (String name : new String[]{"getOwnerEntity", "getOwnerPlayer", "getOwner"}) {
+            try {
+                Method m = getCachedMethod(pokemon, name);
+                if (m != null) {
+                    Object owner = m.invoke(pokemon);
+                    if (owner instanceof Player p) return p;
+                }
+            } catch (Exception ignored) {}
+        }
         return null;
     }
 
@@ -608,17 +634,22 @@ public class CharmEventHandler {
     private static void setEventValue(Object event, Object value, Class<?> valueType, String... methodNames) {
         for (String methodName : methodNames) {
             try {
-                Method setterMethod = event.getClass().getMethod(methodName, valueType);
-                setterMethod.invoke(event, value);
-                return;
+                // [优化-H01] 使用缓存获取Method
+                Method setterMethod = getCachedMethodWithTypes(event, methodName, valueType);
+                if (setterMethod != null) {
+                    setterMethod.invoke(event, value);
+                    return;
+                }
             } catch (Exception ignored) {}
         }
     }
 
     private static Object invokeMethod(Object obj, String methodName) {
         try {
-            Method method = obj.getClass().getMethod(methodName);
-            return method.invoke(obj);
+            // [优化-H01] 使用缓存获取Method
+            Method method = getCachedMethod(obj, methodName);
+            if (method != null) return method.invoke(obj);
+            return null;
         } catch (Exception e) {
             return null;
         }
@@ -626,8 +657,10 @@ public class CharmEventHandler {
 
     private static Object invokeMethodWithTypes(Object obj, String methodName, Class<?>[] paramTypes, Object... args) {
         try {
-            Method method = obj.getClass().getMethod(methodName, paramTypes);
-            return method.invoke(obj, args);
+            // [优化-H01] 使用缓存获取Method
+            Method method = getCachedMethodWithTypes(obj, methodName, paramTypes);
+            if (method != null) return method.invoke(obj, args);
+            return null;
         } catch (Exception e) {
             return null;
         }
@@ -657,15 +690,17 @@ public class CharmEventHandler {
                 if (getExpToNextLevelMethod != null) {
                     expNeeded = (Integer) getExpToNextLevelMethod.invoke(partyPokemon);
                 } else {
-                    // 动态查找：如果缓存的方法不可用，尝试所有可能的方法名
+                    // [优化-H01] 动态查找：使用缓存方法，避免每次getMethod
                     String[] names = {"getExperienceToNextLevel", "getExperienceNeeded", "getExperienceToLevel"};
                     for (String name : names) {
-                        try {
-                            Method m = partyPokemon.getClass().getMethod(name);
-                            expNeeded = (Integer) m.invoke(partyPokemon);
-                            getExpToNextLevelMethod = m;
-                            break;
-                        } catch (Exception ignored) {}
+                        Method m = getCachedMethod(partyPokemon, name);
+                        if (m != null) {
+                            try {
+                                expNeeded = (Integer) m.invoke(partyPokemon);
+                                getExpToNextLevelMethod = m;
+                                break;
+                            } catch (Exception ignored) {}
+                        }
                     }
                 }
                 int expToNextLevel = expNeeded - currentExp;

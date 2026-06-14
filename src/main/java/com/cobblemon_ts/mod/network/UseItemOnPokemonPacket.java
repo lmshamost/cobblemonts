@@ -261,6 +261,34 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
         }
     }
 
+    // [优化-F03] handlePPMax 高频反射缓存 —— 避免每次使用PP Max时重复Class.forName/getMethod
+    private static Class<?> cachedMoveClass;
+    private static Class<?> cachedMoveTemplateClass;
+    private static Method cachedMoveGetRaised;
+    private static Method cachedMoveGetTemplate;
+    private static Method cachedTemplateGetPp;
+    private static Constructor<?> cachedMoveCtor;
+    private static volatile boolean ppmReflectionInitFailed;
+
+    private static boolean initPPMReflection() {
+        if (ppmReflectionInitFailed) return false;
+        if (cachedMoveClass != null && cachedMoveTemplateClass != null) return true;
+        try {
+            cachedMoveClass = Class.forName("com.cobblemon.mod.common.api.moves.Move");
+            cachedMoveTemplateClass = Class.forName("com.cobblemon.mod.common.api.moves.MoveTemplate");
+            cachedMoveGetRaised = cachedMoveClass.getMethod("getRaisedPpStages");
+            cachedMoveGetTemplate = cachedMoveClass.getMethod("getTemplate");
+            cachedTemplateGetPp = cachedMoveTemplateClass.getMethod("getPp");
+            cachedMoveCtor = cachedMoveClass.getDeclaredConstructor(cachedMoveTemplateClass, int.class, int.class);
+            cachedMoveCtor.setAccessible(true);
+            return true;
+        } catch (Throwable t) {
+            ppmReflectionInitFailed = true;
+            CobblemonTS.LOGGER.error("initPPMReflection failed: {}", t.getMessage());
+            return false;
+        }
+    }
+
     // ★ PP极限药特殊处理 —— 线性逻辑树:
     //   ├─ 检查精灵是否为空
     //   ├─ 获取MoveSet → getMove(i)遍历4个技能
@@ -269,17 +297,17 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
     //   │   └─ 可用 → 构造新Move(raised=3, pp=maxPP) → setMove
     //   ├─ !allMoves → 只处理第一个可用技能(break)
     //   └─ allMoves → 遍历全部4个技能
+    //   [优化-F03] 反射全部缓存为静态字段，避免每次Class.forName/getMethod
     private static boolean handlePPMax(ServerPlayer player, Object pokemon, UseItemOnPokemonPacket packet) {
         try {
-            // 获取精灵的技能集
+            if (!initPPMReflection()) return false;
+
+            // [优化-F03] 复用缓存的getMoveSet反射
             Object moveSet = pokemon.getClass().getMethod("getMoveSet").invoke(pokemon);
             if (moveSet == null) return false;
-            
-            Class<?> moveClass = Class.forName("com.cobblemon.mod.common.api.moves.Move");
-            Class<?> moveTemplateClass = Class.forName("com.cobblemon.mod.common.api.moves.MoveTemplate");
-            
+
             Method getMove = moveSet.getClass().getMethod("get", int.class);
-            Method setMove = moveSet.getClass().getMethod("setMove", int.class, moveClass);
+            Method setMove = moveSet.getClass().getMethod("setMove", int.class, cachedMoveClass);
 
             boolean allMoves = packet.allMoves();
             int itemsConsumed = 0;
@@ -289,31 +317,26 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
                 Object move = getMove.invoke(moveSet, i);
                 if (move == null) continue; // 空技能无效
 
-                // 获取当前PP提升阶段
-                Method getRaised = move.getClass().getMethod("getRaisedPpStages");
-                int currentRaised = (int) getRaised.invoke(move);
+                // [优化-F03] 复用缓存的getRaisedPpStages
+                int currentRaised = (int) cachedMoveGetRaised.invoke(move);
                 if (currentRaised >= 3) continue; // 已最大，跳过
 
-                // 获取模板和基础PP
-                Method getTemplate = move.getClass().getMethod("getTemplate");
-                Object template = getTemplate.invoke(move);
+                // [优化-F03] 复用缓存的getTemplate / getPp
+                Object template = cachedMoveGetTemplate.invoke(move);
                 if (template == null) continue;
 
-                Method getPp = moveTemplateClass.getMethod("getPp");
-                int basePP = (int) getPp.invoke(template);
+                int basePP = (int) cachedTemplateGetPp.invoke(template);
 
                 // PP Max = raised 3 stages，计算最大PP
                 int maxPP = (int) Math.floor(basePP * (1.0 + 0.2 * 3));
 
-                // 创建新Move: (MoveTemplate, currentPP, raisedPpStages)
-                Constructor<?> ctor = moveClass.getDeclaredConstructor(moveTemplateClass, int.class, int.class);
-                ctor.setAccessible(true);
-                Object newMove = ctor.newInstance(template, maxPP, 3);
+                // [优化-F03] 复用缓存的Move构造函数
+                Object newMove = cachedMoveCtor.newInstance(template, maxPP, 3);
                 setMove.invoke(moveSet, i, newMove);
 
                 itemsConsumed++;
 
-                // 非Shift模式：只处理第一个可用技能
+                // 非Shift/Alt模式：只处理第一个可用技能
                 if (!allMoves) break;
             }
 
@@ -563,19 +586,8 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
         }
     }
 
-    // ★ 消耗玩家手持物品：优先手部，其次光标
+    // [修复-F02] 消耗物品：只检查光标（玩家用鼠标拿着物品对精灵栏使用，物品始终在光标上）
     private static void consumeItems(ServerPlayer player, int count) {
-        for (net.minecraft.world.InteractionHand hand : net.minecraft.world.InteractionHand.values()) {
-            ItemStack handStack = player.getItemInHand(hand);
-            if (!handStack.isEmpty()) {
-                int shrinkCount = Math.min(count, handStack.getCount());
-                handStack.shrink(shrinkCount);
-                if (handStack.isEmpty()) {
-                    player.setItemInHand(hand, ItemStack.EMPTY);
-                }
-                return;
-            }
-        }
         ItemStack cursorStack = player.containerMenu.getCarried();
         if (!cursorStack.isEmpty()) {
             int shrinkCount = Math.min(count, cursorStack.getCount());

@@ -2121,13 +2121,11 @@ public class PokemonEditorScreen extends Screen {
                                 if (zh.contains(q) || (enName != null && enName.contains(q))) {
                                     if (!autocompleteItems.contains(zh)) autocompleteItems.add(zh);
                                 }
-                                // [线性-L15] 拼音搜索：利用 jecharacters 的 PinIn 引擎
+                                // [线性-L15] 拼音搜索：利用 jecharacters 的 PinIn 引擎（[优化-C05] 通过CobblemonBridge缓存反射）
                                 if (!autocompleteItems.contains(zh)) {
-                                    try {
-                                        if (me.towdium.jecharacters.utils.Match.contains(zh, q)) {
-                                            autocompleteItems.add(zh);
-                                        }
-                                    } catch (Throwable ignored) {}
+                                    if (CobblemonBridge.pinyinContains(zh, q)) {
+                                        autocompleteItems.add(zh);
+                                    }
                                 }
                             }
                         } else {
@@ -2322,13 +2320,11 @@ public class PokemonEditorScreen extends Screen {
                             if (zhName.contains(q) || (enName != null && enName.contains(lowerQ))) {
                                 if (!autocompleteItems.contains(zhName)) autocompleteItems.add(zhName);
                             }
-                            // [线性-L15] 拼音搜索：利用 jecharacters 的 PinIn 引擎
+                            // [线性-L15] 拼音搜索：利用 jecharacters 的 PinIn 引擎（[优化-C05] 通过CobblemonBridge缓存反射）
                             if (!autocompleteItems.contains(zhName)) {
-                                try {
-                                    if (me.towdium.jecharacters.utils.Match.contains(zhName, q)) {
-                                        autocompleteItems.add(zhName);
-                                    }
-                                } catch (Throwable ignored) {}
+                                if (CobblemonBridge.pinyinContains(zhName, q)) {
+                                    autocompleteItems.add(zhName);
+                                }
                             }
                         }
                     }
