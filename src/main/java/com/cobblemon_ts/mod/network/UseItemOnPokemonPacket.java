@@ -497,12 +497,9 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
         return "";
     }
 
-    // ★ 金色王冠特殊处理 —— 线性逻辑树:
-    //   ├─ pokemon.getIvs() → IVs对象
-    //   ├─ 调用cobblemon内置 isHyperTrained(Stats.HP) → 判断是否已激活
-    //   ├─ 未激活 → setHyperTrainedIV(HP,31) x6 → 所有个体值按31计算（原始IV不变）
-    //   └─ 已激活 → 反射获取hyperTrainedIVs Map → clear() → 关闭王冠
-    //   消耗1个金色王冠
+    // ★ 金色王冠特殊处理 —— 直接操作hyperTrainedIVs Map
+    //   cobblemon的setHyperTrainedIV会在原始IV==31时自动移除条目(优化)
+    //   导致满个体精灵永远无法开启王冠，改用put直接写入Map
     private static boolean handleGoldenBottleCap(ServerPlayer player, Object pokemon, UseItemOnPokemonPacket packet) {
         try {
             var getIvsMethod = pokemon.getClass().getMethod("getIvs");
@@ -514,8 +511,6 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
 
             var isHyperTrainedMethod = ivs.getClass().getMethod("isHyperTrained",
                     Class.forName("com.cobblemon.mod.common.api.pokemon.stats.Stat"));
-            var setHyperTrainedIVMethod = ivs.getClass().getMethod("setHyperTrainedIV",
-                    Class.forName("com.cobblemon.mod.common.api.pokemon.stats.Stat"), int.class);
 
             var statsClass = Class.forName("com.cobblemon.mod.common.api.pokemon.stats.Stats");
             var hpStat = statsClass.getField("HP").get(null);
@@ -526,6 +521,13 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
             var speedStat = statsClass.getField("SPEED").get(null);
             Object[] allStats = {hpStat, attackStat, defenceStat, spAtkStat, spDefStat, speedStat};
 
+            // ★ 反射获取hyperTrainedIVs Map（私有字段）
+            var htField = ivs.getClass().getDeclaredField("hyperTrainedIVs");
+            htField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            java.util.Map<Object, Object> htMap = (java.util.Map<Object, Object>) htField.get(ivs);
+
+            // ★ 判断当前是否全部超特训已激活
             boolean allHyperTrained = true;
             for (Object stat : allStats) {
                 if (!(boolean) isHyperTrainedMethod.invoke(ivs, stat)) {
@@ -535,20 +537,22 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
             }
 
             if (allHyperTrained) {
-                // ★ 关闭金色王冠：反射获取hyperTrainedIVs Map并清空
-                var htField = ivs.getClass().getDeclaredField("hyperTrainedIVs");
-                htField.setAccessible(true);
-                @SuppressWarnings("unchecked")
-                java.util.Map<Object, Object> htMap = (java.util.Map<Object, Object>) htField.get(ivs);
+                // ★ 关闭金色王冠：清空hyperTrainedIVs Map
                 if (htMap != null) htMap.clear();
                 player.sendSystemMessage(Component.literal("§e已关闭金色王冠"));
             } else {
-                // ★ 开启金色王冠：所有六项个体值按31计算（原始IV不变）
+                // ★ 开启金色王冠：直接put到hyperTrainedIVs Map(绕过setHyperTrainedIV的优化逻辑)
                 for (Object stat : allStats) {
-                    setHyperTrainedIVMethod.invoke(ivs, stat, 31);
+                    htMap.put(stat, 31);
                 }
                 player.sendSystemMessage(Component.literal("§a已开启金色王冠"));
             }
+
+            // ★ 触发pokemon.update()刷新战斗属性
+            try {
+                var updateMethod = pokemon.getClass().getMethod("update");
+                updateMethod.invoke(pokemon);
+            } catch (Throwable ignored) {}
 
             consumeItems(player, 1);
             CobblemonTS.LOGGER.info("handleGoldenBottleCap: golden_crown active={}", !allHyperTrained);
@@ -559,8 +563,19 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
         }
     }
 
-    // ★ 按指定数量消耗玩家手持物品（服务端确认后方可消耗）
+    // ★ 消耗玩家手持物品：优先手部，其次光标
     private static void consumeItems(ServerPlayer player, int count) {
+        for (net.minecraft.world.InteractionHand hand : net.minecraft.world.InteractionHand.values()) {
+            ItemStack handStack = player.getItemInHand(hand);
+            if (!handStack.isEmpty()) {
+                int shrinkCount = Math.min(count, handStack.getCount());
+                handStack.shrink(shrinkCount);
+                if (handStack.isEmpty()) {
+                    player.setItemInHand(hand, ItemStack.EMPTY);
+                }
+                return;
+            }
+        }
         ItemStack cursorStack = player.containerMenu.getCarried();
         if (!cursorStack.isEmpty()) {
             int shrinkCount = Math.min(count, cursorStack.getCount());

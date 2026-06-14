@@ -473,38 +473,6 @@ public class CobblemonBridge {
                 }
             }
 
-            // ★ 写入金色王冠状态（通过cobblemon内置的setHyperTrainedIV，全部反射避免KMappedMarker问题）
-            try {
-                var getIvsMethod = pokemon.getClass().getMethod("getIvs");
-                var ivs = getIvsMethod.invoke(pokemon);
-                if (ivs != null) {
-                    var statClass = Class.forName("com.cobblemon.mod.common.api.pokemon.stats.Stat");
-                    var setHyperTrainedIVMethod = ivs.getClass().getMethod("setHyperTrainedIV",
-                            statClass, int.class);
-                    var statsClass = Class.forName("com.cobblemon.mod.common.api.pokemon.stats.Stats");
-                    var hpStat = statsClass.getField("HP").get(null);
-                    var attackStat = statsClass.getField("ATTACK").get(null);
-                    var defenceStat = statsClass.getField("DEFENCE").get(null);
-                    var spAtkStat = statsClass.getField("SPECIAL_ATTACK").get(null);
-                    var spDefStat = statsClass.getField("SPECIAL_DEFENCE").get(null);
-                    var speedStat = statsClass.getField("SPEED").get(null);
-                    Object[] allStats = {hpStat, attackStat, defenceStat, spAtkStat, spDefStat, speedStat};
-
-                    if (pkt.goldenBottleCap()) {
-                        for (Object stat : allStats) {
-                            setHyperTrainedIVMethod.invoke(ivs, stat, 31);
-                        }
-                    } else {
-                        var htField = ivs.getClass().getDeclaredField("hyperTrainedIVs");
-                        htField.setAccessible(true);
-                        @SuppressWarnings("unchecked")
-                        java.util.Map<Object, Object> htMap = (java.util.Map<Object, Object>) htField.get(ivs);
-                        if (htMap != null) htMap.clear();
-                    }
-                    PokemonEditorDebug.logEditor("goldenBottleCap set to {}", pkt.goldenBottleCap());
-                }
-            } catch (Throwable ignored) {}
-
             try {
                 Method updateM = pokemon.getClass().getMethod("update");
                 updateM.invoke(pokemon);
@@ -1691,6 +1659,39 @@ public class CobblemonBridge {
             pokemon.setCurrentHealth(hp);
             PokemonEditorDebug.logEditor("currentHp: {} (max={})", hp, currentMaxHp);
         } catch (Throwable ignored) {}
+
+        // ★ 金色王冠状态写入（modifiedFields校验 + 直接操作hyperTrainedIVs Map绕过setHyperTrainedIV优化）
+        if (modifiedFields.contains("goldenBottleCap") || modifiedFields.isEmpty()) {
+            try {
+                var getIvsMethod = pokemon.getClass().getMethod("getIvs");
+                var ivs = getIvsMethod.invoke(pokemon);
+                if (ivs != null) {
+                    var statClass = Class.forName("com.cobblemon.mod.common.api.pokemon.stats.Stat");
+                    var statsClass = Class.forName("com.cobblemon.mod.common.api.pokemon.stats.Stats");
+                    var hpStat = statsClass.getField("HP").get(null);
+                    var attackStat = statsClass.getField("ATTACK").get(null);
+                    var defenceStat = statsClass.getField("DEFENCE").get(null);
+                    var spAtkStat = statsClass.getField("SPECIAL_ATTACK").get(null);
+                    var spDefStat = statsClass.getField("SPECIAL_DEFENCE").get(null);
+                    var speedStat = statsClass.getField("SPEED").get(null);
+                    Object[] allStats = {hpStat, attackStat, defenceStat, spAtkStat, spDefStat, speedStat};
+
+                    var htField = ivs.getClass().getDeclaredField("hyperTrainedIVs");
+                    htField.setAccessible(true);
+                    @SuppressWarnings("unchecked")
+                    java.util.Map<Object, Object> htMap = (java.util.Map<Object, Object>) htField.get(ivs);
+
+                    if (pkt.goldenBottleCap()) {
+                        for (Object stat : allStats) {
+                            htMap.put(stat, 31);
+                        }
+                    } else {
+                        if (htMap != null) htMap.clear();
+                    }
+                    PokemonEditorDebug.logEditor("goldenBottleCap set to {}", pkt.goldenBottleCap());
+                }
+            } catch (Throwable ignored) {}
+        }
 
         PokemonEditorDebug.logEditor("writePokemonFields DONE");
     }

@@ -1352,10 +1352,22 @@ public class PokemonNameMap {
         if (v.length() >= 2 && ((v.startsWith("'") && v.endsWith("'")) || (v.startsWith("\"") && v.endsWith("\"")))) {
             v = v.substring(1, v.length() - 1);
         }
-        // 去除命名空间前缀
+        // 去除命名空间前缀 (minecraft:xxx → xxx)
         if (v.contains(":")) {
             int idx = v.lastIndexOf(":");
             v = v.substring(idx + 1);
+        }
+        // [线性-L01] 去除cobblemon.move.或.move.等LangKey前缀 (cobblemon.move.pound → pound)
+        // 解决重启后技能名变成键值名的问题：当NBT或其他系统存储了完整localization key时
+        while (v.contains(".move.") || v.startsWith("move.")) {
+            int idx = v.lastIndexOf(".move.");
+            if (idx < 0) idx = v.indexOf("move.");
+            if (idx < 0) break;
+            v = v.substring(idx + ".move.".length());
+        }
+        // [线性-L02] 去除残留的cobblemon.前缀 (cobblemon.pound → pound)
+        if (v.startsWith("cobblemon.")) {
+            v = v.substring("cobblemon.".length());
         }
         // 去除 "1 of " 之类前缀
         if (v.toLowerCase().contains(" of ")) {
@@ -1700,11 +1712,23 @@ public class PokemonNameMap {
         // 2. 回落硬编码映射
         return MOVE_EN_TO_ZH.getOrDefault(raw.toLowerCase().trim(), raw);
     }
+    // [线性-L03] moveToEnglish: 支持中文→英文转换，同时清理langKey等异常输入
+    // 解决重启后技能名变成键值名导致无法修改的问题
     public static String moveToEnglish(String zh) {
         if (zh == null || zh.isEmpty()) return zh;
+        // [线性-L03a] 先尝试中文→英文映射
         String en = MOVE_ZH_TO_EN.get(zh.trim());
         if (en != null) return en;
+        // [线性-L03b] 输入可能已经是英文内部名（如pound），直接返回
         if (MOVE_EN_TO_ZH.containsKey(zh.toLowerCase().trim())) return zh.toLowerCase().trim();
+        // [线性-L03c] 输入可能是langKey（如cobblemon.move.pound）或包含命名空间，清洗后再查
+        String cleaned = cleanItemName(zh);
+        if (!cleaned.equals(zh.trim())) {
+            String en2 = MOVE_ZH_TO_EN.get(cleaned);
+            if (en2 != null) return en2;
+            if (MOVE_EN_TO_ZH.containsKey(cleaned.toLowerCase().trim())) return cleaned.toLowerCase().trim();
+            return cleaned;
+        }
         return zh;
     }
 

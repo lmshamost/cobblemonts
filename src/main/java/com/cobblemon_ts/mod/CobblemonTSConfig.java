@@ -19,6 +19,12 @@ public class CobblemonTSConfig {
     public static final ModConfigSpec.BooleanValue SHOW_EFFECT_ICONS;
     public static final ModConfigSpec.BooleanValue SHOW_INVENTORY_EFFECT_ICONS;
     public static final ModConfigSpec.BooleanValue HIDE_TOGGLE_BUTTONS;
+    // [线性-L04] 自定义血条/饥饿条/盔甲条开关
+    public static final ModConfigSpec.BooleanValue HUD_CUSTOM_HEALTH_BAR;
+    public static final ModConfigSpec.BooleanValue HUD_CUSTOM_FOOD_BAR;
+    public static final ModConfigSpec.BooleanValue HUD_CUSTOM_ARMOR_BAR;
+    public static final ModConfigSpec.BooleanValue HUD_ABSORPTION_OVERLAY;
+    public static final ModConfigSpec.BooleanValue HUD_SATURATION_OVERLAY;
 
     static {
         BUILDER.comment("初始精灵设置").push("starter");
@@ -49,6 +55,22 @@ public class CobblemonTSConfig {
         HIDE_TOGGLE_BUTTONS = BUILDER
                 .comment("是否隐藏背包精灵栏和护符栏的开关按钮(true=开关按钮变透明不可见, false=显示绿红小方块正常显示)")
                 .define("hide_toggle_buttons", false);
+        // [线性-L04] 自定义血条/饥饿条/盔甲条开关
+        HUD_CUSTOM_HEALTH_BAR = BUILDER
+                .comment("是否启用自定义血条(true=自定义血条+吸收心金条覆盖, false=原版心形)")
+                .define("custom_health_bar", true);
+        HUD_CUSTOM_FOOD_BAR = BUILDER
+                .comment("是否启用自定义饥饿条(true=自定义饥饿条+饱腹金条覆盖, false=原版鸡腿)")
+                .define("custom_food_bar", true);
+        HUD_CUSTOM_ARMOR_BAR = BUILDER
+                .comment("是否启用自定义盔甲条(true=自定义盔甲条, false=原版盔甲图标)")
+                .define("custom_armor_bar", true);
+        HUD_ABSORPTION_OVERLAY = BUILDER
+                .comment("是否在血条上显示伤害吸收金条覆盖(true=显示金条, false=仅显示红血条)")
+                .define("absorption_overlay", true);
+        HUD_SATURATION_OVERLAY = BUILDER
+                .comment("是否在饥饿条上显示饱腹值金条覆盖(true=显示金条, false=仅显示饥饿条)")
+                .define("saturation_overlay", true);
         BUILDER.pop();
     }
 
