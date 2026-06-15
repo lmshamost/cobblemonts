@@ -8,7 +8,6 @@ package com.cobblemon_ts.mod.pokemoneditor;
 import com.cobblemon_ts.mod.CobblemonTSConfig;
 import com.cobblemon_ts.mod.gui.ColorEditorConfig;
 import java.io.File;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
@@ -27,6 +26,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -60,7 +60,10 @@ public class PokemonEditorScreen extends Screen {
     private EditBox sumHeldItemField;
     private EditBox genderField;
     private Button sumShinyButton;
+    private Button clearSpeciesBtn;
     private Button clearNameBtn;
+    private Button clearNatureBtn;
+    private Button clearAbilityBtn;
     private Button statusCycleBtn;
     private Button levelDownBtn;
     private Button levelUpBtn;
@@ -359,8 +362,10 @@ public class PokemonEditorScreen extends Screen {
         int labelW = 50;
         int rowY = 88;
         int rowStep = 28;
-        this.sumSpeciesField = new EditBox(this.font, editX + 50 + 10, rowY, 230, 16, Component.literal(""));
+        this.sumSpeciesField = new EditBox(this.font, editX + 50 + 10, rowY, 100, 16, Component.literal(""));
         this.sumSpeciesField.setMaxLength(40);
+        this.sumSpeciesField.setTextShadow(false);
+        this.clearSpeciesBtn = Button.builder(Component.literal("\u00d7"), (btn) -> this.sumSpeciesField.setValue("")).pos(editX + 50 + 10 + 100 + 4, rowY).size(18, 18).build();
         this.sumLevelField = this.makeIntBox(editX + 50 + 10, rowY + rowStep, 100, 1, 900);
         this.levelDownBtn = Button.builder(Component.literal("\u2b07"), (btn) -> {
             boolean shift = Screen.hasShiftDown();
@@ -394,13 +399,18 @@ public class PokemonEditorScreen extends Screen {
             int n = Math.min(900, cur + step);
             this.sumLevelField.setValue(String.valueOf(n));
         }).pos(editX + 50 + 10 + 100 + 4 + 18 + 2, rowY + rowStep).size(18, 18).build();
-        this.sumNameField = new EditBox(this.font, editX + 50 + 10, rowY + rowStep * 2, 160, 16, Component.literal(""));
+        this.sumNameField = new EditBox(this.font, editX + 50 + 10, rowY + rowStep * 2, 100, 16, Component.literal(""));
         this.sumNameField.setMaxLength(30);
-        this.clearNameBtn = Button.builder(Component.literal("\u00d7"), (btn) -> this.sumNameField.setValue("")).pos(editX + 50 + 10 + 160 + 4, rowY + rowStep * 2).size(18, 18).build();
-        this.sumNatureField = new EditBox(this.font, editX + 50 + 10, rowY + rowStep * 3, 160, 16, Component.literal(""));
+        this.sumNameField.setTextShadow(false);
+        this.clearNameBtn = Button.builder(Component.literal("\u00d7"), (btn) -> this.sumNameField.setValue("")).pos(editX + 50 + 10 + 100 + 4, rowY + rowStep * 2).size(18, 18).build();
+        this.sumNatureField = new EditBox(this.font, editX + 50 + 10, rowY + rowStep * 3, 100, 16, Component.literal(""));
         this.sumNatureField.setMaxLength(20);
-        this.sumAbilityField = new EditBox(this.font, editX + 50 + 10, rowY + rowStep * 4, 160, 16, Component.literal(""));
+        this.sumNatureField.setTextShadow(false);
+        this.clearNatureBtn = Button.builder(Component.literal("\u00d7"), (btn) -> this.sumNatureField.setValue("")).pos(editX + 50 + 10 + 100 + 4, rowY + rowStep * 3).size(18, 18).build();
+        this.sumAbilityField = new EditBox(this.font, editX + 50 + 10, rowY + rowStep * 4, 100, 16, Component.literal(""));
         this.sumAbilityField.setMaxLength(30);
+        this.sumAbilityField.setTextShadow(false);
+        this.clearAbilityBtn = Button.builder(Component.literal("\u00d7"), (btn) -> this.sumAbilityField.setValue("")).pos(editX + 50 + 10 + 100 + 4, rowY + rowStep * 4).size(18, 18).build();
         this.sumFriendshipField = this.makeIntBox(editX + 50 + 10, rowY + rowStep * 5, 100, 0, 255);
         this.friendshipDownBtn = Button.builder(Component.literal("\u2b07"), (btn) -> {
             boolean shift = Screen.hasShiftDown();
@@ -436,8 +446,10 @@ public class PokemonEditorScreen extends Screen {
         }).pos(editX + 50 + 10 + 100 + 4 + 18 + 2, rowY + rowStep * 5).size(18, 18).build();
         this.sumFormField = new EditBox(this.font, editX + 50 + 10, rowY + rowStep * 6, 160, 16, Component.literal(""));
         this.sumFormField.setMaxLength(40);
+        this.sumFormField.setTextShadow(false);
         this.sumHeldItemField = new EditBox(this.font, editX + 50 + 10, rowY + rowStep * 7, 160, 16, Component.literal(""));
         this.sumHeldItemField.setMaxLength(50);
+        this.sumHeldItemField.setTextShadow(false);
         this.genderField = this.makeIntBox(editX + 50 + 10, rowY + rowStep * 8, 60, 0, 2);
         this.genderCycleBtn = Button.builder(Component.literal("  \u21bb \u5207\u6362  "), (btn) -> {
             int cur = this.parseOrDefault(this.genderField, 2);
@@ -546,7 +558,30 @@ public class PokemonEditorScreen extends Screen {
         this.evSpA = this.makeIntBox(evColX + ivLabelW + 10, ivStartY + statRowH * 3, valueW, 0, 252);
         this.evSpD = this.makeIntBox(evColX + ivLabelW + 10, ivStartY + statRowH * 4, valueW, 0, 252);
         this.evSpe = this.makeIntBox(evColX + ivLabelW + 10, ivStartY + statRowH * 5, valueW, 0, 252);
+        
+        // [优化-L4] EV输入框添加总和限制响应器
         EditBox[] evBoxes = new EditBox[]{this.evHp, this.evAtk, this.evDef, this.evSpA, this.evSpD, this.evSpe};
+        for (int i = 0; i < 6; i++) {
+            final int idx = i;
+            evBoxes[i].setResponder(s -> {
+                // 只在输入完成时校验（避免输入过程中频繁限制）
+                if (s.isEmpty() || s.matches("\\d+")) {
+                    int total = 0;
+                    for (int j = 0; j < 6; j++) {
+                        total += this.parseOrDefault(evBoxes[j], 0);
+                    }
+                    int maxCap = CobblemonTSConfig.getEVTotalCap();
+                    if (total > maxCap) {
+                        // 超出总和时，将当前输入框值调整到不超出上限
+                        int over = total - maxCap;
+                        int current = this.parseOrDefault(evBoxes[idx], 0);
+                        int newVal = Math.max(0, current - over);
+                        evBoxes[idx].setValue(String.valueOf(newVal));
+                        PokemonEditorDebug.logEditor("EV总和超出上限: " + maxCap + "，自动调整值为: " + newVal);
+                    }
+                }
+            });
+        }
 
         for(int i = 0; i < 6; ++i) {
             int evIdx = i;
@@ -624,12 +659,16 @@ public class PokemonEditorScreen extends Screen {
         int moveFieldX = editX + moveLabelW + 5;
         this.move1Field = new EditBox(this.font, moveFieldX, moveY, moveW, 16, Component.literal(""));
         this.move1Field.setMaxLength(30);
+        this.move1Field.setTextShadow(false);
         this.move2Field = new EditBox(this.font, moveFieldX, moveY + 25, moveW, 16, Component.literal(""));
         this.move2Field.setMaxLength(30);
+        this.move2Field.setTextShadow(false);
         this.move3Field = new EditBox(this.font, moveFieldX, moveY + 50, moveW, 16, Component.literal(""));
         this.move3Field.setMaxLength(30);
+        this.move3Field.setTextShadow(false);
         this.move4Field = new EditBox(this.font, moveFieldX, moveY + 75, moveW, 16, Component.literal(""));
         this.move4Field.setMaxLength(30);
+        this.move4Field.setTextShadow(false);
         int ppFieldX = moveFieldX + moveW + 10;
         this.move1PPField = this.makeIntBox(ppFieldX, moveY, ppW, 0, 999);
         this.move2PPField = this.makeIntBox(ppFieldX, moveY + 25, ppW, 0, 999);
@@ -700,6 +739,7 @@ public class PokemonEditorScreen extends Screen {
         this.advUUIDField = new EditBox(this.font, editX + 50 + 10, advY + 35, 280, 16, Component.literal(""));
         this.advUUIDField.setMaxLength(60);
         this.advUUIDField.setEditable(true);
+        this.advUUIDField.setTextShadow(false);
         this.dataAreaX = editX + 10;
         this.dataAreaY = advY + 80;
         this.dataAreaW = 340;
@@ -708,7 +748,7 @@ public class PokemonEditorScreen extends Screen {
         this.advRawField.setMaxLength(20000);
         this.advRawField.setEditable(true);
         this.advRawField.visible = true;
-        this.advRawField.setBordered(false);
+        this.advRawField.setTextShadow(false);
         this.advRawField.setTextColorUneditable(16777215);
         int rightBtnX = editX + 360;
         int rightBtnY = advY + 80;
@@ -797,11 +837,13 @@ public class PokemonEditorScreen extends Screen {
 
         for(EditBox b : new EditBox[]{this.sumSpeciesField, this.sumLevelField, this.sumNameField, this.sumNatureField, this.sumAbilityField, this.sumFriendshipField, this.sumFormField, this.sumHeldItemField, this.genderField, this.ivHp, this.ivAtk, this.ivDef, this.ivSpA, this.ivSpD, this.ivSpe, this.evHp, this.evAtk, this.evDef, this.evSpA, this.evSpD, this.evSpe, this.currentHpField, this.maxHpField, this.move1Field, this.move2Field, this.move3Field, this.move4Field, this.move1PPField, this.move2PPField, this.move3PPField, this.move4PPField, this.move1MaxPPField, this.move2MaxPPField, this.move3MaxPPField, this.move4MaxPPField, this.advExpField, this.advUUIDField, this.advRawField}) {
             this.addRenderableWidget(b);
-            b.setBordered(false);
         }
 
         this.addRenderableWidget(this.sumShinyButton);
+        this.addRenderableWidget(this.clearSpeciesBtn);
         this.addRenderableWidget(this.clearNameBtn);
+        this.addRenderableWidget(this.clearNatureBtn);
+        this.addRenderableWidget(this.clearAbilityBtn);
         this.addRenderableWidget(this.statusCycleBtn);
         this.addRenderableWidget(this.genderCycleBtn);
         this.addRenderableWidget(this.levelDownBtn);
@@ -879,7 +921,7 @@ public class PokemonEditorScreen extends Screen {
         EditBox box = new EditBox(this.font, x, y, w, 16, Component.literal(""));
         box.setMaxLength(String.valueOf(max).length());
         box.setFilter((s) -> s.isEmpty() || s.matches("-?\\d+"));
-        box.setBordered(false);
+        box.setTextShadow(false);
         return box;
     }
 
@@ -918,8 +960,16 @@ public class PokemonEditorScreen extends Screen {
         }
 
         this.sumShinyButton.visible = sumVisible;
+        this.clearSpeciesBtn.visible = sumVisible;
         this.statusCycleBtn.visible = sumVisible;
         this.genderCycleBtn.visible = sumVisible;
+        this.clearNameBtn.visible = sumVisible;
+        this.clearNatureBtn.visible = sumVisible;
+        this.clearAbilityBtn.visible = sumVisible;
+        this.levelDownBtn.visible = sumVisible;
+        this.levelUpBtn.visible = sumVisible;
+        this.friendshipDownBtn.visible = sumVisible;
+        this.friendshipUpBtn.visible = sumVisible;
         boolean statsVisible = tab == 2;
 
         for(EditBox b : new EditBox[]{this.ivHp, this.ivAtk, this.ivDef, this.ivSpA, this.ivSpD, this.ivSpe, this.evHp, this.evAtk, this.evDef, this.evSpA, this.evSpD, this.evSpe}) {
@@ -1504,17 +1554,32 @@ public class PokemonEditorScreen extends Screen {
         if (this.selectedSlot >= 0 && this.selectedSlot < this.partyData.size()) {
             PokemonData d = (PokemonData)this.partyData.get(this.selectedSlot);
             if (d.exists) {
-                this.pendingDeleteSlot = this.selectedSlot;
-                PokemonEditorDebug.logEditor("[Screen] Delete marker set for slot {} (pending, will delete on save)", new Object[]{this.selectedSlot});
-                if (Minecraft.getInstance().player != null) {
-                    Minecraft.getInstance().player.sendSystemMessage(Component.literal("[\u5b9d\u53ef\u68a6\u7f16\u8f91\u5668] \u5df2\u6807\u8bb0\u961f\u4f0d " + (this.selectedSlot + 1) + " \u5f85\u5220\u9664\uff08\u70b9\u51fb\u4fdd\u5b58\u751f\u6548\uff09"));
-                }
+                // [优化-L5] 添加删除二次确认弹窗
+                Component title = Component.literal("\u786e\u8ba4\u5220\u9664\u5b9d\u53ef\u68a6");
+                Component message = Component.literal("\u786e\u5b9e\u8981\u5220\u9664\u961f\u4f0d " + (this.selectedSlot + 1) + " \u7684\u5b9d\u53ef\u68a6\u5417\uff1f\n\u6b64\u64cd\u4f5c\u4e0d\u53ef\u6062\u590d\uff01");
 
-                PokemonData emptyData = new PokemonData();
-                emptyData.exists = false;
-                this.partyData.set(this.selectedSlot, emptyData);
-                this.refreshEditFields();
-                this.updateSlotButtonLabel(this.selectedSlot);
+                // 使用原版确认弹窗
+                ConfirmScreen confirmScreen = new ConfirmScreen(
+                    confirmed -> {
+                        if (confirmed) {
+                            this.pendingDeleteSlot = this.selectedSlot;
+                            PokemonEditorDebug.logEditor("[Screen] Delete marker set for slot {} (pending, will delete on save)", new Object[]{this.selectedSlot});
+                            if (Minecraft.getInstance().player != null) {
+                                Minecraft.getInstance().player.sendSystemMessage(Component.literal("[\u5b9d\u53ef\u68a6\u7f16\u8f91\u5668] \u5df2\u6807\u8bb0\u961f\u4f0d " + (this.selectedSlot + 1) + " \u5f85\u5220\u9664\uff08\u70b9\u51fb\u4fdd\u5b58\u751f\u6548\uff09"));
+                            }
+
+                            PokemonData emptyData = new PokemonData();
+                            emptyData.exists = false;
+                            this.partyData.set(this.selectedSlot, emptyData);
+                            this.refreshEditFields();
+                            this.updateSlotButtonLabel(this.selectedSlot);
+                        }
+                        // 不管是否确认，都回到编辑器界面
+                        Minecraft.getInstance().setScreen(this);
+                    }, title, message
+                );
+
+                Minecraft.getInstance().setScreen(confirmScreen);
             }
         }
     }
@@ -1605,7 +1670,12 @@ public class PokemonEditorScreen extends Screen {
                                             case "pokemonuuid":
                                             case "uuid":
                                                 if (!val.isEmpty()) {
-                                                    d.pokemonUUID = UUID.fromString(val);
+                                                    try {
+                                                        d.pokemonUUID = UUID.fromString(val);
+                                                    } catch (IllegalArgumentException e) {
+                                                        // [优化-L3] UUID格式错误时不崩溃，保留原UUID
+                                                        PokemonEditorDebug.logEditor("Invalid UUID format: " + val);
+                                                    }
                                                 }
                                                 break;
                                             case "experience":
@@ -1834,141 +1904,7 @@ public class PokemonEditorScreen extends Screen {
         boolean isTab1 = this.activeTab == 1;
         boolean isTab2 = this.activeTab == 2;
         boolean isTab3 = this.activeTab == 3;
-        if (this.sumSpeciesField != null) {
-            this.sumSpeciesField.visible = isTab0;
-            this.sumLevelField.visible = isTab0;
-            this.sumNameField.visible = isTab0;
-            this.sumNatureField.visible = isTab0;
-            this.sumAbilityField.visible = isTab0;
-            this.sumFriendshipField.visible = isTab0;
-            this.sumFormField.visible = isTab0;
-            this.sumHeldItemField.visible = isTab0;
-            this.genderField.visible = isTab0;
-            this.genderCycleBtn.visible = isTab0;
-            this.sumShinyButton.visible = isTab0;
-            if (this.clearNameBtn != null) {
-                this.clearNameBtn.visible = isTab0;
-            }
-
-            if (this.levelDownBtn != null) {
-                this.levelDownBtn.visible = isTab0;
-            }
-
-            if (this.levelUpBtn != null) {
-                this.levelUpBtn.visible = isTab0;
-            }
-
-            if (this.friendshipDownBtn != null) {
-                this.friendshipDownBtn.visible = isTab0;
-            }
-
-            if (this.friendshipUpBtn != null) {
-                this.friendshipUpBtn.visible = isTab0;
-            }
-        }
-
-        if (this.ivHp != null) {
-            boolean show = isTab2;
-            this.ivHp.visible = isTab2;
-            this.ivAtk.visible = isTab2;
-            this.ivDef.visible = isTab2;
-            this.ivSpA.visible = isTab2;
-            this.ivSpD.visible = isTab2;
-            this.ivSpe.visible = isTab2;
-            this.evHp.visible = isTab2;
-            this.evAtk.visible = isTab2;
-            this.evDef.visible = isTab2;
-            this.evSpA.visible = isTab2;
-            this.evSpD.visible = isTab2;
-            this.evSpe.visible = isTab2;
-
-            for(int i = 0; i < 6; ++i) {
-                if (this.ivUpButtons[i] != null) {
-                    this.ivUpButtons[i].visible = show;
-                }
-
-                if (this.ivDownButtons[i] != null) {
-                    this.ivDownButtons[i].visible = show;
-                }
-
-                if (this.evUpButtons[i] != null) {
-                    this.evUpButtons[i].visible = show;
-                }
-
-                if (this.evDownButtons[i] != null) {
-                    this.evDownButtons[i].visible = show;
-                }
-            }
-
-            if (this.maxIvButton != null) {
-                this.maxIvButton.visible = show;
-            }
-
-            if (this.clearEvButton != null) {
-                this.clearEvButton.visible = show;
-            }
-
-            if (this.fullEvButton != null) {
-                this.fullEvButton.visible = show;
-            }
-
-            this.crownVisible = show;
-            if (this.hiddenPowerBtn != null) {
-                this.hiddenPowerBtn.visible = show;
-            }
-        }
-
-        if (this.currentHpField != null) {
-            this.currentHpField.visible = isTab1;
-            this.maxHpField.visible = isTab1;
-            this.move1Field.visible = isTab1;
-            this.move2Field.visible = isTab1;
-            this.move3Field.visible = isTab1;
-            this.move4Field.visible = isTab1;
-            this.move1PPField.visible = isTab1;
-            this.move2PPField.visible = isTab1;
-            this.move3PPField.visible = isTab1;
-            this.move4PPField.visible = isTab1;
-        }
-
-        if (this.advExpField != null) {
-            if (this.viewingAllTeam) {
-                this.advExpField.visible = false;
-                this.advUUIDField.visible = false;
-            } else {
-                this.advExpField.visible = isTab3;
-                this.advUUIDField.visible = isTab3;
-            }
-
-            this.advRawField.visible = isTab3;
-            if (this.advCopyBtn != null) {
-                this.advCopyBtn.visible = isTab3;
-            }
-
-            if (this.advPasteBtn != null) {
-                this.advPasteBtn.visible = isTab3;
-            }
-
-            if (this.advExportBtn != null) {
-                this.advExportBtn.visible = isTab3;
-            }
-
-            if (this.advImportBtn != null) {
-                this.advImportBtn.visible = isTab3;
-            }
-
-            if (this.advSaveBtn != null) {
-                this.advSaveBtn.visible = isTab3;
-            }
-
-            if (this.advResetBtn != null) {
-                this.advResetBtn.visible = isTab3;
-            }
-
-            if (this.teamAllBtn != null) {
-                this.teamAllBtn.visible = isTab3;
-            }
-        }
+        // [优化-L1] 已删除render中重复的控件可见性赋值，由switchTab()统一控制，减少每帧冗余计算
 
         int panelX = screenW / 2 - 280;
         int panelY = 60;
@@ -2491,14 +2427,8 @@ public class PokemonEditorScreen extends Screen {
                 cursorDisplayCol = ((String)lines.get(cursorDisplayLine)).length();
             }
 
-            int highlightPos = cursorPos;
-
-            try {
-                Field hpField = EditBox.class.getDeclaredField("highlightPos");
-                hpField.setAccessible(true);
-                highlightPos = hpField.getInt(this.advRawField);
-            } catch (Throwable var83) {
-            }
+            // [线性-A1] 通过EditBoxAccessor Mixin获取私有字段highlightPos
+            int highlightPos = ((com.cobblemon_ts.mod.mixin.EditBoxAccessor) this.advRawField).getHighlightPos();
 
             if (highlightPos < 0) {
                 highlightPos = 0;
@@ -2646,20 +2576,20 @@ public class PokemonEditorScreen extends Screen {
                 int itemY = sY + i * lineH;
                 if (mouseX >= sfX && mouseX < sfX + this.autocompleteW && mouseY >= itemY && mouseY < itemY + lineH) {
                     guiGraphics.fill(sfX, itemY, sfX + this.autocompleteW, itemY + lineH, -12877066);
-                    guiGraphics.drawString(this.font, (String)this.autocompleteItems.get(itemIdx), sfX + 6, itemY + 4, -1, true);
+                    guiGraphics.drawString(this.font, (String)this.autocompleteItems.get(itemIdx), sfX + 6, itemY + 4, -1, false);
                 } else {
-                    guiGraphics.drawString(this.font, (String)this.autocompleteItems.get(itemIdx), sfX + 6, itemY + 4, -14800581, true);
+                    guiGraphics.drawString(this.font, (String)this.autocompleteItems.get(itemIdx), sfX + 6, itemY + 4, -14800581, false);
                 }
             }
 
             if (this.autocompleteItems.size() > maxShown) {
                 int arrowX = sfX + this.autocompleteW - 12;
                 if (this.autocompleteScrollOffset > 0) {
-                    guiGraphics.drawString(this.font, "\u2191", arrowX, sY - 12, -12877066, true);
+                    guiGraphics.drawString(this.font, "\u2191", arrowX, sY - 12, -12877066, false);
                 }
 
                 if (this.autocompleteScrollOffset < maxOffset) {
-                    guiGraphics.drawString(this.font, "\u2193", arrowX, sY + listH + 2, -12877066, true);
+                    guiGraphics.drawString(this.font, "\u2193", arrowX, sY + listH + 2, -12877066, false);
                 }
             }
         }

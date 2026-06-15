@@ -2010,24 +2010,25 @@ public class PokemonNameMap {
 
     private static void ensureDynamicSpecies() {
         if (dynamicSpeciesInitialized) return;
-        // [线性-L15] ★ 优先硬编码表构建图鉴编号映射（EN_TO_ZH的LinkedHashMap插入顺序=全国图鉴顺序）
-        int dex = 1;
-        for (String id : EN_TO_ZH.keySet()) {
-            NUMBER_TO_ID.put(dex, id);
-            ID_TO_NUMBER.put(id, dex);
-            dex++;
-        }
-        // 补充：对不在硬编码表中的物种，从Cobblemon API获取编号
+        // [修复-L15] ★ 优先从Cobblemon API获取真实图鉴编号（apiNumMap的key=真实全国图鉴号）
+        // 原逻辑：硬编码遍历EN_TO_ZH给顺序编号1,2,3...导致rookidee(真实821)被错排到152号
         try {
             java.util.Map<Integer, String> apiNumMap = CobblemonBridge.getNationalDexNumberMap();
             for (java.util.Map.Entry<Integer, String> e : apiNumMap.entrySet()) {
                 String id = e.getValue();
-                if (!ID_TO_NUMBER.containsKey(id)) {
-                    NUMBER_TO_ID.put(e.getKey(), id);
-                    ID_TO_NUMBER.put(id, e.getKey());
-                }
+                NUMBER_TO_ID.put(e.getKey(), id);
+                ID_TO_NUMBER.put(id, e.getKey());
             }
         } catch (Throwable ignored) {}
+        // [修复-L15] 回落：硬编码表中未在API找到的物种，用大偏移临时编号排到末尾
+        int fallbackDex = 10000;
+        for (String id : EN_TO_ZH.keySet()) {
+            if (!ID_TO_NUMBER.containsKey(id)) {
+                ID_TO_NUMBER.put(id, fallbackDex);
+                NUMBER_TO_ID.put(fallbackDex, id);
+                fallbackDex++;
+            }
+        }
         // 动态覆盖翻译（lang系统的值覆盖硬编码，但顺序不变）
         try {
             List<String> allIds = CobblemonBridge.getAllSpeciesIds();
@@ -2043,7 +2044,10 @@ public class PokemonNameMap {
         // [线性-L14fix] 移出try块：getAllSpeciesIds失败时也必须用硬编码物种填充列表
         SPECIES_ZH_LIST.clear();
         // [线性-L16] 按全国图鉴编号重新排序，确保下拉列表是图鉴顺序
-        for (Map.Entry<Integer, String> entry : NUMBER_TO_ID.entrySet()) {
+        // [修复-L16] LinkedHashMap保持插入顺序而非键排序，需显式按key排序
+        java.util.List<Map.Entry<Integer, String>> sortedEntries = new java.util.ArrayList<>(NUMBER_TO_ID.entrySet());
+        sortedEntries.sort(Map.Entry.comparingByKey());
+        for (Map.Entry<Integer, String> entry : sortedEntries) {
             String enId = entry.getValue();
             String zhName = toChinese(enId);
             if (zhName != null && !zhName.isEmpty() && !SPECIES_ZH_LIST.contains(zhName)) {

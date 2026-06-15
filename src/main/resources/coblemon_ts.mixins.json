@@ -3,6 +3,8 @@
   "package": "com.cobblemon_ts.mod.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "EditBoxAccessor",
+    "EditBoxTextPositionMixin",
     "InventoryScreenMixin",
     "PartyUIInteractionMixin",
     "ScreenCloseCleanupMixin",
