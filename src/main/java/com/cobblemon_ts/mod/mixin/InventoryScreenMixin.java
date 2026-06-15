@@ -4,8 +4,10 @@ import com.cobblemon_ts.mod.CharmPlayerData;
 import com.cobblemon_ts.mod.CharmConfig;
 import com.cobblemon_ts.mod.CharmState;
 import com.cobblemon_ts.mod.CharmType;
+import com.cobblemon_ts.mod.CharmItems;
 import com.cobblemon_ts.mod.CobblemonTS;
 import com.cobblemon_ts.mod.CobblemonTSConfig;
+import com.cobblemon_ts.mod.gui.ColorEditorConfig;
 import com.cobblemon_ts.mod.ui.PartyUIState;
 
 import com.cobblemon.mod.common.pokemon.Pokemon;
@@ -54,8 +56,14 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
         PartyUIState.invalidatePartyCache();
     }
 
-    // ==================== render ====================
-    @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V", at = @At("HEAD"), require = 0)
+    // [渲染层级修复] EffectRenderingInventoryScreen.render() 调用 super.render() (AbstractContainerScreen.render)
+    // super.render() 内部先调用 renderBackground(渐变) 再渲染槽位
+    // 注入到 super.render() 返回之后 = 渐变已绘制完毕 → 精灵栏在渐变之上
+    @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V",
+            at = @At(value = "INVOKE",
+                     target = "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V",
+                     shift = At.Shift.AFTER),
+            require = 0)
     private void render(GuiGraphics guiGraphics, int mouseX, int mouseY,
                         @SuppressWarnings("unused") float partialTick, CallbackInfo ci) {
         if (!PartyUIState.isValidScreen(this)) return;
@@ -104,9 +112,13 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
         }
         // partyHidden=true 时完全不绘制（包括窄条和"队伍"文字也一起隐藏）
 
-        // ===== 绘制两个小正方形开关按钮 =====
+        // ===== 绘制两个小正方形开关按钮（Z=300，高于面板Z=200，防止被遮挡） =====
+        PoseStack pose = guiGraphics.pose();
+        pose.pushPose();
+        pose.translate(0, 0, 300);
         drawToggleButton(guiGraphics, mouseX, mouseY, charmToggleX, TOGGLE_Y, TOGGLE_SIZE, state.charmDrawerOut);
         drawToggleButton(guiGraphics, mouseX, mouseY, partyToggleX, TOGGLE_Y, TOGGLE_SIZE, !state.partyHidden);
+        pose.popPose();
 
         // ===== 绘制携带物 tooltip =====
         if (!state.partyHidden) {
@@ -180,6 +192,11 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
                                 PartyUIState.State state) {
         int panelWidth = PartyUIState.PARTY_WIDTH;
 
+        // [线性-L08] Z轴提升200，避免与背包底层同层渲染导致文字发虚
+        PoseStack pose = guiGraphics.pose();
+        pose.pushPose();
+        pose.translate(0, 0, 200);
+
         // 面板底色（亮色/暗色主题）
         PartyUIState.drawPanelBg(guiGraphics, panelX, panelY, panelWidth, panelHeight);
 
@@ -211,24 +228,36 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
 
             boolean isSelected = (i == state.selectedPartySlot || i == state.dragSourceSlot);
 
+            boolean isLight = PartyUIState.isLightTheme();
             int borderColor;
             if (isSelected) {
-                borderColor = -16733441;  // JAR L267: 选中边框 0xFF00AAFF
+                borderColor = isLight ? ColorEditorConfig.panelLightSlotSelectedBorder() : ColorEditorConfig.panelDarkSlotSelectedBorder();
             } else if (isHovering && pokemon != null) {
-                borderColor = -1;          // JAR L269: 悬停边框 0xFFFFFFFF
+                borderColor = isLight ? ColorEditorConfig.panelLightSlotHoverBorder() : ColorEditorConfig.panelDarkSlotHoverBorder();
             } else {
-                borderColor = -11184811;   // JAR L265: 普通边框 0xFF555555
+                borderColor = isLight ? ColorEditorConfig.panelLightSlotBorder() : ColorEditorConfig.panelDarkSlotBorder();
             }
 
             guiGraphics.fill(slotX - 1, slotY - 1, slotX + panelWidth - 5, slotY + slotSize + 1, borderColor);
 
-            // JAR L274: 背景 hovered?-573517616:-570425345 (浅色半透明)
-            int innerColor = (isHovering && pokemon != null) ? -573517616 : -570425345;
+            // 槽位底色
+            int innerColor;
+            if (isLight) {
+                innerColor = (isHovering && pokemon != null)
+                        ? ColorEditorConfig.panelLightSlotHoverBg()
+                        : ColorEditorConfig.panelLightSlotBg();
+            } else {
+                innerColor = (isHovering && pokemon != null)
+                        ? ColorEditorConfig.panelDarkSlotHoverBg()
+                        : ColorEditorConfig.panelDarkSlotBg();
+            }
             guiGraphics.fill(slotX, slotY, slotX + panelWidth - 6, slotY + slotSize, innerColor);
 
             // JAR L439: 绘制槽位内容 (w = SLOT_CONTENT_WIDTH = 52)
             drawPartySlot(guiGraphics, slotX, slotY, PartyUIState.SLOT_CONTENT_WIDTH, slotSize, pokemon, state);
         }
+        
+        pose.popPose();
     }
 
     // ==================== 精灵槽位绘制 (与 JAR drawPartySlot 字节码完全一致) ====================
@@ -354,76 +383,103 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
         }
     }
 
-    // ==================== 护符抽屉绘制（与精灵栏像素级对齐：顶部同高，每个护符单元=精灵槽位大小） ====================
+    // ==================== 护符抽屉绘制（6格框分割，与精灵栏像素级对齐，道具袋置顶无文字） ====================
     private void drawCharmDrawer(GuiGraphics guiGraphics, int mouseX, int mouseY,
                                  int drawerX, int panelY, int panelHeight) {
         PartyUIState.State state = PartyUIState.getState(this);
         int drawerWidth = state.charmDrawerOffset;
 
-        // 护符栏顶部 = 精灵栏顶部（与精灵栏同一顶部）
         int charmDrawerY = panelY;
-        // 总高度与精灵栏相同：标题(16) + 空1槽位(31) + 5×单元(31) + 底部间距(3) = 205
-        int totalHeight = PartyUIState.CHARM_HEADER_HEIGHT + 1 * (PartyUIState.SLOT_SIZE + PartyUIState.SLOT_SPACING)
-                + PartyUIState.CHARM_TYPES.length * PartyUIState.CHARM_CELL_HEIGHT + PartyUIState.SLOT_SPACING;
+        // 总高度：标题(16) + 6×(28+3) + 底部间距(3) = 16 + 186 + 3 = 205
+        int totalHeight = PartyUIState.HEADER_HEIGHT + 6 * (PartyUIState.SLOT_SIZE + PartyUIState.SLOT_SPACING) + PartyUIState.SLOT_SPACING;
+
+        // [线性-L08] Z轴提升200，避免与背包底层同层渲染导致文字发虚
+        PoseStack pose = guiGraphics.pose();
+        pose.pushPose();
+        pose.translate(0, 0, 200);
 
         // 面板底色（亮色/暗色主题）
         PartyUIState.drawPanelBg(guiGraphics, drawerX, charmDrawerY, drawerWidth + 2, totalHeight);
 
-        // 只有抽屉宽度 > CHARM_DRAWER_MIN_VISIBLE(40) 时才显示内容
-        if (drawerWidth <= PartyUIState.CHARM_DRAWER_MIN_VISIBLE) return;
+        if (drawerWidth <= PartyUIState.CHARM_DRAWER_MIN_VISIBLE) { pose.popPose(); return; }
 
         // ===== 顶部标题："护符"（对齐精灵栏"队伍"） =====
         String title = "\u62a4\u7b26";
         int textColor = PartyUIState.getPanelTextColor();
         int titleX = drawerX + (drawerWidth - this.font.width(title)) / 2;
-        guiGraphics.drawString(this.font, title, titleX, charmDrawerY + 4, textColor);
-        // 标题下方留 1 个精灵槽位大小的空白（对应精灵1的位置）
+        guiGraphics.drawString(this.font, title, titleX, charmDrawerY + 4, textColor, false);
 
-        // ===== 绘制护符列表：从精灵2的位置开始，每个护符单元 = 31px（与精灵槽位+间距同高） =====
-        int contentStartY = charmDrawerY + PartyUIState.getCharmDrawerContentOffset();
-        CharmType[] charmTypes = PartyUIState.CHARM_TYPES;
-        for (int i = 0; i < charmTypes.length; i++) {
-            CharmType type = charmTypes[i];
-            CharmState charmState = state.charmManager != null
-                    ? state.charmManager.getCharmState(type)
-                    : CharmState.DISABLED;
+        // ===== 6个框：道具袋 + 5种护符，与精灵栏槽位边框风格一致 =====
+        boolean isLight = PartyUIState.isLightTheme();
+        int slotSize = PartyUIState.SLOT_SIZE;
+        int slotSpacing = PartyUIState.SLOT_SPACING;
+        int startY = charmDrawerY + PartyUIState.HEADER_HEIGHT;
+        int slotX = drawerX + 3;
+        int slotW = drawerWidth - 4; // 可用宽度
 
-            int cellY = contentStartY + i * PartyUIState.CHARM_CELL_HEIGHT;
-            int cellSize = PartyUIState.CHARM_CELL_HEIGHT;  // = 31
+        // 6格顺序：道具袋 → 闪耀 → 圆形 → 经验 → 防晃 → 学习装置
+        CharmType[] charmTypes = PartyUIState.CHARM_TYPES; // SHINY, OVAL, EXP, CATCHING, EXP_ALL
 
-            if (charmState != CharmState.DISABLED) {
-                // 名称 + 加成值（如"防晃: 1.5"、"学习: 50%"）
-                String displayName = getCharmDisplayName(type);
-                int maxDrawWidth = drawerWidth - 4;
-                if (this.font.width(displayName) > maxDrawWidth) {
-                    displayName = this.font.plainSubstrByWidth(displayName, maxDrawWidth);
-                }
-                int nameX = drawerX + (drawerWidth - this.font.width(displayName)) / 2;
-                int nameY = cellY + 3;  // 名称在单元顶部附近
-                guiGraphics.drawString(this.font, displayName, nameX, nameY, textColor);
+        for (int i = 0; i < 6; i++) {
+            int slotY = startY + i * (slotSize + slotSpacing);
 
-                // 图标（单元下半部分，居中，标准16px大小，不需要缩小）
-                ItemStack icon = new ItemStack(type.getItem());
-                int iconSize = 16;
-                int iconX = drawerX + (drawerWidth - iconSize) / 2;
-                int iconY = cellY + cellSize - iconSize - 3;  // 图标在单元底部附近
-                if (!icon.isEmpty()) {
-                    guiGraphics.renderItem(icon, iconX, iconY);
-                }
+            // 边框：与精灵栏槽位样式一致，亮色/暗色从 ColorEditorConfig 读取
+            int borderColor = isLight ? ColorEditorConfig.panelLightSlotBorder() : ColorEditorConfig.panelDarkSlotBorder();
+            guiGraphics.fill(slotX - 1, slotY - 1, slotX + slotW - 1, slotY + slotSize + 1, borderColor);
 
-                // AVAILABLE 状态：在图标上覆盖半透明遮罩
-                if (charmState == CharmState.AVAILABLE) {
-                    guiGraphics.fill(iconX - 1, iconY - 1, iconX + iconSize + 1, iconY + iconSize + 1, -2130771968);
-                    guiGraphics.drawString(this.font, "\u2715", iconX + iconSize + 2, iconY + 2, 0xFFFFFF00);
-                }
+            // 槽位底色
+            int innerColor = isLight ? ColorEditorConfig.panelLightSlotBg() : ColorEditorConfig.panelDarkSlotBg();
+            guiGraphics.fill(slotX, slotY, slotX + slotW - 2, slotY + slotSize, innerColor);
+
+            if (i == 0) {
+                // [线性-L07] 第1格：道具袋 → blit纹理放大居中，向下取整不超出框
+                // [修复] 使用9参数blit分离目标尺寸和源尺寸，防止源区域超出16x16导致UV环绕
+                int pad = 2;
+                int maxSize = Math.min(slotW - pad * 2, slotSize - pad * 2);
+                int imgX = slotX + (slotW - maxSize) / 2;
+                int imgY = slotY + (slotSize - maxSize) / 2;
+                guiGraphics.blit(PartyUIState.POKEBAG_TEXTURE, imgX, imgY, maxSize, maxSize, 0, 0, 16, 16, 16, 16);
             } else {
-                // DISABLED 状态：显示 "?" 居中
-                int questionX = drawerX + (drawerWidth - this.font.width("?")) / 2;
-                int questionY = cellY + cellSize / 2 - 4;
-                int dimColor = PartyUIState.isLightTheme() ? 0xFF_999999 : 0xFF_666666;
-                guiGraphics.drawString(this.font, "?", questionX, questionY, dimColor);
+                // 第2-6格：护符
+                CharmType type = charmTypes[i - 1];
+                CharmState charmState = state.charmManager != null
+                        ? state.charmManager.getCharmState(type)
+                        : CharmState.DISABLED;
+
+                if (charmState != CharmState.DISABLED) {
+                    // 图标（居中，16px）
+                    ItemStack icon = new ItemStack(type.getItem());
+                    int iconSize = 16;
+                    int iconX = slotX + (slotW - iconSize) / 2;
+                    int iconY = slotY + 2;
+                    guiGraphics.renderItem(icon, iconX, iconY);
+
+                    // 名称（图标下方）
+                    String displayName = getCharmDisplayName(type);
+                    int maxDrawWidth = slotW - 2;
+                    if (this.font.width(displayName) > maxDrawWidth) {
+                        displayName = this.font.plainSubstrByWidth(displayName, maxDrawWidth);
+                    }
+                    int nameX = slotX + (slotW - this.font.width(displayName)) / 2;
+                    int nameY = slotY + slotSize - 12;
+                    guiGraphics.drawString(this.font, displayName, nameX, nameY, textColor, false);
+
+                    // AVAILABLE 状态：半透明遮罩
+                    if (charmState == CharmState.AVAILABLE) {
+                        guiGraphics.fill(iconX - 1, iconY - 1, iconX + iconSize + 1, iconY + iconSize + 1, -2130771968);
+                        guiGraphics.drawString(this.font, "\u2715", iconX + iconSize + 2, iconY + 2, 0xFFFFFF00);
+                    }
+                } else {
+                    // DISABLED 状态：显示 "?"
+                    int questionX = slotX + (slotW - this.font.width("?")) / 2;
+                    int questionY = slotY + slotSize / 2 - 4;
+                    int dimColor = isLight ? 0xFF_999999 : 0xFF_666666;
+                    guiGraphics.drawString(this.font, "?", questionX, questionY, dimColor, false);
+                }
             }
         }
+
+        pose.popPose();
     }
 
     // ==================== 右键菜单绘制：白字黑底，动态宽度 ====================

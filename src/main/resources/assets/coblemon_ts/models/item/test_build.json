@@ -1,3 +1,6 @@
 {
-  "parent": "coblemon_ts:item/test_build"
+    "parent": "minecraft:item/generated",
+    "textures": {
+        "layer0": "coblemon_ts:item/test_build"
+    }
 }

@@ -11,6 +11,7 @@ import com.cobblemon_ts.mod.CharmType;
 import com.cobblemon_ts.mod.CobblemonTS;
 import com.cobblemon_ts.mod.CobblemonTSConfig;
 import com.cobblemon_ts.mod.DebugConfig;
+import com.cobblemon_ts.mod.gui.ColorEditorConfig;
 import com.cobblemon_ts.mod.network.PartyToPCPacket;
 import com.cobblemon_ts.mod.network.ReleasePokemonPacket;
 import net.minecraft.client.Minecraft;
@@ -28,6 +29,8 @@ public class PartyUIState {
     public static final int PARTY_WIDTH = 60;
     public static final int SLOT_SIZE = 28;
     public static final int SLOT_SPACING = 3;
+    /** [线性-L07] 道具袋纹理，用于护符栏第一格 blit 放大居中 */
+    public static final ResourceLocation POKEBAG_TEXTURE = ResourceLocation.fromNamespaceAndPath("coblemon_ts", "textures/block/pokebag.png");
     public static final int HEADER_HEIGHT = 16;
     public static final int SLOT_CONTENT_WIDTH = PARTY_WIDTH - 6;     // 54
     public static final int SLOT_MODEL_WIDTH = SLOT_CONTENT_WIDTH - 20; // 34
@@ -58,12 +61,12 @@ public class PartyUIState {
 
     public static final CharmType[] CHARM_TYPES = CharmType.values();
 
-    // ===== 面板主题：亮色白底 / 暗色深灰 =====
-    public static final int VANILLA_WHITE_BG = 0xFF_F0F0F0;
-    public static final int PANEL_BORDER_GRAY = 0xFF_AAAAAA;
-    // 暗色面板颜色（与原有 JAR 一致）
-    public static final int DARK_OUTER = 0xCC_0B0B0B;  // -856295947
-    public static final int DARK_INNER = 0xCC_161616;  // -855638017
+    // ===== 面板主题：亮色白底 / 暗色深灰（颜色值从 ColorEditorConfig 读取，支持热修改） =====
+    public static int getVanillaWhiteBg() { return ColorEditorConfig.panelLightBg(); }
+    public static int getPanelBorderGray() { return ColorEditorConfig.panelLightBorder(); }
+    // 暗色面板颜色
+    public static int getDarkOuter() { return ColorEditorConfig.panelDarkOuter(); }
+    public static int getDarkInner() { return ColorEditorConfig.panelDarkInner(); }
 
     public static boolean isLightTheme() {
         return CobblemonTSConfig.LIGHT_PANEL_THEME.get();
@@ -71,19 +74,19 @@ public class PartyUIState {
 
     public static void drawPanelBg(GuiGraphics graphics, int x, int y, int w, int h) {
         if (isLightTheme()) {
-            graphics.fill(x, y, x + w, y + h, VANILLA_WHITE_BG);
-            graphics.hLine(x, x + w - 1, y, PANEL_BORDER_GRAY);
-            graphics.hLine(x, x + w - 1, y + h - 1, PANEL_BORDER_GRAY);
-            graphics.vLine(x, y, y + h - 1, PANEL_BORDER_GRAY);
-            graphics.vLine(x + w - 1, y, y + h - 1, PANEL_BORDER_GRAY);
+            graphics.fill(x, y, x + w, y + h, getVanillaWhiteBg());
+            graphics.hLine(x, x + w - 1, y, getPanelBorderGray());
+            graphics.hLine(x, x + w - 1, y + h - 1, getPanelBorderGray());
+            graphics.vLine(x, y, y + h - 1, getPanelBorderGray());
+            graphics.vLine(x + w - 1, y, y + h - 1, getPanelBorderGray());
         } else {
-            graphics.fill(x, y, x + w, y + h, DARK_OUTER);
-            graphics.fill(x + 1, y + 1, x + w - 1, y + h - 1, DARK_INNER);
+            graphics.fill(x, y, x + w, y + h, getDarkOuter());
+            graphics.fill(x + 1, y + 1, x + w - 1, y + h - 1, getDarkInner());
         }
     }
 
     public static int getPanelTextColor() {
-        return isLightTheme() ? 0xFF_333333 : 0xFF_FFFFFF;
+        return isLightTheme() ? ColorEditorConfig.panelLightText() : ColorEditorConfig.panelDarkText();
     }
 
     /** 面板总高度 = HEADER_HEIGHT + 6 * (SLOT_SIZE + SLOT_SPACING) + SLOT_SPACING = 205 */

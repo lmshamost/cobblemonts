@@ -27,4 +27,8 @@ public class CharmItems {
 
     public static final DeferredItem<TestBuildItem> TEST_BUILD = ITEMS.register("test_build",
             () -> new TestBuildItem(new Item.Properties().stacksTo(1)));
+
+    // [线性-L07] 道具袋：护符栏第6格，图片放大居中显示，无文字
+    public static final DeferredItem<Item> POKE_BAG = ITEMS.register("pokebag",
+            () -> new Item(new Item.Properties().stacksTo(1)));
 }

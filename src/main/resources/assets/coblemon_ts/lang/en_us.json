@@ -8,7 +8,10 @@
   "item.coblemon_ts.catching_charm": "Catching Charm",
   "item.coblemon_ts.mark_charm": "Mark Charm",
   "item.coblemon_ts.gold_crown": "Gold Crown",
+  "item.coblemon_ts.exp_all": "Exp. All",
+  "item.coblemon_ts.pokebag": "Poké Bag",
   "item.coblemon_ts.pokemon_editor": "Pokemon Editor",
+  "item.coblemon_ts.test_build": "Test Build"，
   "item.coblemon_ts.pokemon_editor.tooltip.one": "Creative-mode only tool",
   "item.coblemon_ts.pokemon_editor.tooltip.two": "Right-click to edit your party",
   "item.coblemon_ts.pokemon_editor.tooltip.three": "Left-click a player to edit their party",

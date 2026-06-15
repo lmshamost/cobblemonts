@@ -30,6 +30,7 @@ import com.cobblemon_ts.mod.network.TestBuildOpenStarterPacket;
 import com.cobblemon_ts.mod.lucky.LuckyBlocks;
 import com.cobblemon_ts.mod.lucky.LuckyConfig;
 import com.cobblemon_ts.mod.lucky.LuckyRecipeCondition;
+import com.cobblemon_ts.mod.gui.ColorEditorConfig;
 import com.cobblemon_ts.mod.gui.ModContainers;
 import com.cobblemon_ts.mod.gui.PartyHeldItemScreen;
 import com.cobblemon_ts.mod.gui.PartyHeldItemContainer;
@@ -69,6 +70,7 @@ public class CobblemonTS {
                 output.accept(CharmItems.CATCHING_CHARM);
                 output.accept(CharmItems.EXP_ALL);
                 output.accept(CharmItems.GOLD_CROWN);
+                output.accept(CharmItems.POKE_BAG);
                 output.accept(LuckyBlocks.LUCKY_BLOCK);
                 output.accept(LuckyBlocks.LEGENDARY_LUCKY_BLOCK);
                 output.accept(LuckyBlocks.ULTRA_BEAST_LUCKY_BLOCK);
@@ -107,6 +109,7 @@ public class CobblemonTS {
         modContainer.registerConfig(ModConfig.Type.COMMON, CobblemonTSConfig.SPEC, MODID + "-global.toml");
         modContainer.registerConfig(ModConfig.Type.COMMON, DebugConfig.SPEC, MODID + "-debug.toml");
         modContainer.registerConfig(ModConfig.Type.COMMON, com.cobblemon_ts.mod.pokemoneditor.PokemonEditorConfig.SPEC, MODID + "-pokemon_editor.toml");
+        modContainer.registerConfig(ModConfig.Type.COMMON, ColorEditorConfig.SPEC, MODID + "-colors.toml");
 
 
         modEventBus.register(CobblemonTS.class);
@@ -266,6 +269,7 @@ public class CobblemonTS {
             event.accept(CharmItems.CATCHING_CHARM);
             event.accept(CharmItems.EXP_ALL);
             event.accept(CharmItems.GOLD_CROWN);
+            event.accept(CharmItems.POKE_BAG);
             event.accept(PokemonEditorItems.POKEMON_EDITOR);
             event.accept(CharmItems.TEST_BUILD);
         }
