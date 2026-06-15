@@ -26,6 +26,7 @@ import com.cobblemon_ts.mod.network.PartyToPCPacket;
 import com.cobblemon_ts.mod.network.ReleasePokemonPacket;
 import com.cobblemon_ts.mod.network.SwapPartySlotsPacket;
 import com.cobblemon_ts.mod.network.OpenHeldItemPacket;
+import com.cobblemon_ts.mod.network.TestBuildOpenStarterPacket;
 import com.cobblemon_ts.mod.lucky.LuckyBlocks;
 import com.cobblemon_ts.mod.lucky.LuckyConfig;
 import com.cobblemon_ts.mod.lucky.LuckyRecipeCondition;
@@ -222,6 +223,12 @@ public class CobblemonTS {
                 SwapPartySlotsPacket.TYPE,
                 SwapPartySlotsPacket.STREAM_CODEC,
                 SwapPartySlotsPacket::handleServerSide
+        );
+        // [线性-L1] 测试物品：请求打开初始宝可梦选择
+        registrar.playToServer(
+                TestBuildOpenStarterPacket.TYPE,
+                TestBuildOpenStarterPacket.STREAM_CODEC,
+                TestBuildOpenStarterPacket::handleServerSide
         );
 
         // ==== Pokemon Editor Network Packets ====
