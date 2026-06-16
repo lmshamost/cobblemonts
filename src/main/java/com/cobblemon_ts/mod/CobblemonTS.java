@@ -134,7 +134,6 @@ public class CobblemonTS {
     
     private void commonSetup(FMLCommonSetupEvent event) {
         CharmEventHandler.init();
-        StarterPokemonInitializer.init();
         // [线性-D01] 配方追踪：服务器启动后检查RecipeManager
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(CobblemonTS::onServerStarted);
         // 注册 NeoForge 游戏事件总线（用于客户端 Tick 同步 Cobblemon 原生 UI）

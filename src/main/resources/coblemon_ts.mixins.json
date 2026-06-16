@@ -25,6 +25,7 @@
     "cobblemon.PokemonEVMixin",
     "cobblemon.EVsCanSetMixin",
     "cobblemon.EVsTotalCapMixin",
+    "cobblemon.ShinyChanceCalculationEventMixin",
     "InventoryPickupMixin"
   ],
   "injectors": {

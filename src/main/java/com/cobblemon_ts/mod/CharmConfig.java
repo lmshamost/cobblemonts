@@ -59,7 +59,7 @@ public class CharmConfig {
         
         SHINY_CHARM_BOOST = BUILDER
             .comment("闪耀护符闪光几率加成倍数 (3.0 = 3倍几率)")
-            .defineInRange("shiny_charm_boost", 3.0, 1.0, 100.0);
+            .defineInRange("shiny_charm_boost", 3.0, 1.0, 10000.0);
         
         EXP_ALL_PERCENT = BUILDER
             .comment("高级学习装置经验分配百分比 (50.0 = 未出战宝可梦获得50%经验)")

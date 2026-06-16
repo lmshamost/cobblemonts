@@ -5,12 +5,6 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class CobblemonTSConfig {
     public static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-    // ==================== 初始精灵设置 ====================
-    public static final ModConfigSpec.BooleanValue STARTER_IS_SHINY;
-    public static final ModConfigSpec.BooleanValue STARTER_PERFECT_IVS;
-    public static final ModConfigSpec.BooleanValue INITIAL_POKEMON_SHINY;
-    public static final ModConfigSpec.BooleanValue INITIAL_POKEMON_MAX_IV;
-
     // ==================== 努力值设置 ====================
     public static final ModConfigSpec.BooleanValue ENABLE_UNLIMITED_EVS;
     public static final ModConfigSpec.BooleanValue EV_EFFORT_CAP_252X6;
@@ -38,17 +32,6 @@ public class CobblemonTSConfig {
     public static final ModConfigSpec.BooleanValue ALTERNATIVE_CAPTURE_MODE;
 
     static {
-        BUILDER.comment("初始精灵设置").push("starter");
-        STARTER_IS_SHINY = BUILDER
-                .comment("初始精灵是否为闪光(true=闪光, false=正常)")
-                .define("starter_is_shiny", false);
-        STARTER_PERFECT_IVS = BUILDER
-                .comment("初始精灵是否为满6V(true=满6V, false=随机)")
-                .define("starter_perfect_ivs", false);
-        INITIAL_POKEMON_SHINY = STARTER_IS_SHINY;
-        INITIAL_POKEMON_MAX_IV = STARTER_PERFECT_IVS;
-        BUILDER.pop();
-
         BUILDER.comment("努力值设置").push("ev");
         ENABLE_UNLIMITED_EVS = BUILDER
                 .comment("是否开启努力值上限为252*6(true=开启, false=原版限制)\n注意：修改此选项后请重启游戏，否则可能因已有精灵EV超限导致数据异常")

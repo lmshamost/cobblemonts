@@ -14,7 +14,6 @@ public class CharmEventHandler {
 
     private static final List<String> EVENT_NAMES = Arrays.asList(
         "POKEMON_CATCH_RATE",
-        "SHINY_CHANCE_CALCULATION",
         "EXPERIENCE_GAINED_EVENT_PRE",
         "HATCH_EGG_PRE",
         "BATTLE_VICTORY"
@@ -199,7 +198,6 @@ public class CharmEventHandler {
     private static boolean registerEventByType(Field field, String fieldName) {
         return switch (fieldName) {
             case "POKEMON_CATCH_RATE" -> registerCatchRateEvent(field);
-            case "SHINY_CHANCE_CALCULATION" -> registerShinyEvent(field);
             case "EXPERIENCE_GAINED_EVENT_PRE" -> registerExpEvent(field);
             case "HATCH_EGG_PRE" -> registerHatchEvent(field);
             case "BATTLE_VICTORY" -> registerBattleVictoryEvent(field);
@@ -339,28 +337,6 @@ public class CharmEventHandler {
                     player.getName().getString(), exp.intValue(), newExp);
             });
         }, "经验");
-    }
-
-    private static boolean registerShinyEvent(Field field) {
-        return registerEvent(field, event -> {
-            Object pokemon = invokeMethod(event, "getPokemon");
-            if (pokemon == null) return;
-
-            Player player = getPlayerFromPokemon(pokemon);
-            if (player == null) return;
-
-            processCharmEffect(player, CharmType.SHINY, () -> {
-                Boolean isShiny = invokeBooleanMethod(event, "isShiny");
-                if (Boolean.TRUE.equals(isShiny)) return;
-
-                double boost = CharmConfig.SHINY_CHARM_BOOST.get();
-                if (Math.random() < boost / 100.0) {
-                    setEventValue(event, true, boolean.class, "setShiny");
-                    CobblemonTS.LOGGER.info("闪耀护符生效！玩家: {} 遇到闪光宝可梦！",
-                        player.getName().getString());
-                }
-            });
-        }, "闪光");
     }
 
     private static boolean registerHatchEvent(Field field) {

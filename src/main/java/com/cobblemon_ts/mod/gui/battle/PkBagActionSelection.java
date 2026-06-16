@@ -1,7 +1,6 @@
 package com.cobblemon_ts.mod.gui.battle;
 
 import com.cobblemon.mod.common.battles.HealItemActionResponse;
-import com.cobblemon.mod.common.client.CobblemonClient;
 import com.cobblemon.mod.common.client.gui.battle.BattleGUI;
 import com.cobblemon.mod.common.client.gui.battle.subscreen.BattleActionSelection;
 import com.cobblemon.mod.common.client.gui.battle.subscreen.BattleBackButton;
@@ -29,16 +28,17 @@ import java.util.List;
 
 // [线性-B05x] 精灵球背包GUI作为BattleActionSelection嵌入BattleGUI
 // 使用Cobblemon原生changeActionSelection切换，带返回按键+翻页按键
-// [线性-B05zd] 每格92x23，6格纵向堆叠(138px)，png/png1做普通/悬停切换
-// 翻页按键battle_next.png仅在pkbag界面显示，与返回键对称居中
-// 位置：x=12左对齐道具tile(左下角)，底边对齐道具tile底边(guiScaledH-30)
+// [线性-B05zi] 槽位渲染pkbag.png(92x23)作为背景，悬停用pkbag1.png
+// pkbag.png内右侧有20x20 #f5f5f5区域(x=70~89, y=2~21)，物品材质居中放此区域
+// 翻页按键battle_next.png垂直strip渲染（上半=普通，下半=悬停蓝色），与BattleBackButton完全一致(29x17)
+// 布局：BattleBackButton(12~41) ← 间距 → "1/3" ← 间距 → battle_next(29x17)
 // [线性-B05ze] 物品分类显示：捕捉(#cobblemon:poke_balls)、恢复(#cobblemon:revives等)、战斗道具(#cobblemon:battle_items)
 // 点击使用：球类→缩小战斗界面+切精灵球到手中投掷，恢复/战斗道具→HealItemActionResponse发送使用指令
 public class PkBagActionSelection extends BattleActionSelection {
 
+    private static final ResourceLocation BATTLE_NEXT = ResourceLocation.parse("coblemon_ts:textures/gui/battle_next.png");
     private static final ResourceLocation PKBAG = ResourceLocation.parse("coblemon_ts:textures/gui/pkbag.png");
     private static final ResourceLocation PKBAG_HOVER = ResourceLocation.parse("coblemon_ts:textures/gui/pkbag1.png");
-    private static final ResourceLocation BATTLE_NEXT = ResourceLocation.parse("coblemon_ts:textures/gui/battle_next.png");
 
     private static final int SLOT_W = 92;
     private static final int SLOT_H = 23;
@@ -46,9 +46,15 @@ public class PkBagActionSelection extends BattleActionSelection {
     private static final int PANEL_W = 92;
     private static final int PANEL_H = SLOT_H * SLOTS_PER_PAGE;  // 138
 
-    // [线性-B05zd] 下一页按键尺寸
-    private static final int NEXT_W = 58;
-    private static final int NEXT_H = 68;
+    // [线性-B05zh] 下一页按键：纹理58x68垂直strip布局（上半=普通，下半=悬停蓝色）
+    // 模仿Cobblemon BattleBackButton的strip渲染：uWidth=58, vHeight=34, hover时vOffset=34
+    private static final int NEXT_TEX_W = 58;   // 纹理总宽=渲染宽
+    private static final int NEXT_TEX_H = 68;   // 纹理总高=34*2（上下两半）
+    private static final int NEXT_RENDER_W = 58; // 渲染宽=全宽（与BattleBackButton一致）
+    private static final int NEXT_RENDER_H = 34; // 渲染高=半高（与BattleBackButton一致，vHeight=34）
+    private static final int NEXT_HOVER_V = 34;  // 悬停时vOffset=34（下半）
+    private static final int SLOT_ICON_X = 72;  // 物品图标X偏移（20x20 #f5f5f5区域(70~89)居中16x16: 70+(20-16)/2=72）
+    private static final int SLOT_ICON_Y = 4;   // 物品图标Y偏移（20x20 #f5f5f5区域(2~21)居中16x16: 2+(20-16)/2=4）
 
     // [线性-B05zc] 道具tile(index=2): x=12, bottom=guiScaledH-30
     private static final int ITEMS_TILE_X = 12;
@@ -71,12 +77,20 @@ public class PkBagActionSelection extends BattleActionSelection {
     private final int panelX;
     private final int panelY;
 
-    // [线性-B05zd] 下一页按键位置（取中相对返回键：返回键x=12左，下一页x=12+92+4右）
-    private final int nextX;
+    // [线性-B05zj] 下一页按键：与BattleBackButton完全一致(29x17)
+    // 固定位置：BattleBackButton(12~41) ← gap(9) → "1/3"(50~66) ← gap(9) → battle_next(75~104)
+    private int nextX;
     private final int nextY;
 
     private int currentPage = 0;
     private int totalPages = 1;
+
+    // [线性-B05zk] 自动使用模式开关（静态，跨GUI实例持久）
+    public static boolean autoUseEnabled = false;
+
+    // [线性-B05zk] 上次使用的物品缓存（用于自动使用）
+    private static String lastUsedItemId = null;
+    private static ItemCategory lastUsedCategory = null;
 
     // [线性-B05ze] 当前显示的分类，由BattleChangeMenuActionSelection点击按钮时设置
     private ItemCategory currentCategory = ItemCategory.CAPTURE;
@@ -85,13 +99,13 @@ public class PkBagActionSelection extends BattleActionSelection {
         super(battleGUI, request, 0, 0, battleGUI.width, battleGUI.height, Component.literal("精灵球背包"));
         this.backButton = new BattleBackButton(12.0f, battleGUI.height - 32.0f);
 
-        // [线性-B05zd] 面板x=12左对齐道具tile，底边对齐道具tile底边(guiScaledH-30)
+        // [线性-B05zh] 面板x=12左对齐道具tile，底边对齐道具tile底边(guiScaledH-30)
         this.panelX = ITEMS_TILE_X;
         this.panelY = battleGUI.height - ITEMS_TILE_BOTTOM_OFFSET - PANEL_H;
 
-        // [线性-B05zd] 下一页按键：与返回键取中相对位置，返回键在面板左侧x=12，下一页在面板右侧
-        this.nextX = panelX + PANEL_W + 4;
-        this.nextY = battleGUI.height - 32 - NEXT_H;  // 底边对齐屏幕底-32（与返回键同底边）
+        // [线性-B05zj] 下一页Y=返回键Y(同X层)，X=75固定(与返回键左右对称)
+        this.nextX = 75;  // 75=面板右边缘104-29（右对齐面板，与返回键x=12左对齐对称）
+        this.nextY = battleGUI.height - 32;  // 与BattleBackButton同Y层（blitk scale=0.5后视觉Y=height-32）
 
         // [线性-B05zf] 请求服务端同步Pokebag库存到客户端缓存
         PacketDistributor.sendToServer(new RequestPokebagContentsPacket());
@@ -107,19 +121,13 @@ public class PkBagActionSelection extends BattleActionSelection {
         updateTotalPages();
     }
 
-    // [线性-B05ze] 获取当前分类的物品列表，从玩家背包+Pokebag客户端缓存中筛选
+    // [线性-B05zk] 获取当前分类的物品列表，优先道具袋→玩家背包
     private List<ItemStack> getItemsForCurrentCategory() {
         Player player = Minecraft.getInstance().player;
         if (player == null) return List.of();
 
         List<ItemStack> result = new ArrayList<>();
-        // [线性-B05ze] 遍历玩家背包所有物品
-        for (ItemStack stack : player.getInventory().items) {
-            if (!stack.isEmpty() && isItemInCurrentCategory(stack)) {
-                result.add(stack);
-            }
-        }
-        // [线性-B05zf] 遍历Pokebag客户端缓存（服务端同步过来的数据）
+        // [线性-B05zk] 优先遍历Pokebag客户端缓存（道具袋）
         for (SyncPokebagContentsPacket.ItemEntry entry : PokebagClientCache.getItems()) {
             Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(entry.itemId()));
             if (item != null) {
@@ -127,6 +135,12 @@ public class PkBagActionSelection extends BattleActionSelection {
                 if (isItemInCurrentCategory(stack)) {
                     result.add(stack);
                 }
+            }
+        }
+        // [线性-B05zk] 再遍历玩家背包
+        for (ItemStack stack : player.getInventory().items) {
+            if (!stack.isEmpty() && isItemInCurrentCategory(stack)) {
+                result.add(stack);
             }
         }
         return result;
@@ -154,24 +168,28 @@ public class PkBagActionSelection extends BattleActionSelection {
         List<ItemStack> items = getItemsForCurrentCategory();
         int startIndex = currentPage * SLOTS_PER_PAGE;
         int hoveredSlot = getHoveredSlot(mouseX, mouseY);
+        Minecraft mc = Minecraft.getInstance();
 
-        // [线性-B05ze] 渲染6格槽位，悬停格用pkbag1.png，否则用pkbag.png
-        // 每格内渲染物品图标+名称
+        // [线性-B05zi] 渲染6格槽位：pkbag.png作为背景(92x23)，悬停用pkbag1.png
+        // 物品材质居中放在pkbag.png内20x20 #f5f5f5区域(x=70~89, y=2~21)
         for (int i = 0; i < SLOTS_PER_PAGE; i++) {
             int slotY = panelY + i * SLOT_H;
             int itemIndex = startIndex + i;
-            ResourceLocation tex = (i == hoveredSlot && itemIndex < items.size()) ? PKBAG_HOVER : PKBAG;
-            graphics.blit(tex, panelX, slotY, 0, 0, SLOT_W, SLOT_H, SLOT_W, SLOT_H);
+            boolean isHovered = (i == hoveredSlot && itemIndex < items.size());
 
-            // [线性-B05ze] 渲染物品图标和名称
+            // [线性-B05zi] 渲染槽位背景：pkbag.png(普通) / pkbag1.png(悬停)
+            ResourceLocation bgTex = isHovered ? PKBAG_HOVER : PKBAG;
+            graphics.blit(bgTex, panelX, slotY, 0, 0, SLOT_W, SLOT_H, SLOT_W, SLOT_H);
+
+            // [线性-B05zi] 渲染物品图标和名称
             if (itemIndex < items.size()) {
                 ItemStack stack = items.get(itemIndex);
-                // 物品图标
-                graphics.renderItem(stack, panelX + 4, slotY + 3);
-                // 物品数量
-                graphics.renderItemDecorations(Minecraft.getInstance().font, stack, panelX + 4, slotY + 3);
-                // 物品名称
-                graphics.drawString(Minecraft.getInstance().font,
+                // [线性-B05zi] 物品材质居中放在20x20 #f5f5f5区域 (panelX+72, slotY+4)
+                graphics.renderItem(stack, panelX + SLOT_ICON_X, slotY + SLOT_ICON_Y);
+                // 物品数量覆盖在图标上
+                graphics.renderItemDecorations(mc.font, stack, panelX + SLOT_ICON_X, slotY + SLOT_ICON_Y);
+                // 物品名称（保持原位置）
+                graphics.drawString(mc.font,
                         stack.getHoverName().getString(),
                         panelX + 24, slotY + 7, 0xFFFFFF);
             }
@@ -180,18 +198,26 @@ public class PkBagActionSelection extends BattleActionSelection {
         // 返回按键
         this.backButton.render(graphics, mouseX, mouseY, partialTick);
 
-        // [线性-B05zd] 仅当有下一页时渲染翻页按键
-        if (currentPage < totalPages - 1) {
-            graphics.blit(BATTLE_NEXT, nextX, nextY, 0, 0, NEXT_W, NEXT_H, NEXT_W, NEXT_H);
-        }
-
-        // [线性-B05ze] 渲染页码指示器
+        // [线性-B05zj] 渲染页码指示器（固定位置，居中面板下方）
+        // 布局：BattleBackButton(12~41) ← gap(9) → "1/3"(50~66) ← gap(9) → battle_next(75~104)
         if (totalPages > 1) {
             String pageText = (currentPage + 1) + "/" + totalPages;
-            int textW = Minecraft.getInstance().font.width(pageText);
-            graphics.drawString(Minecraft.getInstance().font, pageText,
+            int textW = mc.font.width(pageText);
+            graphics.drawString(mc.font, pageText,
                     panelX + (PANEL_W - textW) / 2,
                     panelY + PANEL_H + 4, 0xAAAAAA);
+        }
+
+        // [线性-B05zh] 下一页按键：垂直strip渲染，上半=普通，下半=悬停蓝色
+        // blit到屏幕29x17（与BattleBackButton blitk(scale=0.5)后尺寸一致）
+        if (currentPage < totalPages - 1) {
+            boolean isHovered = isNextHovered(mouseX, mouseY);
+            int vOffset = isHovered ? NEXT_HOVER_V : 0;  // 悬停=下半(v=34)，普通=上半(v=0)
+            graphics.blit(BATTLE_NEXT, nextX, nextY,
+                    29, 17,                    // 屏幕渲染宽高（与BattleBackButton一致）
+                    0, vOffset,                // 纹理UV起点
+                    NEXT_RENDER_W, NEXT_RENDER_H,  // 纹理区域宽高(58x34)
+                    NEXT_TEX_W, NEXT_TEX_H);       // 纹理总宽高(58x68)
         }
     }
 
@@ -203,11 +229,11 @@ public class PkBagActionSelection extends BattleActionSelection {
         return relY / SLOT_H;
     }
 
-    // [线性-B05zd] 检测下一页按键是否悬停
+    // [线性-B05zh] 检测下一页按键是否悬停（29x17，与BattleBackButton hit检测一致）
     private boolean isNextHovered(double mouseX, double mouseY) {
         if (currentPage >= totalPages - 1) return false;
-        return mouseX >= nextX && mouseX <= nextX + NEXT_W
-                && mouseY >= nextY && mouseY <= nextY + NEXT_H;
+        return mouseX >= nextX && mouseX <= nextX + 29
+                && mouseY >= nextY && mouseY <= nextY + 17;
     }
 
     // [线性-B05ze] 点击处理：返回按键→三选一菜单，下一页→翻页，外部区域→三选一菜单，槽位→使用物品
@@ -247,8 +273,12 @@ public class PkBagActionSelection extends BattleActionSelection {
         return false;
     }
 
-    // [线性-B05ze] 使用物品：捕捉类→缩小战斗界面+切精灵球到手中，恢复/战斗道具→发送HealItemActionResponse
+    // [线性-B05zk] 使用物品：记录最后使用的物品，自动模式下BattleChangeMenu可直接复用
     private void useItem(ItemStack stack) {
+        // [线性-B05zk] 记录最后使用的物品ID和分类
+        lastUsedItemId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+        lastUsedCategory = currentCategory;
+
         if (currentCategory == ItemCategory.CAPTURE) {
             // [线性-B05ze] 球类 → 缩小战斗界面，切换精灵球到手中，玩家投掷触发捕捉
             usePokeball(stack);
@@ -256,6 +286,26 @@ public class PkBagActionSelection extends BattleActionSelection {
             // [线性-B05ze] 恢复/战斗道具 → 通过HealItemActionResponse发送使用指令
             // Cobblemon原版拿道具右键精灵的事件，由showdown处理
             useBagItem(stack);
+        }
+    }
+
+    // [线性-B05zk] 自动使用上次物品（BattleChangeMenu调用）
+    public static void autoUseLastItem(BattleGUI battleGUI, SingleActionRequest request) {
+        if (lastUsedItemId == null || lastUsedCategory == null) return;
+        Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(lastUsedItemId));
+        if (item == null) return;
+        ItemStack stack = new ItemStack(item, 1);
+        Minecraft mc = Minecraft.getInstance();
+        if (lastUsedCategory == ItemCategory.CAPTURE) {
+            // 球类 → 发送ThrowPokeBallPacket
+            PacketDistributor.sendToServer(new ThrowPokeBallPacket(lastUsedItemId));
+        } else {
+            // 恢复/战斗道具 → HealItemActionResponse
+            if (stack.getItem() instanceof BagItemLike bagItemLike) {
+                BagItem bagItem = bagItemLike.getBagItem(stack);
+                HealItemActionResponse response = new HealItemActionResponse(bagItem.getItemName());
+                battleGUI.selectAction(request, response);
+            }
         }
     }
 
