@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -105,5 +106,13 @@ public abstract class BaseLuckyBlock extends Block {
         ItemEntity itemEntity = new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, stack);
         itemEntity.setDeltaMovement(level.random.nextGaussian() * 0.05, level.random.nextGaussian() * 0.05 + 0.2, level.random.nextGaussian() * 0.05);
         level.addFreshEntity(itemEntity);
+    }
+
+    // [线性-BASE-LUCK] 获取玩家幸运值，用于动态权重加成
+    // 仿原版loot_tables的quality机制: effective_weight = base_weight + floor(quality * luck)
+    // player为null时(红石触发)返回0，不加成
+    protected double getPlayerLuck(Player player) {
+        if (player == null) return 0;
+        return player.getAttributeValue(Attributes.LUCK);
     }
 }

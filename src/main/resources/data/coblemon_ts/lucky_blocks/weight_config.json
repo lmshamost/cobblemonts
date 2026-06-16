@@ -1,0 +1,59 @@
+{
+  "coblemon_ts:item_lucky_block": {
+    "entries": [
+      {
+        "items": ["minecraft:turtle_helmet"],
+        "weight": 2,
+        "guarantee": 10
+      },
+      {
+        "items": ["cobblemon_ts:oval_charm", "cobblemon_ts:shiny_charm", "cobblemon_ts:exp_charm", "cobblemon_ts:catching_charm", "cobblemon_ts:exp_all", "cobblemon_ts:gold_crown"],
+        "weight": 5,
+        "guarantee": 0
+      },
+      {
+        "items": ["cobblemon:master_ball"],
+        "weight": 3,
+        "guarantee": 0
+      },
+      {
+        "items": ["tag:#cobblemon:candies"],
+        "weight": 8,
+        "guarantee": 0
+      },
+      {
+        "items": ["minecraft:dragon_egg", "minecraft:nether_star"],
+        "weight": 1,
+        "guarantee": 0
+      },
+      {
+        "items": ["minecraft:emerald", "minecraft:diamond", "minecraft:redstone_block", "minecraft:gold_ingot", "minecraft:iron_ingot", "minecraft:coal_block"],
+        "weight": 10,
+        "guarantee": 0
+      },
+      {
+        "items": ["minecraft:diamond"],
+        "weight": 0,
+        "guarantee": 10
+      }
+    ]
+  },
+  "coblemon_ts:legendary_lucky_block": {
+    "entries": [
+      {
+        "pokemon": ["mewtwo", "rayquaza", "dialga", "palkia", "giratina"],
+        "weight": 1,
+        "guarantee": 0
+      }
+    ]
+  },
+  "coblemon_ts:ultra_beast_lucky_block": {
+    "entries": [
+      {
+        "pokemon": ["nihilego", "buzzwole", "pheromosa", "xurkitree", "celesteela", "kartana", "guzzlord", "poipole", "naganadel", "stakataka", "blacephalon"],
+        "weight": 1,
+        "guarantee": 0
+      }
+    ]
+  }
+}

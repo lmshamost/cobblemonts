@@ -141,42 +141,37 @@ public class CobblemonTS {
         LOGGER.info("Cobblemon TS initialized!");
     }
 
-    // [线性-B01] 配置文件.bak清理：每次配置加载后删除多余的备份，只保留最新一个
+    // [线性-B01] 配置文件.bak清理：每次配置加载后删除所有 common-*.toml.bak，让下次保存从 common-1 开始
     @SubscribeEvent
     public static void onConfigLoaded(ModConfigEvent.Loading event) {
-        Path configPath = event.getConfig().getFullPath();
+        deleteAllBakFiles(event.getConfig().getFullPath());
+    }
+
+    // [线性-B01a] 配置重载时也清理（/reload命令触发）
+    @SubscribeEvent
+    public static void onConfigReloaded(ModConfigEvent.Reloading event) {
+        deleteAllBakFiles(event.getConfig().getFullPath());
+    }
+
+    // [线性-B01b] 删除指定配置的 *-数字.toml.bak，只清当前触发配置的备份
+    // 例如传入 common.toml → 只删 common-1.toml.bak / common-2.toml.bak ... 不影响 global / debug / colors
+    public static void deleteAllBakFiles(Path configPath) {
         if (configPath == null) return;
         Path configDir = configPath.getParent();
         if (configDir == null || !Files.isDirectory(configDir)) return;
-        String configName = configPath.getFileName().toString();
+        String baseName = configPath.getFileName().toString().replace(".toml", ""); // "common"
 
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(configDir, configName + "*.bak")) {
-            List<Path> bakFiles = new ArrayList<>();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(configDir, entry ->
+                entry.getFileName().toString().startsWith(baseName + "-"))) {
             for (Path path : stream) {
-                bakFiles.add(path);
-            }
-            if (bakFiles.size() <= 1) return; // 只有1个或0个.bak无需清理
-
-            // 按修改时间排序，最新在前
-            bakFiles.sort((a, b) -> {
                 try {
-                    return Files.getLastModifiedTime(b).compareTo(Files.getLastModifiedTime(a));
+                    Files.delete(path);
+                    LOGGER.debug("[ConfigBak] 删除: {}", path.getFileName());
                 } catch (IOException e) {
-                    return 0;
-                }
-            });
-
-            // 保留最新1个，删除其余
-            for (int i = 1; i < bakFiles.size(); i++) {
-                try {
-                    Files.delete(bakFiles.get(i));
-                    LOGGER.debug("[ConfigBak] 删除旧备份: {}", bakFiles.get(i).getFileName());
-                } catch (IOException e) {
-                    LOGGER.warn("[ConfigBak] 删除备份失败: {}", bakFiles.get(i).getFileName(), e);
+                    LOGGER.warn("[ConfigBak] 删除失败: {}", path.getFileName(), e);
                 }
             }
         } catch (IOException ignored) {
-            // 配置目录可能尚不存在（首次启动）
         }
     }
 
@@ -364,11 +359,6 @@ public class CobblemonTS {
     }
 
     @SubscribeEvent
-    public static void onConfigLoading(ModConfigEvent.Loading event) {
-        cleanupConfigBackups();
-    }
-
-    @SubscribeEvent
     public static void onConfigReloading(ModConfigEvent.Reloading event) {
         if (event.getConfig().getSpec() == CharmConfig.SPEC) {
             LOGGER.info("CobblemonTS: CharmConfig reloaded, catching={}, exp={}, shiny={}, minLevel={}, maxLevel={}",
@@ -377,42 +367,6 @@ public class CobblemonTS {
                     CharmConfig.SHINY_CHARM_BOOST.get(),
                     CharmConfig.MIN_SPAWN_LEVEL.get(),
                     CharmConfig.MAX_SPAWN_LEVEL.get());
-        }
-        cleanupConfigBackups();
-    }
-
-    private static void cleanupConfigBackups() {
-        java.nio.file.Path configDir = java.nio.file.Path.of("config", "CoblemonTest");
-        if (!java.nio.file.Files.isDirectory(configDir)) return;
-        try {
-            java.util.Map<String, java.util.List<java.nio.file.Path>> groups = new java.util.HashMap<>();
-            java.nio.file.DirectoryStream<java.nio.file.Path> stream =
-                java.nio.file.Files.newDirectoryStream(configDir, "*.bak*");
-            for (java.nio.file.Path p : stream) {
-                String name = p.getFileName().toString();
-                String base = name.replaceAll("\\.bak\\d*$", "");
-                groups.computeIfAbsent(base, k -> new java.util.ArrayList<>()).add(p);
-            }
-            stream.close();
-            int deleted = 0;
-            for (java.util.List<java.nio.file.Path> group : groups.values()) {
-                group.sort((a, b) -> {
-                    try {
-                        return Long.compare(
-                            java.nio.file.Files.getLastModifiedTime(b).toMillis(),
-                            java.nio.file.Files.getLastModifiedTime(a).toMillis());
-                    } catch (Exception e) { return 0; }
-                });
-                for (int i = 1; i < group.size(); i++) {
-                    java.nio.file.Files.deleteIfExists(group.get(i));
-                    deleted++;
-                }
-            }
-            if (deleted > 0) {
-                LOGGER.info("CobblemonTS: 清理了 {} 个旧配置备份", deleted);
-            }
-        } catch (Exception e) {
-            LOGGER.warn("CobblemonTS: 清理配置备份时出错: {}", e.getMessage());
         }
     }
 }

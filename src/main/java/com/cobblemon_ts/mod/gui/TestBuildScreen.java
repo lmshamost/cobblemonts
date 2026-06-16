@@ -69,6 +69,14 @@ public class TestBuildScreen extends Screen {
                 .pos(centerX - btnW / 2, startY + 75)
                 .size(btnW, btnH)
                 .build());
+
+        // [线性-L1-5] 按钮5: 打开幸运方块权重编辑器
+        this.addRenderableWidget(Button.builder(
+                Component.literal("幸运方块权重编辑器"),
+                btn -> Minecraft.getInstance().setScreen(new com.cobblemon_ts.mod.gui.lucky.LuckyWeightEditorScreen()))
+                .pos(centerX - btnW / 2, startY + 100)
+                .size(btnW, btnH)
+                .build());
     }
 
     private String getThemeToggleLabel() {

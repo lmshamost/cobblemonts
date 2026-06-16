@@ -2,18 +2,21 @@ package com.cobblemon_ts.mod.lucky.block;
 
 import com.cobblemon_ts.mod.CharmConfig;
 import com.cobblemon_ts.mod.CobblemonTS;
+import com.cobblemon_ts.mod.lucky.LuckyWeightManager;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.Random;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class RandomPokemonBlock extends BaseLuckyBlock {
-    private static final Random RANDOM = new Random();
 
     public RandomPokemonBlock(Properties properties) {
         super(properties);
@@ -21,19 +24,42 @@ public class RandomPokemonBlock extends BaseLuckyBlock {
 
     @Override
     protected void triggerEffect(ServerLevel level, BlockPos pos, Player player) {
+        ResourceLocation blockId = BuiltInRegistries.BLOCK.getKey(this);
+        LuckyWeightManager.LuckyWeightConfig config = LuckyWeightManager.getConfig(blockId);
+
         int minLevel = CharmConfig.MIN_SPAWN_LEVEL.get();
         int maxLevel = CharmConfig.MAX_SPAWN_LEVEL.get();
-        int pokemonLevel = minLevel + RANDOM.nextInt(maxLevel - minLevel + 1);
+        int pokemonLevel = minLevel + ThreadLocalRandom.current().nextInt(maxLevel - minLevel + 1);
+        String species;
 
-        String command = String.format("spawnpokemon random lvl=%d x=%d y=%d z=%d",
-                pokemonLevel, pos.getX(), pos.getY() + 1, pos.getZ());
+        if (config != null) {
+            // [线性-B01] 有配置 → 保底或加权随机选一个pokemon
+            LuckyWeightManager.WeightEntry<String> entry = LuckyWeightManager.checkGuarantee(config);
+            if (entry == null) {
+                entry = LuckyWeightManager.selectWeighted(config, getPlayerLuck(player));
+            }
+            if (entry != null) {
+                String selected = LuckyWeightManager.randomEntry(entry);
+                species = selected != null ? selected : "random";
+            } else {
+                species = "random";
+            }
+        } else {
+            species = "random";
+        }
 
+        String command = String.format("spawnpokemon %s lvl=%d x=%d y=%d z=%d",
+                species, pokemonLevel, pos.getX(), pos.getY() + 1, pos.getZ());
+
+        executeCommand(level, pos, command);
+        CobblemonTS.LOGGER.info("[LuckyBlock] 生成随机宝可梦 {} Lv.{} at {}", species, pokemonLevel, pos);
+    }
+
+    private void executeCommand(ServerLevel level, BlockPos pos, String command) {
         CommandSourceStack source = new CommandSourceStack(
                 level.getServer(), Vec3.atCenterOf(pos), Vec2.ZERO,
                 level, 2, "LuckyBlock",
                 Component.literal("LuckyBlock"), level.getServer(), null);
-
         level.getServer().getCommands().performPrefixedCommand(source, command);
-        CobblemonTS.LOGGER.info("[LuckyBlock] 生成随机宝可梦 Lv.{} at {}", pokemonLevel, pos);
     }
 }

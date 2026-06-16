@@ -34,6 +34,8 @@ public class CharmConfig {
     public static final ModConfigSpec.ConfigValue<List<? extends String>> ULTRA_BEAST_POKEMON;
     public static final ModConfigSpec.IntValue MIN_SPAWN_LEVEL;
     public static final ModConfigSpec.IntValue MAX_SPAWN_LEVEL;
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> LUCKY_WEIGHTS;
+    public static final ModConfigSpec.IntValue LUCK_WEIGHT_PER_LEVEL;
 
     // ==================== 宝可梦编辑器设置 ====================
     public static final ModConfigSpec.BooleanValue REQUIRE_CREATIVE;
@@ -162,6 +164,43 @@ public class CharmConfig {
         MAX_SPAWN_LEVEL = BUILDER
             .comment("随机宝可梦幸运方块生成的最高等级")
             .defineInRange("max_spawn_level", 80, 1, 100);
+
+        LUCKY_WEIGHTS = BUILDER
+            .comment("幸运方块权重与保底配置（仿原版loot_tables的quality机制）",
+                     "格式: 方块ID|物品列表(逗号分隔)|权重(整数)|保底(整数)",
+                     "方块ID: coblemon_ts:item_lucky_block / coblemon_ts:lucky_block / coblemon_ts:legendary_lucky_block / coblemon_ts:ultra_beast_lucky_block / coblemon_ts:shiny_lucky_block",
+                     "物品列表: item_id 或 tag:#tag_id 或 nbt:item_id@{components} 或 pokemon英文名",
+                     "权重: 整数, 0=跳过加权随机仅靠保底, 数值越大概率越高",
+                     "保底: 整数, 0=无保底, 每N次触发必出一次",
+                     "动态幸运加成: 见 luck_weight_per_level 配置项 → 给最低权重物品加权",
+                     "示例:",
+                     "  coblemon_ts:item_lucky_block|coblemon_ts:catching_charm,coblemon_ts:shiny_charm|1|50",
+                     "  coblemon_ts:item_lucky_block|coblemon_ts:exp_charm,coblemon_ts:exp_all|2|30",
+                     "  coblemon_ts:ultra_beast_lucky_block|nihilego|1|800")
+            .defineList("lucky_weights", Arrays.asList(
+                // === 物品幸运方块默认配置 ===
+                "coblemon_ts:item_lucky_block|coblemon_ts:catching_charm,coblemon_ts:shiny_charm|1|50",
+                "coblemon_ts:item_lucky_block|coblemon_ts:exp_charm,coblemon_ts:exp_all|2|30",
+                "coblemon_ts:item_lucky_block|coblemon_ts:oval_charm|1|50",
+                "coblemon_ts:item_lucky_block|coblemon_ts:gold_crown|2|30",
+                "coblemon_ts:item_lucky_block|cobblemon:master_ball|3|0",
+                "coblemon_ts:item_lucky_block|tag:#cobblemon:candies|10|0",
+                "coblemon_ts:item_lucky_block|minecraft:dragon_egg,minecraft:nether_star|1|0",
+                "coblemon_ts:item_lucky_block|minecraft:emerald,minecraft:diamond|15|0",
+                "coblemon_ts:item_lucky_block|minecraft:redstone_block,minecraft:gold_ingot,minecraft:iron_ingot,minecraft:coal_block|20|0",
+                "coblemon_ts:item_lucky_block|nbt:minecraft:turtle_helmet@components:{\"minecraft:attribute_modifiers\":{modifiers:[{type:\"minecraft:generic.luck\",id:\"minecraft:generic.luck\",amount:10.0d,operation:\"add_value\",slot:\"head\"}],show_in_tooltip:false}}|1|100",
+                // === 闪光幸运方块默认配置 ===
+                "coblemon_ts:shiny_lucky_block|mewtwo|50|100"
+            ), obj -> obj instanceof String);
+
+        LUCK_WEIGHT_PER_LEVEL = BUILDER
+            .comment("幸运属性加成（仿原版loot_tables的quality机制）",
+                     "每1点幸运值 = 给最低权重物品额外加多少权重值",
+                     "公式: 最终权重 = base_weight + floor(luck_weight_per_level * 玩家幸运值)",
+                     "加成只作用于当前方块配置中权重最低的物品（多个并列最低则全部加成）",
+                     "默认: 1 (即幸运5 → 最低权重物品+5权重)",
+                     "设为0即可禁用幸运加成")
+            .defineInRange("luck_weight_per_level", 1, 0, 1000);
 
         BUILDER.pop();
 
