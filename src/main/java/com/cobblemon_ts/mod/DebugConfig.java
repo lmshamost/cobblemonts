@@ -12,6 +12,7 @@ public class DebugConfig {
     public static final ModConfigSpec.BooleanValue DEBUG_CONFIG;
     public static final ModConfigSpec.BooleanValue DEBUG_EDITOR;
     public static final ModConfigSpec.BooleanValue DEBUG_MOVES;
+    public static final ModConfigSpec.BooleanValue DEBUG_POKEBAG;
 
     static {
         BUILDER.comment("调试设置（独立配置文件，按功效命名）");
@@ -36,6 +37,9 @@ public class DebugConfig {
         DEBUG_MOVES = BUILDER
                 .comment("技能读写调试：MoveSet探测、按索引读写、PP/MaxPP/raised计算")
                 .define("debug_moves", false);
+        DEBUG_POKEBAG = BUILDER
+                .comment("道具袋调试：容器创建、物品复制、setItem截断、堆叠上限、保存回写")
+                .define("debug_pokebag", false);
     }
 
     public static final ModConfigSpec SPEC = BUILDER.build();

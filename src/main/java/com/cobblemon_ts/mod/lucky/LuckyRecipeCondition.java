@@ -8,7 +8,7 @@ import net.neoforged.neoforge.common.conditions.ICondition;
 public class LuckyRecipeCondition implements ICondition {
     public static final MapCodec<LuckyRecipeCondition> CODEC = RecordCodecBuilder.mapCodec(
             instance -> instance.group(
-                    com.mojang.serialization.Codec.BOOL.optionalFieldOf("enabled", false).forGetter(c -> CobblemonTSConfig.LUCKY_RECIPES_ENABLED_TS.get())
+                    com.mojang.serialization.Codec.BOOL.optionalFieldOf("enabled", false).forGetter(c -> c.enabled)
             ).apply(instance, LuckyRecipeCondition::new)
     );
 

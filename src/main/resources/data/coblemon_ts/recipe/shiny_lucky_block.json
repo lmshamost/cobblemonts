@@ -6,17 +6,17 @@
   ],
   "type": "minecraft:crafting_shaped",
   "category": "misc",
-  "key": {
-    "a": { "item": "minecraft:diamond_block" },
-    "b": { "item": "minecraft:gold_block" }
-  },
   "pattern": [
-    "aaa",
-    "aba",
-    "aaa"
+    "AAA",
+    "ABA",
+    "AAA"
   ],
+  "key": {
+    "A": { "item": "minecraft:beacon" },
+    "B": { "item": "cobblemon:dawn_stone_block" }
+  },
   "result": {
-    "count": 1,
-    "id": "coblemon_ts:item_lucky_block"
+    "id": "coblemon_ts:shiny_lucky_block",
+    "count": 1
   }
 }

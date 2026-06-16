@@ -1,0 +1,22 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "coblemon_ts:lucky_recipes_enabled"
+    }
+  ],
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "AAA",
+    "ABA",
+    "AAA"
+  ],
+  "key": {
+    "A": { "item": "minecraft:nether_star" },
+    "B": { "item": "cobblemon:master_ball" }
+  },
+  "result": {
+    "id": "coblemon_ts:legendary_lucky_block",
+    "count": 1
+  }
+}

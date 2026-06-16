@@ -432,13 +432,23 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
             guiGraphics.fill(slotX, slotY, slotX + slotW - 2, slotY + slotSize, innerColor);
 
             if (i == 0) {
-                // [线性-L07] 第1格：道具袋 → blit纹理放大居中，向下取整不超出框
-                // [修复] 使用9参数blit分离目标尺寸和源尺寸，防止源区域超出16x16导致UV环绕
-                int pad = 2;
-                int maxSize = Math.min(slotW - pad * 2, slotSize - pad * 2);
-                int imgX = slotX + (slotW - maxSize) / 2;
-                int imgY = slotY + (slotSize - maxSize) / 2;
-                guiGraphics.blit(PartyUIState.POKEBAG_TEXTURE, imgX, imgY, maxSize, maxSize, 0, 0, 16, 16, 16, 16);
+                // [线性-L07] 第1格：道具袋
+                if (state.charmManager != null && state.charmManager.isPokebagOwned()) {
+                    // 已拥有：显示道具袋纹理
+                    int pad = 2;
+                    int maxSize = Math.min(slotW - pad * 2, slotSize - pad * 2);
+                    int imgX = slotX + (slotW - maxSize) / 2;
+                    int imgY = slotY + (slotSize - maxSize) / 2;
+                    guiGraphics.blit(PartyUIState.POKEBAG_TEXTURE, imgX, imgY, maxSize, maxSize, 0, 0, 16, 16, 16, 16);
+
+                    // [线性-L07] 自动收集状态指示
+                    com.cobblemon_ts.mod.PokebagManager bagManager = com.cobblemon_ts.mod.CharmPlayerData.get(
+                            Minecraft.getInstance().player).getPokebagManager();
+                    if (bagManager != null && bagManager.isAutoCollect()) {
+                        // 自动收集开启：绿色指示
+                        guiGraphics.fill(slotX + slotW - 5, slotY + 1, slotX + slotW - 1, slotY + 5, 0xFF_00FF00);
+                    }
+                }
             } else {
                 // 第2-6格：护符
                 CharmType type = charmTypes[i - 1];

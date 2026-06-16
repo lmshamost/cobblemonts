@@ -21,7 +21,8 @@
     "PokemonCatchRateEventMixin",
     "cobblemon.PokemonEVMixin",
     "cobblemon.EVsCanSetMixin",
-    "cobblemon.EVsTotalCapMixin"
+    "cobblemon.EVsTotalCapMixin",
+    "InventoryPickupMixin"
   ],
   "injectors": {
     "defaultRequire": 0

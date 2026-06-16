@@ -1,14 +1,20 @@
 {
   "replace": false,
   "values": [
-    "minecraft:diamond",
+    "coblemon_ts:oval_charm",
+    "coblemon_ts:shiny_charm",
+    "coblemon_ts:exp_charm",
+    "coblemon_ts:catching_charm",
+    "coblemon_ts:exp_all",
+    "coblemon_ts:gold_crown",
+    "cobblemon:master_ball",
+    "minecraft:dragon_egg",
+    "minecraft:nether_star",
     "minecraft:emerald",
+    "minecraft:diamond",
+    "minecraft:redstone_block",
     "minecraft:gold_ingot",
     "minecraft:iron_ingot",
-    "minecraft:ender_pearl",
-    "minecraft:ender_eye",
-    "cobblemon:rare_candy",
-    "cobblemon:master_ball",
-    "cobblemon:ultra_ball"
+    "minecraft:coal_block"
   ]
 }

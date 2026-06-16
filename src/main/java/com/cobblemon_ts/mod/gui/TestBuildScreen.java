@@ -1,6 +1,7 @@
 package com.cobblemon_ts.mod.gui;
 
 import com.cobblemon_ts.mod.CobblemonTSConfig;
+import com.cobblemon_ts.mod.network.ClearAllCharmsPacket;
 import com.cobblemon_ts.mod.network.TestBuildOpenStarterPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -55,6 +56,17 @@ public class TestBuildScreen extends Screen {
                 Component.literal("打开颜色编辑器"),
                 btn -> Minecraft.getInstance().setScreen(new ColorEditorScreen()))
                 .pos(centerX - btnW / 2, startY + 50)
+                .size(btnW, btnH)
+                .build());
+
+        // [线性-L1-4] 按钮4: 清除所有护符和道具袋
+        this.addRenderableWidget(Button.builder(
+                Component.literal("清除所有护符和道具袋"),
+                btn -> {
+                    PacketDistributor.sendToServer(new ClearAllCharmsPacket());
+                    this.onClose();
+                })
+                .pos(centerX - btnW / 2, startY + 75)
                 .size(btnW, btnH)
                 .build());
     }

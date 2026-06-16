@@ -15,4 +15,9 @@ public class ModContainers {
             MENU_TYPES.register("party_held_item",
                     () -> IMenuTypeExtension.create(
                             (id, inv, buf) -> new PartyHeldItemContainer(id, inv)));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<PokebagContainer>> POKEBAG =
+            MENU_TYPES.register("pokebag",
+                    () -> IMenuTypeExtension.create(
+                            (id, inv, buf) -> new PokebagContainer(id, inv)));
 }

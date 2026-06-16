@@ -238,33 +238,34 @@ public class PartyUIState {
         return hit;
     }
 
-    /** 护符抽屉内点击切换护符状态（布局：顶部标题 + 空1槽位 + (名称+小图标) × 5，与精灵栏对齐） */
+    /** 护符抽屉内点击（布局：顶部标题 + 道具袋 + (名称+小图标) × 5，与精灵栏对齐） */
     public static boolean handleCharmDrawerClick(State state, int leftPos, int topPos, double mouseX, double mouseY) {
         if (state.charmDrawerOffset <= CHARM_DRAWER_MIN_VISIBLE) return false;
         int charmDrawerX = getCharmDrawerX(state, leftPos);
-        // 护符栏顶部 = 精灵栏顶部（与精灵栏同一顶部）
-        int charmDrawerY = topPos;  // 与精灵栏同一顶部
-        // 总高度 = 标题(16) + 空1个槽位(31) + 5×单元(28) = 187
-        int totalHeight = CHARM_HEADER_HEIGHT + 1 * (SLOT_SIZE + SLOT_SPACING)
-                + CHARM_TYPES.length * CHARM_CELL_HEIGHT;
+        int charmDrawerY = topPos;
+        // 总高度 = 标题(16) + 6×(28+3) + 底部间距(3)
+        int totalHeight = CHARM_HEADER_HEIGHT + 6 * (SLOT_SIZE + SLOT_SPACING) + SLOT_SPACING;
         int drawerWidth = state.charmDrawerOffset;
 
-        // 整体点击区域检测
         if (!(mouseX >= charmDrawerX && mouseX <= charmDrawerX + drawerWidth + 2
                 && mouseY >= charmDrawerY && mouseY <= charmDrawerY + totalHeight)) {
             return false;
         }
 
-        // 跳过标题和空槽位区域（不响应点击）
-        int contentStartY = charmDrawerY + getCharmDrawerContentOffset();
+        // 跳过标题区域
+        int contentStartY = charmDrawerY + CHARM_HEADER_HEIGHT;
         if (mouseY < contentStartY) return false;
 
-        // 每个护符单元内检测（单元高度 = 31，与精灵槽位+间距同高）
-        for (int i = 0; i < CHARM_TYPES.length; i++) {
-            int cellY = contentStartY + i * CHARM_CELL_HEIGHT;
-            if (mouseY >= cellY && mouseY <= cellY + CHARM_CELL_HEIGHT
+        // 6个槽位：道具袋(0) + 5种护符(1-5)
+        int totalCells = 1 + CHARM_TYPES.length;
+        for (int i = 0; i < totalCells; i++) {
+            int cellY = contentStartY + i * (SLOT_SIZE + SLOT_SPACING);
+            if (mouseY >= cellY && mouseY <= cellY + SLOT_SIZE
                     && mouseX >= charmDrawerX && mouseX <= charmDrawerX + drawerWidth) {
-                CharmType type = CHARM_TYPES[i];
+                if (i == 0) {
+                    return true;
+                }
+                CharmType type = CHARM_TYPES[i - 1];
                 CharmState currentState = state.charmManager != null
                         ? state.charmManager.getCharmState(type)
                         : CharmState.DISABLED;
@@ -278,6 +279,40 @@ public class PartyUIState {
                 }
                 return true;
             }
+        }
+        return false;
+    }
+
+    /** 道具袋槽位点击：左键切换自动收集，右键打开道具袋 */
+    public static boolean handlePokebagSlotClick(State state, int leftPos, int topPos, double mouseX, double mouseY, int button) {
+        if (state.charmDrawerOffset <= CHARM_DRAWER_MIN_VISIBLE) return false;
+        int charmDrawerX = getCharmDrawerX(state, leftPos);
+        int charmDrawerY = topPos;
+        int drawerWidth = state.charmDrawerOffset;
+
+        int pokebagCellY = charmDrawerY + CHARM_HEADER_HEIGHT;
+        if (mouseY >= pokebagCellY && mouseY <= pokebagCellY + SLOT_SIZE
+                && mouseX >= charmDrawerX && mouseX <= charmDrawerX + drawerWidth) {
+            if (state.charmManager == null || !state.charmManager.isPokebagOwned()) return true;
+
+            if (button == 0) {
+                // 左键：切换自动收集
+                com.cobblemon_ts.mod.PokebagManager bagManager = com.cobblemon_ts.mod.CharmPlayerData.get(
+                        Minecraft.getInstance().player).getPokebagManager();
+                bagManager.toggleAutoCollect();
+                if (bagManager.isAutoCollect()) {
+                    Minecraft.getInstance().player.displayClientMessage(
+                            net.minecraft.network.chat.Component.translatable("message.coblemon_ts.pokebag_autocollect_on"), true);
+                } else {
+                    Minecraft.getInstance().player.displayClientMessage(
+                            net.minecraft.network.chat.Component.translatable("message.coblemon_ts.pokebag_autocollect_off"), true);
+                }
+            } else if (button == 1) {
+                // 右键：打开道具袋
+                net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                        new com.cobblemon_ts.mod.network.OpenPokebagPacket());
+            }
+            return true;
         }
         return false;
     }

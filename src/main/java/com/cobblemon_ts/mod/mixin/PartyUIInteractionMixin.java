@@ -76,8 +76,13 @@ public abstract class PartyUIInteractionMixin extends AbstractContainerScreen {
             return;
         }
 
-        // 2. 不在精灵面板区域 → 检查护符抽屉
+        // 2. 不在精灵面板区域 → 先检查道具袋槽位，再检查护符抽屉
         if (!PartyUIState.isInPartyArea(state, leftPos, topPos, mouseX, mouseY)) {
+            if (PartyUIState.handlePokebagSlotClick(state, leftPos, topPos, mouseX, mouseY, button)) {
+                cir.setReturnValue(true);
+                cir.cancel();
+                return;
+            }
             PartyUIState.safeHandleCharmClick(state, leftPos, topPos, mouseX, mouseY);
             return;
         }

@@ -16,6 +16,8 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.minecraft.world.item.crafting.RecipeManager;
 
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -26,14 +28,16 @@ import com.cobblemon_ts.mod.network.PartyToPCPacket;
 import com.cobblemon_ts.mod.network.ReleasePokemonPacket;
 import com.cobblemon_ts.mod.network.SwapPartySlotsPacket;
 import com.cobblemon_ts.mod.network.OpenHeldItemPacket;
+import com.cobblemon_ts.mod.network.OpenPokebagPacket;
+import com.cobblemon_ts.mod.network.ClearAllCharmsPacket;
 import com.cobblemon_ts.mod.network.TestBuildOpenStarterPacket;
 import com.cobblemon_ts.mod.lucky.LuckyBlocks;
-import com.cobblemon_ts.mod.lucky.LuckyConfig;
 import com.cobblemon_ts.mod.lucky.LuckyRecipeCondition;
 import com.cobblemon_ts.mod.gui.ColorEditorConfig;
 import com.cobblemon_ts.mod.gui.ModContainers;
 import com.cobblemon_ts.mod.gui.PartyHeldItemScreen;
 import com.cobblemon_ts.mod.gui.PartyHeldItemContainer;
+import com.cobblemon_ts.mod.gui.PokebagScreen;
 import com.cobblemon_ts.mod.pokemoneditor.PokemonEditorItems;
 import com.cobblemon_ts.mod.pokemoneditor.PokemonEditorNetwork;
 import com.cobblemon_ts.mod.pokemoneditor.PokemonEditorClientHandler;
@@ -48,6 +52,12 @@ import net.neoforged.neoforge.common.conditions.ICondition;
 import net.minecraft.resources.ResourceLocation;
 
 import java.lang.reflect.Method;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.client.Minecraft;
@@ -104,12 +114,10 @@ public class CobblemonTS {
         LOOT_MODIFIER_SERIALIZERS.register(modEventBus); // [线性-L06] 注册战利品修饰器
         ModContainers.MENU_TYPES.register(modEventBus);
 
-        modContainer.registerConfig(ModConfig.Type.COMMON, CharmConfig.SPEC, MODID + "-common.toml");
-        modContainer.registerConfig(ModConfig.Type.COMMON, LuckyConfig.SPEC, MODID + "-lucky.toml");
-        modContainer.registerConfig(ModConfig.Type.COMMON, CobblemonTSConfig.SPEC, MODID + "-global.toml");
-        modContainer.registerConfig(ModConfig.Type.COMMON, DebugConfig.SPEC, MODID + "-debug.toml");
-        modContainer.registerConfig(ModConfig.Type.COMMON, com.cobblemon_ts.mod.pokemoneditor.PokemonEditorConfig.SPEC, MODID + "-pokemon_editor.toml");
-        modContainer.registerConfig(ModConfig.Type.COMMON, ColorEditorConfig.SPEC, MODID + "-colors.toml");
+        modContainer.registerConfig(ModConfig.Type.COMMON, CharmConfig.SPEC, "CoblemonTest/common.toml");
+        modContainer.registerConfig(ModConfig.Type.COMMON, CobblemonTSConfig.SPEC, "CoblemonTest/global.toml");
+        modContainer.registerConfig(ModConfig.Type.COMMON, DebugConfig.SPEC, "CoblemonTest/debug.toml");
+        modContainer.registerConfig(ModConfig.Type.COMMON, ColorEditorConfig.SPEC, "CoblemonTest/colors.toml");
 
 
         modEventBus.register(CobblemonTS.class);
@@ -124,11 +132,71 @@ public class CobblemonTS {
     private void commonSetup(FMLCommonSetupEvent event) {
         CharmEventHandler.init();
         StarterPokemonInitializer.init();
+        // [线性-D01] 配方追踪：服务器启动后检查RecipeManager
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(CobblemonTS::onServerStarted);
         // 注册 NeoForge 游戏事件总线（用于客户端 Tick 同步 Cobblemon 原生 UI）
         if (FMLEnvironment.dist == Dist.CLIENT) {
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(CobblemonTS::onClientTick);
         }
         LOGGER.info("Cobblemon TS initialized!");
+    }
+
+    // [线性-B01] 配置文件.bak清理：每次配置加载后删除多余的备份，只保留最新一个
+    @SubscribeEvent
+    public static void onConfigLoaded(ModConfigEvent.Loading event) {
+        Path configPath = event.getConfig().getFullPath();
+        if (configPath == null) return;
+        Path configDir = configPath.getParent();
+        if (configDir == null || !Files.isDirectory(configDir)) return;
+        String configName = configPath.getFileName().toString();
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(configDir, configName + "*.bak")) {
+            List<Path> bakFiles = new ArrayList<>();
+            for (Path path : stream) {
+                bakFiles.add(path);
+            }
+            if (bakFiles.size() <= 1) return; // 只有1个或0个.bak无需清理
+
+            // 按修改时间排序，最新在前
+            bakFiles.sort((a, b) -> {
+                try {
+                    return Files.getLastModifiedTime(b).compareTo(Files.getLastModifiedTime(a));
+                } catch (IOException e) {
+                    return 0;
+                }
+            });
+
+            // 保留最新1个，删除其余
+            for (int i = 1; i < bakFiles.size(); i++) {
+                try {
+                    Files.delete(bakFiles.get(i));
+                    LOGGER.debug("[ConfigBak] 删除旧备份: {}", bakFiles.get(i).getFileName());
+                } catch (IOException e) {
+                    LOGGER.warn("[ConfigBak] 删除备份失败: {}", bakFiles.get(i).getFileName(), e);
+                }
+            }
+        } catch (IOException ignored) {
+            // 配置目录可能尚不存在（首次启动）
+        }
+    }
+
+    // [线性-D01] 服务器启动后检查配方加载情况
+    public static void onServerStarted(ServerStartedEvent event) {
+        RecipeManager rm = event.getServer().getRecipeManager();
+        LOGGER.info("[RecipeCheck] ========== 服务器启动，检查RecipeManager ==========");
+        int coblemonCount = 0;
+        for (ResourceLocation key : rm.getRecipeIds().toList()) {
+            if (key.getNamespace().equals("coblemon_ts")) {
+                coblemonCount++;
+                LOGGER.info("[RecipeCheck] 已加载coblemon_ts配方: {}", key);
+            }
+        }
+        if (coblemonCount == 0) {
+            LOGGER.warn("[RecipeCheck] ⚠ 未找到任何coblemon_ts配方！");
+        } else {
+            LOGGER.info("[RecipeCheck] coblemon_ts配方总数: {}", coblemonCount);
+        }
+        LOGGER.info("[RecipeCheck] ================================================");
     }
 
     // ========== 客户端 Tick：同步 Cobblemon ClientStorageManager.this.party ← partyStores ==========
@@ -198,6 +266,7 @@ public class CobblemonTS {
 
     private void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ModContainers.PARTY_HELD_ITEM.get(), PartyHeldItemScreen::new);
+        event.register(ModContainers.POKEBAG.get(), PokebagScreen::new);
     }
 
     private void registerPayloads(RegisterPayloadHandlersEvent event) {
@@ -232,6 +301,18 @@ public class CobblemonTS {
                 TestBuildOpenStarterPacket.TYPE,
                 TestBuildOpenStarterPacket.STREAM_CODEC,
                 TestBuildOpenStarterPacket::handleServerSide
+        );
+        // [线性-L07] 道具袋：打开道具袋界面
+        registrar.playToServer(
+                OpenPokebagPacket.TYPE,
+                OpenPokebagPacket.STREAM_CODEC,
+                OpenPokebagPacket::handleServerSide
+        );
+        // [线性-L1] 清除所有护符和道具袋
+        registrar.playToServer(
+                ClearAllCharmsPacket.TYPE,
+                ClearAllCharmsPacket.STREAM_CODEC,
+                ClearAllCharmsPacket::handleServerSide
         );
 
         // ==== Pokemon Editor Network Packets ====
@@ -284,27 +365,54 @@ public class CobblemonTS {
 
     @SubscribeEvent
     public static void onConfigLoading(ModConfigEvent.Loading event) {
-        if (event.getConfig().getSpec() == CharmConfig.SPEC) {
-            LOGGER.info("CobblemonTS: CharmConfig loaded from file");
-        }
-        if (event.getConfig().getSpec() == LuckyConfig.SPEC) {
-            LOGGER.info("CobblemonTS: LuckyConfig loaded from file");
-        }
+        cleanupConfigBackups();
     }
 
     @SubscribeEvent
     public static void onConfigReloading(ModConfigEvent.Reloading event) {
         if (event.getConfig().getSpec() == CharmConfig.SPEC) {
-            LOGGER.info("CobblemonTS: CharmConfig reloaded, catching={}, exp={}, shiny={}",
+            LOGGER.info("CobblemonTS: CharmConfig reloaded, catching={}, exp={}, shiny={}, minLevel={}, maxLevel={}",
                     CharmConfig.CATCHING_CHARM_BOOST.get(),
                     CharmConfig.EXP_CHARM_BOOST.get(),
-                    CharmConfig.SHINY_CHARM_BOOST.get());
+                    CharmConfig.SHINY_CHARM_BOOST.get(),
+                    CharmConfig.MIN_SPAWN_LEVEL.get(),
+                    CharmConfig.MAX_SPAWN_LEVEL.get());
         }
-        if (event.getConfig().getSpec() == LuckyConfig.SPEC) {
-            LOGGER.info("CobblemonTS: LuckyConfig reloaded, recipes={}, minLevel={}, maxLevel={}",
-                    CobblemonTSConfig.LUCKY_RECIPES_ENABLED_TS.get(),
-                    LuckyConfig.MIN_SPAWN_LEVEL.get(),
-                    LuckyConfig.MAX_SPAWN_LEVEL.get());
+        cleanupConfigBackups();
+    }
+
+    private static void cleanupConfigBackups() {
+        java.nio.file.Path configDir = java.nio.file.Path.of("config", "CoblemonTest");
+        if (!java.nio.file.Files.isDirectory(configDir)) return;
+        try {
+            java.util.Map<String, java.util.List<java.nio.file.Path>> groups = new java.util.HashMap<>();
+            java.nio.file.DirectoryStream<java.nio.file.Path> stream =
+                java.nio.file.Files.newDirectoryStream(configDir, "*.bak*");
+            for (java.nio.file.Path p : stream) {
+                String name = p.getFileName().toString();
+                String base = name.replaceAll("\\.bak\\d*$", "");
+                groups.computeIfAbsent(base, k -> new java.util.ArrayList<>()).add(p);
+            }
+            stream.close();
+            int deleted = 0;
+            for (java.util.List<java.nio.file.Path> group : groups.values()) {
+                group.sort((a, b) -> {
+                    try {
+                        return Long.compare(
+                            java.nio.file.Files.getLastModifiedTime(b).toMillis(),
+                            java.nio.file.Files.getLastModifiedTime(a).toMillis());
+                    } catch (Exception e) { return 0; }
+                });
+                for (int i = 1; i < group.size(); i++) {
+                    java.nio.file.Files.deleteIfExists(group.get(i));
+                    deleted++;
+                }
+            }
+            if (deleted > 0) {
+                LOGGER.info("CobblemonTS: 清理了 {} 个旧配置备份", deleted);
+            }
+        } catch (Exception e) {
+            LOGGER.warn("CobblemonTS: 清理配置备份时出错: {}", e.getMessage());
         }
     }
 }

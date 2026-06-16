@@ -1,5 +1,6 @@
 package com.cobblemon_ts.mod.pokemoneditor;
 
+import com.cobblemon_ts.mod.CharmConfig;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -57,7 +58,7 @@ public class PokemonEditorItem extends Item {
         // 从配置读取：是否要求必须是创造模式
         boolean requireCreative;
         try {
-            requireCreative = PokemonEditorConfig.REQUIRE_CREATIVE.get();
+            requireCreative = CharmConfig.REQUIRE_CREATIVE.get();
         } catch (Exception e) {
             requireCreative = true; // 配置未加载时默认 true
         }

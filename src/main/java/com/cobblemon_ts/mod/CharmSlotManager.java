@@ -10,11 +10,27 @@ import java.util.Map;
 
 public class CharmSlotManager {
     private final Map<CharmType, CharmState> charmStates = new EnumMap<>(CharmType.class);
+    private boolean pokebagOwned = false;
+    // [线性-B02] 自动保存回调：数据一改即时写persistentData，解决重启丢护符问题
+    private Runnable onDirty = () -> {};
+
+    public void setOnDirty(Runnable callback) {
+        this.onDirty = callback != null ? callback : () -> {};
+    }
 
     public CharmSlotManager() {
         for (CharmType type : CharmType.values()) {
             charmStates.put(type, CharmState.DISABLED);
         }
+    }
+
+    public boolean isPokebagOwned() {
+        return pokebagOwned;
+    }
+
+    public void setPokebagOwned(boolean owned) {
+        this.pokebagOwned = owned;
+        onDirty.run();
     }
 
     public Map<CharmType, CharmState> getCharmStates() {
@@ -27,6 +43,7 @@ public class CharmSlotManager {
     
     public void setCharmState(CharmType type, CharmState state) {
         charmStates.put(type, state);
+        onDirty.run();
     }
     
     public boolean isCharmActive(CharmType type) {
@@ -95,6 +112,7 @@ public class CharmSlotManager {
         }
         
         tag.put("charms", charmList);
+        tag.putBoolean("pokebagOwned", pokebagOwned);
         return tag;
     }
     
@@ -114,5 +132,6 @@ public class CharmSlotManager {
                 CobblemonTS.LOGGER.warn("Failed to deserialize charm state: " + e.getMessage());
             }
         }
+        pokebagOwned = tag.getBoolean("pokebagOwned");
     }
 }

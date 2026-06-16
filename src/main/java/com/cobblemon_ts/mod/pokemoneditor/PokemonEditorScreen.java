@@ -5,6 +5,7 @@
 
 package com.cobblemon_ts.mod.pokemoneditor;
 
+import com.cobblemon_ts.mod.CharmConfig;
 import com.cobblemon_ts.mod.CobblemonTSConfig;
 import com.cobblemon_ts.mod.gui.ColorEditorConfig;
 import java.io.File;
@@ -889,11 +890,11 @@ public class PokemonEditorScreen extends Screen {
         int btnGap = 20;
         int totalBtnW = btnW * 4 + btnGap * 3;
         int btnStartX = panelX + 280 - totalBtnW / 2;
-        boolean autoClose = (Boolean)PokemonEditorConfig.EDITOR_AUTO_CLOSE.get();
+        boolean autoClose = (Boolean)CharmConfig.EDITOR_AUTO_CLOSE.get();
         this.editorAutoCloseBtn = Button.builder(Component.literal(autoClose ? "\u25a0" : "\u25a0").withStyle(autoClose ? ChatFormatting.GREEN : ChatFormatting.RED), (btn) -> {
-            boolean newVal = !(Boolean)PokemonEditorConfig.EDITOR_AUTO_CLOSE.get();
-            PokemonEditorConfig.EDITOR_AUTO_CLOSE.set(newVal);
-            PokemonEditorConfig.EDITOR_AUTO_CLOSE.save();
+            boolean newVal = !(Boolean)CharmConfig.EDITOR_AUTO_CLOSE.get();
+            CharmConfig.EDITOR_AUTO_CLOSE.set(newVal);
+            CharmConfig.EDITOR_AUTO_CLOSE.save();
             btn.setMessage(Component.literal("\u25a0").withStyle(newVal ? ChatFormatting.GREEN : ChatFormatting.RED));
         }).pos(btnStartX + btnW - 26, btnY - 26).size(22, 22).build();
         this.themeToggleBtn = Button.builder(Component.literal((Boolean)CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? "  \u2600\ufe0f \u4eae\u8272  " : "  \ud83c\udf19 \u6df1\u8272  "), (btn) -> {
@@ -1288,7 +1289,7 @@ public class PokemonEditorScreen extends Screen {
                 }
 
                 this.pendingDeleteSlot = -1;
-                if ((Boolean)PokemonEditorConfig.EDITOR_AUTO_CLOSE.get()) {
+                if ((Boolean)CharmConfig.EDITOR_AUTO_CLOSE.get()) {
                     this.onClose();
                 }
 
@@ -1542,7 +1543,7 @@ public class PokemonEditorScreen extends Screen {
         }
 
         PokemonEditorDebug.logEditor("[Screen] Packet sent for slot {}", new Object[]{this.selectedSlot});
-        if ((Boolean)PokemonEditorConfig.EDITOR_AUTO_CLOSE.get()) {
+        if ((Boolean)CharmConfig.EDITOR_AUTO_CLOSE.get()) {
             this.onClose();
         } else {
             PokemonEditorDebug.logEditor("[Screen] auto-close disabled, keeping editor open", new Object[0]);

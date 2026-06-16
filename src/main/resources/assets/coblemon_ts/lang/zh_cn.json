@@ -19,6 +19,12 @@
   "message.coblemon_ts.charm_obtained": "§a获得了 %s！§r",
   "message.coblemon_ts.charm_already_owned": "§e你已经拥有 %s，点击背包中的护符槽激活/关闭。§r",
   "message.coblemon_ts.charm_already_active": "§e%s 已经处于激活状态。§r",
+  "message.coblemon_ts.pokebag_obtained": "§a获得了道具袋！护符栏中左键切换自动收集，右键打开道具袋。§r",
+  "message.coblemon_ts.pokebag_already_owned": "§e你已经拥有道具袋。§r",
+  "message.coblemon_ts.pokebag_autocollect_on": "§a道具袋自动收集：开启§r",
+  "message.coblemon_ts.pokebag_autocollect_off": "§7道具袋自动收集：关闭§r",
+  "message.coblemon_ts.all_charms_cleared": "§a所有护符和道具袋已清除！§r",
+  "container.coblemon_ts.pokebag": "道具袋",
 
   "coblemon_ts.configuration.title": "Cobblemon TS 配置",
   "coblemon_ts.configuration.section.coblemon_ts.common.toml": "Cobblemon TS 配置",

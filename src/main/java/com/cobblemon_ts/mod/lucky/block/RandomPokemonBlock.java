@@ -1,7 +1,7 @@
 package com.cobblemon_ts.mod.lucky.block;
 
+import com.cobblemon_ts.mod.CharmConfig;
 import com.cobblemon_ts.mod.CobblemonTS;
-import com.cobblemon_ts.mod.lucky.LuckyConfig;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -21,8 +21,8 @@ public class RandomPokemonBlock extends BaseLuckyBlock {
 
     @Override
     protected void triggerEffect(ServerLevel level, BlockPos pos, Player player) {
-        int minLevel = LuckyConfig.MIN_SPAWN_LEVEL.get();
-        int maxLevel = LuckyConfig.MAX_SPAWN_LEVEL.get();
+        int minLevel = CharmConfig.MIN_SPAWN_LEVEL.get();
+        int maxLevel = CharmConfig.MAX_SPAWN_LEVEL.get();
         int pokemonLevel = minLevel + RANDOM.nextInt(maxLevel - minLevel + 1);
 
         String command = String.format("spawnpokemon random lvl=%d x=%d y=%d z=%d",

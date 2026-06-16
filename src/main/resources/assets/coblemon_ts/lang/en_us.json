@@ -11,7 +11,7 @@
   "item.coblemon_ts.exp_all": "Exp. All",
   "item.coblemon_ts.pokebag": "Poké Bag",
   "item.coblemon_ts.pokemon_editor": "Pokemon Editor",
-  "item.coblemon_ts.test_build": "Test Build"，
+  "item.coblemon_ts.test_build": "Test Build",
   "item.coblemon_ts.pokemon_editor.tooltip.one": "Creative-mode only tool",
   "item.coblemon_ts.pokemon_editor.tooltip.two": "Right-click to edit your party",
   "item.coblemon_ts.pokemon_editor.tooltip.three": "Left-click a player to edit their party",
@@ -45,5 +45,12 @@
 
   "coblemon_ts.pc.deposited": "§aPokemon sent to PC!",
   "coblemon_ts.pc.full": "§cPC boxes are full!",
-  "coblemon_ts.pc.last_pokemon": "§cCannot deposit your last Pokemon!"
+  "coblemon_ts.pc.last_pokemon": "§cCannot deposit your last Pokemon!",
+
+  "message.coblemon_ts.pokebag_obtained": "§aPoké Bag obtained! Left-click to toggle auto-collect, right-click to open.§r",
+  "message.coblemon_ts.pokebag_already_owned": "§eYou already have a Poké Bag.§r",
+  "message.coblemon_ts.pokebag_autocollect_on": "§aPoké Bag auto-collect: ON§r",
+  "message.coblemon_ts.pokebag_autocollect_off": "§7Poké Bag auto-collect: OFF§r",
+  "message.coblemon_ts.all_charms_cleared": "§aAll charms and Poké Bag cleared!§r",
+  "container.coblemon_ts.pokebag": "Poké Bag"
 }

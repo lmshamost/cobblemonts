@@ -1,7 +1,7 @@
 package com.cobblemon_ts.mod.lucky.block;
 
+import com.cobblemon_ts.mod.CharmConfig;
 import com.cobblemon_ts.mod.CobblemonTS;
-import com.cobblemon_ts.mod.lucky.LuckyConfig;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -22,7 +22,7 @@ public class UltraBeastBlock extends BaseLuckyBlock {
 
     @Override
     protected void triggerEffect(ServerLevel level, BlockPos pos, Player player) {
-        List<? extends String> ultraBeasts = LuckyConfig.ULTRA_BEAST_POKEMON.get();
+        List<? extends String> ultraBeasts = CharmConfig.ULTRA_BEAST_POKEMON.get();
         if (ultraBeasts.isEmpty()) {
             CobblemonTS.LOGGER.warn("[LuckyBlock] 究极异兽列表为空!");
             return;
