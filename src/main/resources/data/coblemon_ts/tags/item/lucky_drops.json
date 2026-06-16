@@ -8,6 +8,7 @@
     "coblemon_ts:exp_all",
     "coblemon_ts:gold_crown",
     "cobblemon:master_ball",
+    "#cobblemon:candies",
     "minecraft:dragon_egg",
     "minecraft:nether_star",
     "minecraft:emerald",
@@ -15,6 +16,6 @@
     "minecraft:redstone_block",
     "minecraft:gold_ingot",
     "minecraft:iron_ingot",
-    "minecraft:coal_block"
+    "minecraft:coal_block" 
   ]
 }

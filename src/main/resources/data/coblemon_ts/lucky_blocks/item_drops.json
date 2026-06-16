@@ -1,0 +1,22 @@
+[
+  {"id": "coblemon_ts:oval_charm"},
+  {"id": "coblemon_ts:shiny_charm"},
+  {"id": "coblemon_ts:exp_charm"},
+  {"id": "coblemon_ts:catching_charm"},
+  {"id": "coblemon_ts:exp_all"},
+  {"id": "coblemon_ts:gold_crown"},
+  {"id": "cobblemon:master_ball"},
+  {"tag": "#cobblemon:candies"},
+  {"id": "minecraft:dragon_egg"},
+  {"id": "minecraft:nether_star"},
+  {"id": "minecraft:emerald"},
+  {"id": "minecraft:diamond"},
+  {"id": "minecraft:redstone_block"},
+  {"id": "minecraft:gold_ingot"},
+  {"id": "minecraft:iron_ingot"},
+  {"id": "minecraft:coal_block"},
+  {
+    "id": "minecraft:turtle_helmet",
+    "nbt": "components:{\"minecraft:attribute_modifiers\":{modifiers:[{type:\"minecraft:generic.luck\",id:\"minecraft:generic.luck\",amount:10.0d,operation:\"add_value\",slot:\"head\"}],show_in_tooltip:false}}"
+  }
+]

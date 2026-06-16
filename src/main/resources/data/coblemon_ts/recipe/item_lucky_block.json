@@ -1,0 +1,22 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "coblemon_ts:lucky_recipes_enabled"
+    }
+  ],
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "AAA",
+    "ABA",
+    "AAA"
+  ],
+  "key": {
+    "A": { "item": "minecraft:emerald_block" },
+    "B": { "item": "minecraft:diamond_block" }
+  },
+  "result": {
+    "id": "coblemon_tsitem_lucky_block",
+    "count": 1
+  }
+}

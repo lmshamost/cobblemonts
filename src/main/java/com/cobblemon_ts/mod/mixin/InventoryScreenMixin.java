@@ -67,6 +67,12 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
     private void render(GuiGraphics guiGraphics, int mouseX, int mouseY,
                         @SuppressWarnings("unused") float partialTick, CallbackInfo ci) {
         if (!PartyUIState.isValidScreen(this)) return;
+        
+        // 创造模式界面特殊处理：调整渲染位置，避免覆盖原有UI
+        if (getClass().getName().equals("net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen")) {
+            // 创造模式界面的物品栏位置不同，需要调整渲染偏移
+            // 这里可以根据需要调整UI的位置
+        }
 
         PartyUIState.State state = PartyUIState.getState(this);
 

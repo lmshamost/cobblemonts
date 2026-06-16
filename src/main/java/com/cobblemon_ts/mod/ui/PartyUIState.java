@@ -407,9 +407,9 @@ public class PartyUIState {
 
     public static boolean isValidScreen(Object screen) {
         if (screen == null) return false;
-        // mixin 目标是 EffectRenderingInventoryScreen，所以这里总是 true
-        // 除非是被 mixin 之外的其他地方调用
-        return true;
+        // 在所有背包界面中生效，包括创造模式
+        // 但需要特殊处理创造模式界面的UI渲染
+        return screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
     }
 
     // ===== 极简反射初始化：只找 Species 名称和 Summary 打开方法 =====

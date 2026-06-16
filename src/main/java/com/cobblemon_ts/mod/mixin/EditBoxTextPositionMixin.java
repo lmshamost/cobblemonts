@@ -12,6 +12,13 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public class EditBoxTextPositionMixin {
     @Redirect(method = "renderWidget", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/EditBox;isBordered()Z"))
     private boolean cancelBorderSprite(EditBox instance) {
-        return false;
+        // 只在背包界面的输入框取消边框，避免影响其他界面的输入框
+        // 检查当前屏幕是否是背包界面
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen) {
+            return false;
+        }
+        // 其他界面的输入框保持原有边框
+        return instance.isBordered();
     }
 }

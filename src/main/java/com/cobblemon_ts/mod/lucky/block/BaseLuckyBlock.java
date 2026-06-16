@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -54,6 +55,33 @@ public abstract class BaseLuckyBlock extends Block {
         return state;
     }
 
+    // 支持红石激活触发效果
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
+        if (!level.isClientSide) {
+            boolean powered = level.hasNeighborSignal(pos);
+            if (powered) {
+                // 红石激活时触发效果并破坏方块
+                triggerEffect((ServerLevel) level, pos, null);
+                level.destroyBlock(pos, false); // 不掉落方块
+            }
+        }
+    }
+
+    @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+        super.onPlace(state, level, pos, oldState, isMoving);
+        // 放置时检测红石信号
+        if (!level.isClientSide) {
+            boolean powered = level.hasNeighborSignal(pos);
+            if (powered) {
+                // 红石激活时触发效果并破坏方块
+                triggerEffect((ServerLevel) level, pos, null);
+                level.destroyBlock(pos, false); // 不掉落方块
+            }
+        }
+    }
+
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
         if (SILK_TOUCH_FLAG.get()) {
@@ -72,4 +100,10 @@ public abstract class BaseLuckyBlock extends Block {
     }
 
     protected abstract void triggerEffect(ServerLevel level, BlockPos pos, Player player);
+
+    protected void dropItem(ServerLevel level, BlockPos pos, ItemStack stack) {
+        ItemEntity itemEntity = new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, stack);
+        itemEntity.setDeltaMovement(level.random.nextGaussian() * 0.05, level.random.nextGaussian() * 0.05 + 0.2, level.random.nextGaussian() * 0.05);
+        level.addFreshEntity(itemEntity);
+    }
 }
