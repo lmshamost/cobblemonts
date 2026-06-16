@@ -30,7 +30,7 @@ public class PartyUIState {
     public static final int SLOT_SIZE = 28;
     public static final int SLOT_SPACING = 3;
     /** [线性-L07] 道具袋纹理，用于护符栏第一格 blit 放大居中 */
-    public static final ResourceLocation POKEBAG_TEXTURE = ResourceLocation.fromNamespaceAndPath("coblemon_ts", "textures/block/pokebag.png");
+    public static final ResourceLocation POKEBAG_TEXTURE = ResourceLocation.fromNamespaceAndPath("coblemon_ts", "textures/item/pokebag.png");
     public static final int HEADER_HEIGHT = 16;
     public static final int SLOT_CONTENT_WIDTH = PARTY_WIDTH - 6;     // 54
     public static final int SLOT_MODEL_WIDTH = SLOT_CONTENT_WIDTH - 20; // 34

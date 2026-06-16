@@ -31,6 +31,9 @@ import com.cobblemon_ts.mod.network.OpenHeldItemPacket;
 import com.cobblemon_ts.mod.network.OpenPokebagPacket;
 import com.cobblemon_ts.mod.network.ClearAllCharmsPacket;
 import com.cobblemon_ts.mod.network.TestBuildOpenStarterPacket;
+import com.cobblemon_ts.mod.network.ThrowPokeBallPacket;
+import com.cobblemon_ts.mod.network.RequestPokebagContentsPacket;
+import com.cobblemon_ts.mod.network.SyncPokebagContentsPacket;
 import com.cobblemon_ts.mod.lucky.LuckyBlocks;
 import com.cobblemon_ts.mod.lucky.LuckyRecipeCondition;
 import com.cobblemon_ts.mod.gui.ColorEditorConfig;
@@ -308,6 +311,24 @@ public class CobblemonTS {
                 ClearAllCharmsPacket.TYPE,
                 ClearAllCharmsPacket.STREAM_CODEC,
                 ClearAllCharmsPacket::handleServerSide
+        );
+        // [线性-B05ze] 直接投掷精灵球（跳过gameMode.useItem→PokeBallItem.use链路）
+        registrar.playToServer(
+                ThrowPokeBallPacket.TYPE,
+                ThrowPokeBallPacket.STREAM_CODEC,
+                ThrowPokeBallPacket::handleServerSide
+        );
+        // [线性-B05zf] 请求Pokebag库存同步 C→S
+        registrar.playToServer(
+                RequestPokebagContentsPacket.TYPE,
+                RequestPokebagContentsPacket.STREAM_CODEC,
+                RequestPokebagContentsPacket::handleServerSide
+        );
+        // [线性-B05zf] Pokebag库存同步 S→C
+        registrar.playToClient(
+                SyncPokebagContentsPacket.TYPE,
+                SyncPokebagContentsPacket.STREAM_CODEC,
+                SyncPokebagContentsPacket::handleClientSide
         );
 
         // ==== Pokemon Editor Network Packets ====

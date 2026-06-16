@@ -34,6 +34,9 @@ public class CobblemonTSConfig {
     public static final ModConfigSpec.BooleanValue LIGHT_PANEL_THEME;
     public static final ModConfigSpec.BooleanValue LIGHT_EDITOR_THEME;
 
+    // [线性-B05] 另一种捕捉模式：点击捕捉按钮弹出三选一菜单（捕获/恢复/战斗道具）
+    public static final ModConfigSpec.BooleanValue ALTERNATIVE_CAPTURE_MODE;
+
     static {
         BUILDER.comment("初始精灵设置").push("starter");
         STARTER_IS_SHINY = BUILDER
@@ -96,6 +99,13 @@ public class CobblemonTSConfig {
         LIGHT_EDITOR_THEME = BUILDER
                 .comment("宝可梦编辑器主题: true=亮色, false=暗色")
                 .define("light_editor_theme", true);
+
+        // [线性-B05] 另一种捕捉模式
+        BUILDER.comment("另一种捕捉模式").push("alternative_capture");
+        ALTERNATIVE_CAPTURE_MODE = BUILDER
+                .comment("启用另一种捕捉模式：点击捕捉按钮弹出三选一菜单（捕获/恢复/战斗道具），而非直接打开精灵球背包")
+                .define("alternative_capture_mode", true);
+        BUILDER.pop();
     }
 
     public static final ModConfigSpec SPEC = BUILDER.build();
