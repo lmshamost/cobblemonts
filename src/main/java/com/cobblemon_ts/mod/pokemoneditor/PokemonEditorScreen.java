@@ -103,6 +103,8 @@ public class PokemonEditorScreen extends Screen {
     private int dataAreaY = 0;
     private int dataAreaW = 340;
     private int dataAreaH = 200;
+    // [线性-C02] 界面尺寸缩放因子：GUI scale 3/4时缩放UI适配屏幕
+    private float uiScaleFactor = 1.0f;
     private Button saveButton;
     private Button deleteButton;
     private Button closeButton;
@@ -309,6 +311,17 @@ public class PokemonEditorScreen extends Screen {
         this.clearWidgets();
         int screenW = this.width;
         int screenH = this.height;
+
+        // [线性-C02] 界面尺寸缩放：布局中心(layoutCenterX=320, layoutCenterY=233.5)，缩放后居中屏幕
+        // 布局边界：左32(panelX-8) 右608(panelX+panelW+8) 上30(tabBarY) 下437(btnY+btnH)
+        // 缩放公式：screenY = (logicalY - layoutCenterY) * scale + screenCenterY
+        // 要求上下边界不超出屏幕，scale = min(screenW/layoutW, screenH/layoutH)
+        // scale 2(960x540)→factor=1.0, scale 3(640x360)→factor≈0.82, scale 4(480x270)→factor≈0.62
+        float layoutW = 576f; // 608-32
+        float layoutH = 407f; // 437-30
+        this.uiScaleFactor = Math.min(screenW / layoutW, screenH / layoutH);
+        if (this.uiScaleFactor > 1.0f) this.uiScaleFactor = 1.0f;
+        if (this.uiScaleFactor < 0.4f) this.uiScaleFactor = 0.4f; // 下限保护，防止过小
         int panelX = screenW / 2 - 280;
         int panelY = 60;
         int panelW = 560;
@@ -934,18 +947,26 @@ public class PokemonEditorScreen extends Screen {
 
         for(EditBox b : new EditBox[]{this.sumSpeciesField, this.sumLevelField, this.sumNameField, this.sumNatureField, this.sumAbilityField, this.sumFriendshipField, this.sumFormField, this.sumHeldItemField, this.genderField, this.ivHp, this.ivAtk, this.ivDef, this.ivSpA, this.ivSpD, this.ivSpe, this.evHp, this.evAtk, this.evDef, this.evSpA, this.evSpD, this.evSpe, this.currentHpField, this.maxHpField, this.move1Field, this.move2Field, this.move3Field, this.move4Field, this.move1PPField, this.move2PPField, this.move3PPField, this.move4PPField, this.move1MaxPPField, this.move2MaxPPField, this.move3MaxPPField, this.move4MaxPPField, this.advExpField, this.advUUIDField, this.advRawField}) {
             if (b != null && b.visible) {
+                // [线性-C04] setBordered(false)去除EditBox自带黑色背景(0xFF000000)
+                // bordered时文字XY=(x+4, y+(h-8)/2)，unbordered时文字XY=(x, y)
+                // 不修改EditBox位置(避免累加)，改为偏移背景绘制让文字居中于背景框内
+                b.setBordered(false);
                 b.setTextColor(textColor);
                 int bx = b.getX();
                 int by = b.getY();
                 int bw = b.getWidth();
                 int bh = b.getHeight();
-                guiGraphics.fill(bx, by, bx + bw, by + bh, boxBg);
-                guiGraphics.fill(bx, by, bx + bw, by + 1, boxFrame);
-                guiGraphics.fill(bx, by + bh - 1, bx + bw, by + bh, boxFrame);
-                guiGraphics.fill(bx, by, bx + 1, by + bh, boxFrame);
-                guiGraphics.fill(bx + bw - 1, by, bx + bw, by + bh, boxFrame);
+                int textOffsetY = (bh - 8) / 2; // 垂直居中补偿
+                int textOffsetX = 4;            // 水平内边距补偿
+                int bgX = bx - textOffsetX;
+                int bgY = by - textOffsetY;
+                guiGraphics.fill(bgX, bgY, bgX + bw, bgY + bh, boxBg);
+                guiGraphics.fill(bgX, bgY, bgX + bw, bgY + 1, boxFrame);
+                guiGraphics.fill(bgX, bgY + bh - 1, bgX + bw, bgY + bh, boxFrame);
+                guiGraphics.fill(bgX, bgY, bgX + 1, bgY + bh, boxFrame);
+                guiGraphics.fill(bgX + bw - 1, bgY, bgX + bw, bgY + bh, boxFrame);
                 if (b.isFocused()) {
-                    guiGraphics.fill(bx + 1, by + 1, bx + bw - 1, by + 2, boxTopFocus);
+                    guiGraphics.fill(bgX + 1, bgY + 1, bgX + bw - 1, bgY + 2, boxTopFocus);
                 }
             }
         }
@@ -1897,7 +1918,20 @@ public class PokemonEditorScreen extends Screen {
     }
 
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        guiGraphics.fill(0, 0, this.width, this.height, -870704594);
+        // [线性-C02] 使用标准Minecraft渐变背景替代纯色fill，避免黑色覆盖层遮挡字体
+        guiGraphics.fillGradient(0, 0, this.width, this.height, -1072689136, -804253680);
+
+        // [线性-C02] 缩放矩阵：围绕布局中心(layoutCenterX=320, layoutCenterY=233.5)缩放并居中屏幕
+        // layoutCenter = ((32+608)/2, (30+437)/2)，使缩放后UI在屏幕中居中而非贴底
+        if (this.uiScaleFactor < 1.0f) {
+            float layoutCenterX = 320f; // 布局水平中心 (panelX-8 + panelX+panelW+8)/2
+            float layoutCenterY = 233.5f; // 布局垂直中心 (tabBarY + btnY+btnH)/2
+            guiGraphics.pose().pushPose();
+            guiGraphics.pose().translate(this.width / 2f, this.height / 2f, 0);
+            guiGraphics.pose().scale(this.uiScaleFactor, this.uiScaleFactor, 1.0f);
+            guiGraphics.pose().translate(-layoutCenterX, -layoutCenterY, 0);
+        }
+
         int screenW = this.width;
         this.updateSaveButtonState();
         int labelColor = (Boolean)CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? ColorEditorConfig.editorLightLabel() : ColorEditorConfig.editorDarkLabel();
@@ -2353,7 +2387,13 @@ public class PokemonEditorScreen extends Screen {
         }
 
         this.drawInputFieldBackgrounds(guiGraphics, editorLight);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        // [线性-C03] 缩放鼠标坐标用于hover检测：传递给super.render()确保按钮高亮正确
+        int renderMX = mouseX, renderMY = mouseY;
+        if (this.uiScaleFactor < 1.0f) {
+            renderMX = (int)((mouseX - this.width / 2.0) / this.uiScaleFactor + 320.0);
+            renderMY = (int)((mouseY - this.height / 2.0) / this.uiScaleFactor + 233.5);
+        }
+        super.render(guiGraphics, renderMX, renderMY, partialTick);
         if (this.activeTab == 3 && this.advRawField != null) {
             int boxX = this.dataAreaX;
             int boxY = this.dataAreaY + 25;
@@ -2670,6 +2710,10 @@ public class PokemonEditorScreen extends Screen {
             }
         }
 
+        // [线性-C02] 弹出缩放矩阵
+        if (this.uiScaleFactor < 1.0f) {
+            guiGraphics.pose().popPose();
+        }
     }
 
     private MultilineLayout layoutMultiline(String text, int maxWidth) {
@@ -2877,12 +2921,24 @@ public class PokemonEditorScreen extends Screen {
     }
 
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        boolean handled = this.handleMouseScroll(mouseX, mouseY, scrollX, scrollY, scrollY, "4param");
-        return handled ? true : super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        // [线性-C02] 缩放鼠标坐标：逆变换屏幕坐标→逻辑坐标，围绕布局中心(320, 233.5)
+        double mx = mouseX, my = mouseY;
+        if (this.uiScaleFactor < 1.0f) {
+            mx = (mouseX - this.width / 2.0) / this.uiScaleFactor + 320.0;
+            my = (mouseY - this.height / 2.0) / this.uiScaleFactor + 233.5;
+        }
+        boolean handled = this.handleMouseScroll(mx, my, scrollX, scrollY, scrollY, "4param");
+        return handled ? true : super.mouseScrolled(mx, my, scrollX, scrollY);
     }
 
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        PokemonEditorDebug.logEditor("[Mouse-Click] entry activeTab={} mx={} my={} button={} advRawField={} dataArea=[{},{},{},{}]", new Object[]{this.activeTab, (int)mouseX, (int)mouseY, button, this.advRawField != null ? "non-null" : "null", this.dataAreaX, this.dataAreaY, this.dataAreaW, this.dataAreaH});
+        // [线性-C02] 缩放鼠标坐标：逆变换屏幕坐标→逻辑坐标，围绕布局中心(320, 233.5)
+        double mx = mouseX, my = mouseY;
+        if (this.uiScaleFactor < 1.0f) {
+            mx = (mouseX - this.width / 2.0) / this.uiScaleFactor + 320.0;
+            my = (mouseY - this.height / 2.0) / this.uiScaleFactor + 233.5;
+        }
+        PokemonEditorDebug.logEditor("[Mouse-Click] entry activeTab={} mx={} my={} button={} advRawField={} dataArea=[{},{},{},{}]", new Object[]{this.activeTab, (int)mx, (int)my, button, this.advRawField != null ? "non-null" : "null", this.dataAreaX, this.dataAreaY, this.dataAreaW, this.dataAreaH});
         if (this.showImportDialog && this.pendingImportFiles != null) {
             int panelW = 480;
             int panelH = 360;
@@ -2893,11 +2949,11 @@ public class PokemonEditorScreen extends Screen {
             int listW = panelW - 20;
             int itemH = 44;
             int maxShown = Math.min(7, this.pendingImportFiles.length);
-            int mx = (int)mouseX;
-            int my = (int)mouseY;
+            int imx = (int)mx;
+            int imy = (int)my;
             int closeX = panelX + panelW - 28;
             int closeY = panelY + 6;
-            if (mx >= closeX && mx < closeX + 22 && my >= closeY && my < closeY + 16) {
+            if (imx >= closeX && imx < closeX + 22 && imy >= closeY && imy < closeY + 16) {
                 this.showImportDialog = false;
                 this.pendingImportFiles = null;
                 return true;
@@ -2945,13 +3001,13 @@ public class PokemonEditorScreen extends Screen {
                 int boxY = this.dataAreaY;
                 int boxW = this.dataAreaW;
                 int boxH = this.dataAreaH;
-                int mx = (int)mouseX;
-                int my = (int)mouseY;
-                PokemonEditorDebug.logEditor("[Mouse-Click-Check] activeTab={} button={} mx={} my={} box=[{},{},{},{}] inBox={}", new Object[]{this.activeTab, button, mx, my, boxX, boxY, boxW, boxH, mx >= boxX && mx < boxX + boxW && my >= boxY && my < boxY + boxH});
-                if (mx >= boxX && mx < boxX + boxW && my >= boxY && my < boxY + boxH) {
+                int imx2 = (int)mx;
+                int imy2 = (int)my;
+                PokemonEditorDebug.logEditor("[Mouse-Click-Check] activeTab={} button={} mx={} my={} box=[{},{},{},{}] inBox={}", new Object[]{this.activeTab, button, imx2, imy2, boxX, boxY, boxW, boxH, imx2 >= boxX && imx2 < boxX + boxW && imy2 >= boxY && imy2 < boxY + boxH});
+                if (imx2 >= boxX && imx2 < boxX + boxW && imy2 >= boxY && imy2 < boxY + boxH) {
                     this.setFocused(this.advRawField);
                     this.advRawField.setFocused(true);
-                    int pos = this.advRawFieldPosFromMouse(mouseX, mouseY);
+                    int pos = this.advRawFieldPosFromMouse(mx, my);
                     this.advRawField.setCursorPosition(pos);
                     this.advRawField.setHighlightPos(pos);
                     PokemonEditorDebug.logEditor("[Mouse-Click-Apply] focused=true cursor={}/{}", new Object[]{pos, this.advRawField.getValue().length()});
@@ -2962,11 +3018,11 @@ public class PokemonEditorScreen extends Screen {
             if ((this.activeTab == 0 || this.activeTab == 1) && !this.autocompleteItems.isEmpty() && button == 0) {
                 int lineH = 16;
                 int maxShown = 8;
-                int mx = (int)mouseX;
-                int my = (int)mouseY;
+                int imx3 = (int)mx;
+                int imy3 = (int)my;
                 int listH = Math.min(this.autocompleteItems.size(), maxShown) * lineH;
-                if (mx >= this.autocompleteX && mx < this.autocompleteX + this.autocompleteW && my >= this.autocompleteStartY && my < this.autocompleteStartY + listH) {
-                    int idx = this.autocompleteScrollOffset + (my - this.autocompleteStartY) / lineH;
+                if (imx3 >= this.autocompleteX && imx3 < this.autocompleteX + this.autocompleteW && imy3 >= this.autocompleteStartY && imy3 < this.autocompleteStartY + listH) {
+                    int idx = this.autocompleteScrollOffset + (imy3 - this.autocompleteStartY) / lineH;
                     if (idx >= 0 && idx < this.autocompleteItems.size()) {
                         String selected = (String)this.autocompleteItems.get(idx);
                         if (this.autocompleteActiveField == 0) {
@@ -2993,9 +3049,9 @@ public class PokemonEditorScreen extends Screen {
             }
 
             if (this.selectedSlot >= 0 && this.crownVisible) {
-                int mx = (int)mouseX;
-                int my = (int)mouseY;
-                if (mx >= this.crownToggleX && mx < this.crownToggleX + 20 && my >= this.crownToggleY && my < this.crownToggleY + 20) {
+                int imx4 = (int)mx;
+                int imy4 = (int)my;
+                if (imx4 >= this.crownToggleX && imx4 < this.crownToggleX + 20 && imy4 >= this.crownToggleY && imy4 < this.crownToggleY + 20) {
                     PokemonData d = (PokemonData)this.partyData.get(this.selectedSlot);
                     d.goldenBottleCap = !d.goldenBottleCap;
                     d.markModified("goldenBottleCap");
@@ -3003,17 +3059,23 @@ public class PokemonEditorScreen extends Screen {
                 }
             }
 
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(mx, my, button);
         }
     }
 
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        // [线性-C02] 缩放鼠标坐标：逆变换屏幕坐标→逻辑坐标，围绕布局中心(320, 233.5)
+        double mx = mouseX, my = mouseY;
+        if (this.uiScaleFactor < 1.0f) {
+            mx = (mouseX - this.width / 2.0) / this.uiScaleFactor + 320.0;
+            my = (mouseY - this.height / 2.0) / this.uiScaleFactor + 233.5;
+        }
         if (this.activeTab == 3 && this.advRawField != null && this.advRawField.isFocused() && button == 0) {
-            int pos = this.advRawFieldPosFromMouse(mouseX, mouseY);
+            int pos = this.advRawFieldPosFromMouse(mx, my);
             this.advRawField.setCursorPosition(pos);
             return true;
         } else {
-            return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+            return super.mouseDragged(mx, my, button, dragX, dragY);
         }
     }
 
