@@ -170,6 +170,9 @@ public class PartyUIState {
         public int contextMenuY;
         public int contextMenuWidth;  // 动态宽度缓存，供点击检测使用
         public int ticksTillClick;
+
+        // [线性-C02] 注意：道具袋物品选择界面现在使用独立的 PokebagItemSelectScreen
+        // 这些状态变量保留用于兼容性，但不再在 InventoryScreen 上使用
     }
 
     // ===== 状态生命周期管理 =====
@@ -869,7 +872,10 @@ public class PartyUIState {
 
         int itemH = CONTEXT_MENU_ITEM_HEIGHT;
         int menuW = state.contextMenuWidth > 0 ? state.contextMenuWidth : 70;
-        int menuH = 5 * itemH;
+        // [线性-C02] 动态菜单高度：基础5项 + 可能有"使用道具"
+        boolean hasPokebag = state.charmManager != null && state.charmManager.isPokebagOwned();
+        int menuItemCount = hasPokebag ? 6 : 5;
+        int menuH = menuItemCount * itemH;
         int screenW = Minecraft.getInstance().getWindow().getGuiScaledWidth();
         int screenH = Minecraft.getInstance().getWindow().getGuiScaledHeight();
 
@@ -882,25 +888,42 @@ public class PartyUIState {
 
         CobblemonTS.LOGGER.info("[PartyUI-Menu] rect x={} y={} w={} h={}", menuX, menuY, menuW, menuH);
 
-        String[] actionNames = {"SUMMARY", "SET_FIRST", "EVOLVE", "SEND_PC", "RELEASE"};
-        for (int i = 0; i < 5; i++) {
+        // [线性-C02] 动态actionNames：基础5项 + 可能有USE_ITEM
+        String[] actionNames = hasPokebag
+                ? new String[]{"SUMMARY", "SET_FIRST", "EVOLVE", "SEND_PC", "RELEASE", "USE_ITEM"}
+                : new String[]{"SUMMARY", "SET_FIRST", "EVOLVE", "SEND_PC", "RELEASE"};
+        for (int i = 0; i < menuItemCount; i++) {
             int itemY = menuY + i * itemH;
             if (mouseX >= menuX && mouseX <= menuX + menuW && mouseY >= itemY && mouseY <= itemY + itemH) {
                 CobblemonTS.LOGGER.info("[PartyUI-Menu] >>> item {} ({}) clicked at slot {} <<<",
                         i, actionNames[i], state.contextMenuSlot);
                 state.contextMenuOpen = false;
-                switch (i) {
-                    case 0 -> openPokemonSummary(state.contextMenuSlot);
-                    case 1 -> moveToSlotZero(state.contextMenuSlot, state);
-                    case 2 -> openPokemonEvolution(state.contextMenuSlot);
-                    case 3 -> moveToPC(state.contextMenuSlot, state);
-                    case 4 -> releasePokemon(state.contextMenuSlot, state);
+                switch (actionNames[i]) {
+                    case "SUMMARY" -> openPokemonSummary(state.contextMenuSlot);
+                    case "SET_FIRST" -> moveToSlotZero(state.contextMenuSlot, state);
+                    case "EVOLVE" -> openPokemonEvolution(state.contextMenuSlot);
+                    case "SEND_PC" -> moveToPC(state.contextMenuSlot, state);
+                    case "RELEASE" -> releasePokemon(state.contextMenuSlot, state);
+                    // [线性-C02] 使用道具：打开虚假道具袋选择界面
+                    case "USE_ITEM" -> openPokebagItemSelect(state);
                 }
                 return;
             }
         }
         CobblemonTS.LOGGER.info("[PartyUI-Menu] click outside menu bounds, closing");
         state.contextMenuOpen = false;
+    }
+
+    // [线性-C02] 打开道具袋物品选择界面（独立Screen）
+    public static void openPokebagItemSelect(State state) {
+        // 关闭右键菜单
+        state.contextMenuOpen = false;
+        // 打开独立的道具袋物品选择Screen
+        Minecraft.getInstance().setScreen(
+                new com.cobblemon_ts.mod.gui.PokebagItemSelectScreen(state.contextMenuSlot));
+        if (debugParty()) {
+            CobblemonTS.LOGGER.info("[PartyUI] opened pokebag item select Screen for slot={}", state.contextMenuSlot);
+        }
     }
 
     public static void handleInteractionLeftClick(int slotIndex, State state, Object screen) {

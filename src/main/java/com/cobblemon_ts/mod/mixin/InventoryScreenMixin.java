@@ -505,7 +505,19 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
         Object pokemon = PartyUIState.getPartyPokemon(state.contextMenuSlot);
         if (pokemon == null) return;
 
-        String[] items = {"\u7cbe\u7075\u4fe1\u606f", "\u8bbe\u4e3a\u9996\u4f4d", "\u8fdb\u5316", "\u653e\u5165PC", "\u653e\u751f"};
+        // [线性-C02] 动态菜单项：拥有道具袋时添加"使用道具"
+        boolean hasPokebag = state.charmManager != null && state.charmManager.isPokebagOwned();
+        java.util.List<String> itemList = new java.util.ArrayList<>();
+        itemList.add("\u7cbe\u7075\u4fe1\u606f");
+        itemList.add("\u8bbe\u4e3a\u9996\u4f4d");
+        itemList.add("\u8fdb\u5316");
+        itemList.add("\u653e\u5165PC");
+        itemList.add("\u653e\u751f");
+        if (hasPokebag) {
+            itemList.add("\u4f7f\u7528\u9053\u5177");  // 使用道具
+        }
+        String[] items = itemList.toArray(new String[0]);
+
         int itemH = PartyUIState.CONTEXT_MENU_ITEM_HEIGHT;
         int menuH = items.length * itemH;
 
@@ -558,4 +570,5 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
             case EXP_ALL  -> "学习: " + CharmConfig.EXP_ALL_PERCENT.get().intValue() + "%";
         };
     }
+
 }

@@ -6,6 +6,7 @@ import com.cobblemon.mod.common.pokemon.Pokemon;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -226,5 +227,16 @@ public abstract class PartyUIInteractionMixin extends AbstractContainerScreen {
             }
             state.selectedPartySlot = -1;
         }
+    }
+
+    // ==================== keyPressed ====================
+    @Inject(method = "keyPressed(III)Z", at = @At("HEAD"), cancellable = true, require = 0)
+    private void partyui_keyPressed(int keyCode, int scanCode, int modifiers,
+                                    CallbackInfoReturnable<Boolean> cir) {
+        if (Minecraft.getInstance().player == null) return;
+        Object screen = this;
+        if (!PartyUIState.isValidScreen(screen)) return;
+        PartyUIState.State state = PartyUIState.getState(screen);
+        if (state == null) return;
     }
 }
