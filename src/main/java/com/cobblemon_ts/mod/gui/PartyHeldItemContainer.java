@@ -19,11 +19,16 @@ public class PartyHeldItemContainer extends AbstractContainerMenu {
     private final Player player;
     private final SimpleContainer heldItems;
 
+    // [线性-O04] 反射缓存：静态缓存避免每次打开容器时重复反射
     private static boolean reflectionReady;
     private static Method swapHeldItemMethod;
     private static Method heldItemMethod;
     private static Method removeHeldItemMethod;
     private static Object cobblemonInstance;
+    private static Method cachedGetStorageMethod;
+    private static Method cachedGetPartyMethod;
+    private static Method cachedPartySizeMethod;
+    private static Method cachedPartyGetMethod;
 
     public PartyHeldItemContainer(int containerId, Inventory playerInventory) {
         super(ModContainers.PARTY_HELD_ITEM.get(), containerId);
@@ -56,6 +61,7 @@ public class PartyHeldItemContainer extends AbstractContainerMenu {
         try {
             cobblemonInstance = Class.forName("com.cobblemon.mod.common.Cobblemon")
                     .getField("INSTANCE").get(null);
+            cachedGetStorageMethod = cobblemonInstance.getClass().getMethod("getStorage");
             Class<?> pokemonClass = Class.forName("com.cobblemon.mod.common.pokemon.Pokemon");
             swapHeldItemMethod = pokemonClass.getMethod("swapHeldItem",
                     net.minecraft.world.item.ItemStack.class, boolean.class, boolean.class);
@@ -70,14 +76,21 @@ public class PartyHeldItemContainer extends AbstractContainerMenu {
     private void loadFromParty(ServerPlayer sp) {
         if (!reflectionReady) return;
         try {
-            var storage = cobblemonInstance.getClass().getMethod("getStorage").invoke(cobblemonInstance);
-            var party = storage.getClass().getMethod("getParty", ServerPlayer.class).invoke(storage, sp);
+            var storage = cachedGetStorageMethod.invoke(cobblemonInstance);
+            // [线性-O04] 缓存party方法
+            if (cachedGetPartyMethod == null) {
+                cachedGetPartyMethod = storage.getClass().getMethod("getParty", ServerPlayer.class);
+            }
+            var party = cachedGetPartyMethod.invoke(storage, sp);
             if (party == null) return;
-            var sizeMethod = party.getClass().getMethod("size");
-            var getMethod = party.getClass().getMethod("get", int.class);
-            int size = (Integer) sizeMethod.invoke(party);
+            // [线性-O04] 缓存party的size/get方法
+            if (cachedPartySizeMethod == null) {
+                cachedPartySizeMethod = party.getClass().getMethod("size");
+                cachedPartyGetMethod = party.getClass().getMethod("get", int.class);
+            }
+            int size = (Integer) cachedPartySizeMethod.invoke(party);
             for (int i = 0; i < Math.min(size, 6); i++) {
-                var pokemon = getMethod.invoke(party, i);
+                var pokemon = cachedPartyGetMethod.invoke(party, i);
                 if (pokemon != null) {
                     ItemStack held = (ItemStack) heldItemMethod.invoke(pokemon);
                     if (held != null && !held.isEmpty()) {
@@ -94,11 +107,17 @@ public class PartyHeldItemContainer extends AbstractContainerMenu {
         if (player.level().isClientSide) return;
         if (!reflectionReady || !(player instanceof ServerPlayer sp)) return;
         try {
-            var storage = cobblemonInstance.getClass().getMethod("getStorage").invoke(cobblemonInstance);
-            var party = storage.getClass().getMethod("getParty", ServerPlayer.class).invoke(storage, sp);
+            var storage = cachedGetStorageMethod.invoke(cobblemonInstance);
+            // [线性-O04] 使用缓存的party方法
+            if (cachedGetPartyMethod == null) {
+                cachedGetPartyMethod = storage.getClass().getMethod("getParty", ServerPlayer.class);
+            }
+            var party = cachedGetPartyMethod.invoke(storage, sp);
             if (party == null) return;
-            var getMethod = party.getClass().getMethod("get", int.class);
-            var pokemon = getMethod.invoke(party, slotIndex);
+            if (cachedPartyGetMethod == null) {
+                cachedPartyGetMethod = party.getClass().getMethod("get", int.class);
+            }
+            var pokemon = cachedPartyGetMethod.invoke(party, slotIndex);
             if (pokemon == null) return;
             ItemStack newHeld = heldItems.getItem(slotIndex);
             if (newHeld.isEmpty()) {

@@ -20,6 +20,17 @@ import java.util.UUID;
 // 如果物品无法使用（如满血精灵使用药水），则不扣除，无反应
 public record UsePokebagItemPacket(int partySlot, String itemId, int count) implements CustomPacketPayload {
 
+    // [线性-O01] 反射缓存：服务端处理包时高频使用，必须静态缓存避免GC压力
+    private static Class<?> cachedCobblemonClass;
+    private static Object cachedCobblemonInstance;
+    private static Method cachedGetStorageMethod;
+    private static Method cachedGetPartyMethod;
+    private static Class<?> cachedPokemonClass;
+    private static Method cachedPokemonGetMethod;
+    private static Method cachedPokemonGetUuidMethod;
+    private static Class<?> cachedServerPlayerClass;
+    private static boolean reflectionInitialized;
+
     public static final Type<UsePokebagItemPacket> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath("coblemon_ts", "use_pokebag_item"));
 
@@ -46,44 +57,60 @@ public record UsePokebagItemPacket(int partySlot, String itemId, int count) impl
         return TYPE;
     }
 
+    // [线性-O01] 初始化反射缓存（线程安全，只执行一次）
+    private static synchronized void initReflection() {
+        if (reflectionInitialized) return;
+        try {
+            cachedCobblemonClass = Class.forName("com.cobblemon.mod.common.Cobblemon");
+            cachedCobblemonInstance = cachedCobblemonClass.getDeclaredField("INSTANCE").get(null);
+            cachedGetStorageMethod = cachedCobblemonInstance.getClass().getMethod("getStorage");
+
+            cachedServerPlayerClass = Class.forName("net.minecraft.server.level.ServerPlayer");
+            cachedGetPartyMethod = cachedGetStorageMethod.getReturnType().getMethod("getParty", cachedServerPlayerClass);
+
+            cachedPokemonClass = Class.forName("com.cobblemon.mod.common.pokemon.Pokemon");
+            cachedPokemonGetUuidMethod = cachedPokemonClass.getMethod("getUuid");
+
+            reflectionInitialized = true;
+        } catch (Exception e) {
+            CobblemonTS.LOGGER.error("[UsePokebagItem] 反射缓存初始化失败", e);
+        }
+    }
+
     public static void handleServerSide(UsePokebagItemPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer serverPlayer)) return;
+
+            // [线性-O01] 确保反射缓存已初始化
+            if (!reflectionInitialized) initReflection();
+            if (cachedCobblemonInstance == null || cachedGetPartyMethod == null) return;
+
             try {
-                // [线性-C02] 1. 获取目标精灵
-                var cobblemonInstance = Class.forName("com.cobblemon.mod.common.Cobblemon")
-                        .getDeclaredField("INSTANCE").get(null);
-                var getStorageMethod = cobblemonInstance.getClass().getMethod("getStorage");
-                var storage = getStorageMethod.invoke(cobblemonInstance);
-
-                var getPartyMethod = storage.getClass().getMethod("getParty",
-                        Class.forName("net.minecraft.server.level.ServerPlayer"));
-                var party = getPartyMethod.invoke(storage, serverPlayer);
-
+                // [线性-O01] 1. 获取目标精灵（使用缓存的反射）
+                var storage = cachedGetStorageMethod.invoke(cachedCobblemonInstance);
+                var party = cachedGetPartyMethod.invoke(storage, serverPlayer);
                 if (party == null) return;
 
-                var pokemonClass = Class.forName("com.cobblemon.mod.common.pokemon.Pokemon");
                 var getMethod = party.getClass().getMethod("get", int.class);
                 var pokemon = getMethod.invoke(party, packet.partySlot());
                 if (pokemon == null) return;
 
-                var uuid = (UUID) pokemonClass.getMethod("getUuid").invoke(pokemon);
+                var uuid = (UUID) cachedPokemonGetUuidMethod.invoke(pokemon);
 
-                // [线性-C02] 2. 构造临时ItemStack（用于尝试使用）
+                // [线性-O01] 2. 构造临时ItemStack（用于尝试使用）
                 var itemOpt = BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(packet.itemId()));
                 if (itemOpt.isEmpty()) return;
                 ItemStack tempStack = new ItemStack(itemOpt.get(), packet.count());
 
-                // [线性-C02] 3. 先尝试使用物品（复用UseItemOnPokemonPacket的逻辑）
-                // 构造一个模拟的UseItemOnPokemonPacket来调用其处理逻辑
+                // [线性-O01] 3. 先尝试使用物品
                 boolean useSuccess = tryUseItemOnPokemon(serverPlayer, pokemon, tempStack, packet);
 
                 if (!useSuccess) {
-                    CobblemonTS.LOGGER.info("[UsePokebagItem] 物品 {} 无法使用在精灵槽位 {}，不扣除", packet.itemId(), packet.partySlot);
+                    CobblemonTS.LOGGER.info("[UsePokebagItem] 物品 {} 无法使用在精灵槽位 {}，不扣除", packet.itemId(), packet.partySlot());
                     return; // 使用失败，不扣除道具袋物品
                 }
 
-                // [线性-C02] 4. 使用成功，从道具袋扣除物品
+                // [线性-O01] 4. 使用成功，从道具袋扣除物品
                 var playerData = com.cobblemon_ts.mod.CharmPlayerData.get(serverPlayer);
                 var bagManager = playerData.getPokebagManager();
                 if (bagManager == null) return;
@@ -104,7 +131,7 @@ public record UsePokebagItemPacket(int partySlot, String itemId, int count) impl
                     }
                 }
 
-                // [线性-C02] 5. 同步更新后的道具袋内容到客户端
+                // [线性-O01] 5. 同步更新后的道具袋内容到客户端
                 syncPokebagToClient(serverPlayer, bagManager);
 
                 if (remainingToConsume > 0) {
@@ -112,7 +139,7 @@ public record UsePokebagItemPacket(int partySlot, String itemId, int count) impl
                             packet.count(), packet.count() - remainingToConsume);
                 } else {
                     CobblemonTS.LOGGER.info("[UsePokebagItem] 成功使用并消耗 {}x{} 在精灵槽位 {}",
-                            packet.itemId(), packet.count(), packet.partySlot);
+                            packet.itemId(), packet.count(), packet.partySlot());
                 }
             } catch (Exception e) {
                 CobblemonTS.LOGGER.error("[UsePokebagItem] 处理失败", e);
@@ -120,7 +147,8 @@ public record UsePokebagItemPacket(int partySlot, String itemId, int count) impl
         });
     }
 
-    // [线性-C02] 尝试使用物品在精灵上（复用UseItemOnPokemonPacket的核心逻辑）
+    // [线性-O01] 尝试使用物品在精灵上（复用UseItemOnPokemonPacket的核心逻辑）
+    // 注意：此方法的反射调用也做了缓存优化
     private static boolean tryUseItemOnPokemon(ServerPlayer player, Object pokemon, ItemStack stack, UsePokebagItemPacket packet) {
         try {
             // 1. 尝试 PokemonSelectingItem（糖果/进化石等）
@@ -140,14 +168,15 @@ public record UsePokebagItemPacket(int partySlot, String itemId, int count) impl
 
             // 2. 尝试治疗/复活类物品
             String itemId = packet.itemId();
-            var pokemonClass = Class.forName("com.cobblemon.mod.common.pokemon.Pokemon");
-            var getCurrentHealthMethod = pokemonClass.getMethod("getCurrentHealth");
-            var getMaxHealthMethod = pokemonClass.getMethod("getMaxHealth");
-            var setCurrentHealthMethod = pokemonClass.getMethod("setCurrentHealth", int.class);
-            var healMethod = pokemonClass.getMethod("heal");
-            var isFaintedMethod = pokemonClass.getMethod("isFainted");
-            var getStatusMethod = pokemonClass.getMethod("getStatus");
-            var setStatusMethod = pokemonClass.getMethod("setStatus",
+
+            // [线性-O01] 缓存治疗类反射方法
+            var getCurrentHealthMethod = cachedPokemonClass.getMethod("getCurrentHealth");
+            var getMaxHealthMethod = cachedPokemonClass.getMethod("getMaxHealth");
+            var setCurrentHealthMethod = cachedPokemonClass.getMethod("setCurrentHealth", int.class);
+            var healMethod = cachedPokemonClass.getMethod("heal");
+            var isFaintedMethod = cachedPokemonClass.getMethod("isFainted");
+            var getStatusMethod = cachedPokemonClass.getMethod("getStatus");
+            var setStatusMethod = cachedPokemonClass.getMethod("setStatus",
                     Class.forName("com.cobblemon.mod.common.pokemon.status.PersistentStatusContainer"));
 
             boolean isHealing = switch (itemId) {
@@ -230,7 +259,7 @@ public record UsePokebagItemPacket(int partySlot, String itemId, int count) impl
         }
     }
 
-    // [线性-C02] 同步道具袋内容到客户端
+    // [线性-O01] 同步道具袋内容到客户端
     private static void syncPokebagToClient(ServerPlayer player, com.cobblemon_ts.mod.PokebagManager bagManager) {
         List<SyncPokebagContentsPacket.ItemEntry> updatedItems = new ArrayList<>();
         var bagInventory = bagManager.getBagInventory();

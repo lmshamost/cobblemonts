@@ -129,12 +129,17 @@ public class PkBagActionSelection extends BattleActionSelection {
         List<ItemStack> result = new ArrayList<>();
         // [线性-B05zk] 优先遍历Pokebag客户端缓存（道具袋）
         for (SyncPokebagContentsPacket.ItemEntry entry : PokebagClientCache.getItems()) {
-            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(entry.itemId()));
-            if (item != null) {
-                ItemStack stack = new ItemStack(item, entry.count());
-                if (isItemInCurrentCategory(stack)) {
-                    result.add(stack);
+            // [线性-O06] 复用entry缓存的renderStack，避免重复创建ItemStack
+            ItemStack stack = entry.renderStack();
+            if (stack == null) {
+                Item item = BuiltInRegistries.ITEM.get(ResourceLocation.tryParse(entry.itemId()));
+                if (item != null) {
+                    stack = new ItemStack(item, Math.min(entry.count(), 64));
+                    entry.setRenderStack(stack);
                 }
+            }
+            if (stack != null && isItemInCurrentCategory(stack)) {
+                result.add(stack);
             }
         }
         // [线性-B05zk] 再遍历玩家背包

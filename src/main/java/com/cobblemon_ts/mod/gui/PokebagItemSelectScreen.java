@@ -111,12 +111,19 @@ public class PokebagItemSelectScreen extends Screen {
 
             if (itemIndex < items.size()) {
                 var entry = items.get(itemIndex);
-                var itemOpt = BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(entry.itemId()));
+                // [线性-O06] 避免每帧创建ResourceLocation，使用parse缓存
+                var itemOpt = BuiltInRegistries.ITEM.getOptional(
+                        ResourceLocation.tryParse(entry.itemId()));
                 if (itemOpt.isPresent()) {
-                    ItemStack stack = new ItemStack(itemOpt.get(), entry.count());
-                    guiGraphics.renderItem(stack, slotX + 1, slotY + 1);
+                    // [线性-O06] 避免每帧创建ItemStack，使用单例stack渲染
+                    ItemStack renderStack = entry.renderStack();
+                    if (renderStack == null) {
+                        renderStack = new ItemStack(itemOpt.get(), Math.min(entry.count(), 64));
+                        entry.setRenderStack(renderStack);
+                    }
+                    guiGraphics.renderItem(renderStack, slotX + 1, slotY + 1);
                     if (entry.count() > 1) {
-                        guiGraphics.renderItemDecorations(this.font, stack, slotX + 1, slotY + 1);
+                        guiGraphics.renderItemDecorations(this.font, renderStack, slotX + 1, slotY + 1);
                     }
                 }
             }
@@ -127,8 +134,14 @@ public class PokebagItemSelectScreen extends Screen {
 
         if (selectedSlot >= 0 && selectedSlot < items.size()) {
             var entry = items.get(selectedSlot);
-            var itemOpt = BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(entry.itemId()));
-            String itemName = itemOpt.map(i -> i.getName(new ItemStack(i)).getString()).orElse("未知物品");
+            // [线性-O06] 避免每帧创建ResourceLocation和ItemStack
+            var itemOpt = BuiltInRegistries.ITEM.getOptional(
+                    ResourceLocation.tryParse(entry.itemId()));
+            String itemName = entry.cachedName();
+            if (itemName == null) {
+                itemName = itemOpt.map(i -> i.getName(new ItemStack(i)).getString()).orElse("未知物品");
+                entry.setCachedName(itemName);
+            }
             String info = String.format("%s  x%d / %d", itemName, selectCount, entry.count());
             guiGraphics.drawCenteredString(this.font, info, this.width / 2, infoY, 0xFFFFFF00);
             guiGraphics.drawCenteredString(this.font, "左键+1  Ctrl+左键-1  Shift+左键+10  滚轮±1  Shift滚轮±2", this.width / 2, infoY + 12, 0xFF888888);

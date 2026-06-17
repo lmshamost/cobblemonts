@@ -96,6 +96,11 @@ public class PokemonEditorScreen extends Screen {
     private EditBox move4MaxPPField;
     private EditBox currentHpField;
     private EditBox maxHpField;
+    // [线性-F01] 招式清除按钮：仅在对战页(tab==1)显示，点击清空对应招式输入框
+    private Button clearMove1Btn;
+    private Button clearMove2Btn;
+    private Button clearMove3Btn;
+    private Button clearMove4Btn;
     private EditBox advExpField;
     private EditBox advUUIDField;
     private EditBox advRawField;
@@ -379,7 +384,7 @@ public class PokemonEditorScreen extends Screen {
         this.sumSpeciesField = new EditBox(this.font, editX + 50 + 10, rowY, 100, 16, Component.literal(""));
         this.sumSpeciesField.setMaxLength(40);
         this.sumSpeciesField.setTextShadow(false);
-        this.clearSpeciesBtn = Button.builder(Component.literal("\u00d7"), (btn) -> this.sumSpeciesField.setValue("")).pos(editX + 50 + 10 + 100 + 4, rowY).size(18, 18).build();
+        this.clearSpeciesBtn = Button.builder(Component.literal("\u00d7"), (btn) -> this.sumSpeciesField.setValue("")).pos(editX + 50 + 10 + 100 + 4, rowY - 4).size(16, 16).build();
         this.sumLevelField = this.makeIntBox(editX + 50 + 10, rowY + rowStep, 100, 1, 900);
         this.levelDownBtn = Button.builder(Component.literal("\u2b07"), (btn) -> {
             boolean shift = Screen.hasShiftDown();
@@ -416,15 +421,15 @@ public class PokemonEditorScreen extends Screen {
         this.sumNameField = new EditBox(this.font, editX + 50 + 10, rowY + rowStep * 2, 100, 16, Component.literal(""));
         this.sumNameField.setMaxLength(30);
         this.sumNameField.setTextShadow(false);
-        this.clearNameBtn = Button.builder(Component.literal("\u00d7"), (btn) -> this.sumNameField.setValue("")).pos(editX + 50 + 10 + 100 + 4, rowY + rowStep * 2).size(18, 18).build();
+        this.clearNameBtn = Button.builder(Component.literal("\u00d7"), (btn) -> this.sumNameField.setValue("")).pos(editX + 50 + 10 + 100 + 4, rowY + rowStep * 2 - 4).size(16, 16).build();
         this.sumNatureField = new EditBox(this.font, editX + 50 + 10, rowY + rowStep * 3, 100, 16, Component.literal(""));
         this.sumNatureField.setMaxLength(20);
         this.sumNatureField.setTextShadow(false);
-        this.clearNatureBtn = Button.builder(Component.literal("\u00d7"), (btn) -> this.sumNatureField.setValue("")).pos(editX + 50 + 10 + 100 + 4, rowY + rowStep * 3).size(18, 18).build();
+        this.clearNatureBtn = Button.builder(Component.literal("\u00d7"), (btn) -> this.sumNatureField.setValue("")).pos(editX + 50 + 10 + 100 + 4, rowY + rowStep * 3 - 4).size(16, 16).build();
         this.sumAbilityField = new EditBox(this.font, editX + 50 + 10, rowY + rowStep * 4, 100, 16, Component.literal(""));
         this.sumAbilityField.setMaxLength(30);
         this.sumAbilityField.setTextShadow(false);
-        this.clearAbilityBtn = Button.builder(Component.literal("\u00d7"), (btn) -> this.sumAbilityField.setValue("")).pos(editX + 50 + 10 + 100 + 4, rowY + rowStep * 4).size(18, 18).build();
+        this.clearAbilityBtn = Button.builder(Component.literal("\u00d7"), (btn) -> this.sumAbilityField.setValue("")).pos(editX + 50 + 10 + 100 + 4, rowY + rowStep * 4 - 4).size(16, 16).build();
         this.sumFriendshipField = this.makeIntBox(editX + 50 + 10, rowY + rowStep * 5, 100, 0, 255);
         this.friendshipDownBtn = Button.builder(Component.literal("\u2b07"), (btn) -> {
             boolean shift = Screen.hasShiftDown();
@@ -668,7 +673,8 @@ public class PokemonEditorScreen extends Screen {
         this.maxHpField = this.makeIntBox(editX + 50 + 10, battleY + 30, 100, 1, 9999);
         int moveY = battleY + 70;
         int moveLabelW = 50;
-        int moveW = 180;
+        // [线性-F01] 招式输入框宽度缩短到与HP输入框一致(100)，为清除按钮留空间
+        int moveW = 100;
         int ppW = 60;
         int moveFieldX = editX + moveLabelW + 5;
         this.move1Field = new EditBox(this.font, moveFieldX, moveY, moveW, 16, Component.literal(""));
@@ -683,7 +689,16 @@ public class PokemonEditorScreen extends Screen {
         this.move4Field = new EditBox(this.font, moveFieldX, moveY + 75, moveW, 16, Component.literal(""));
         this.move4Field.setMaxLength(30);
         this.move4Field.setTextShadow(false);
-        int ppFieldX = moveFieldX + moveW + 10;
+        // [线性-F01] 创建招式清除按钮（×），紧贴输入框右侧，Y坐标与背景框底部对齐
+        int clearBtnX = moveFieldX + moveW + 2;
+        this.clearMove1Btn = Button.builder(Component.literal("\u00d7"), (btn) -> this.move1Field.setValue("")).pos(clearBtnX, moveY - 4).size(16, 16).build();
+        this.clearMove2Btn = Button.builder(Component.literal("\u00d7"), (btn) -> this.move2Field.setValue("")).pos(clearBtnX, moveY + 25 - 4).size(16, 16).build();
+        this.clearMove3Btn = Button.builder(Component.literal("\u00d7"), (btn) -> this.move3Field.setValue("")).pos(clearBtnX, moveY + 50 - 4).size(16, 16).build();
+        this.clearMove4Btn = Button.builder(Component.literal("\u00d7"), (btn) -> this.move4Field.setValue("")).pos(clearBtnX, moveY + 75 - 4).size(16, 16).build();
+        // [线性-F01] PP字段X坐标：右边界与高级按钮右边界对齐(editX + 440)
+        // MaxPP右边界 = ppFieldX + ppW + 10 + ppW = editX + 440
+        // ppFieldX = editX + 440 - 2 * ppW - 10 = editX + 440 - 120 - 10 = editX + 310
+        int ppFieldX = editX + 310;
         this.move1PPField = this.makeIntBox(ppFieldX, moveY, ppW, 0, 999);
         this.move2PPField = this.makeIntBox(ppFieldX, moveY + 25, ppW, 0, 999);
         this.move3PPField = this.makeIntBox(ppFieldX, moveY + 50, ppW, 0, 999);
@@ -897,6 +912,11 @@ public class PokemonEditorScreen extends Screen {
         this.addRenderableWidget(this.advSaveBtn);
         this.addRenderableWidget(this.advResetBtn);
         this.addRenderableWidget(this.maxPPButton);
+        // [线性-F01] 添加招式清除按钮到渲染列表
+        this.addRenderableWidget(this.clearMove1Btn);
+        this.addRenderableWidget(this.clearMove2Btn);
+        this.addRenderableWidget(this.clearMove3Btn);
+        this.addRenderableWidget(this.clearMove4Btn);
         int btnY = 415;
         int btnW = 120;
         int btnH = 22;
@@ -1039,6 +1059,11 @@ public class PokemonEditorScreen extends Screen {
         if (this.maxPPButton != null) {
             this.maxPPButton.visible = battleVisible;
         }
+        // [线性-F01] 招式清除按钮仅在对战页(tab==1)显示
+        if (this.clearMove1Btn != null) this.clearMove1Btn.visible = battleVisible;
+        if (this.clearMove2Btn != null) this.clearMove2Btn.visible = battleVisible;
+        if (this.clearMove3Btn != null) this.clearMove3Btn.visible = battleVisible;
+        if (this.clearMove4Btn != null) this.clearMove4Btn.visible = battleVisible;
 
         boolean advVisible = tab == 3;
 
@@ -1271,6 +1296,31 @@ public class PokemonEditorScreen extends Screen {
 
             int next = (idx + 1) % STATUS_DISPLAY.length;
             d.status = STATUS_DISPLAY[next][0];
+            this.updateStatusButton();
+        }
+    }
+
+    // [线性-F01] 状态向左循环：右键点击状态切换按钮时调用
+    // 循环顺序：无←剧毒←睡眠←冰冻←烧伤←麻痹←中毒←无
+    private void cycleToPrevStatus() {
+        if (this.selectedSlot >= 0 && this.selectedSlot < this.partyData.size()) {
+            PokemonData d = (PokemonData)this.partyData.get(this.selectedSlot);
+            String cur = this.normalizeStatusId(d.status);
+            int idx = -1;
+
+            for(int i = 0; i < STATUS_DISPLAY.length; ++i) {
+                if (STATUS_DISPLAY[i][0].equals(cur)) {
+                    idx = i;
+                    break;
+                }
+            }
+
+            if (idx < 0) {
+                idx = 0;
+            }
+
+            int prev = (idx - 1 + STATUS_DISPLAY.length) % STATUS_DISPLAY.length;
+            d.status = STATUS_DISPLAY[prev][0];
             this.updateStatusButton();
         }
     }
@@ -2294,15 +2344,15 @@ public class PokemonEditorScreen extends Screen {
             guiGraphics.drawString(this.font, "最大HP:", editX, battleY + 34, labelColor, false);
             int moveY = battleY + 70;
             int moveLabelW = 40;
-            int moveW = 180;
+            int moveW = 100;
 
             for(int i = 0; i < 4; ++i) {
                 int y = moveY + 25 * i;
                 guiGraphics.drawString(this.font, "\u62db\u5f0f" + (i + 1) + ":", editX, y + 4, labelColor, false);
             }
 
-            guiGraphics.drawString(this.font, "PP", editX + moveLabelW + moveW + 20, moveY - 9, labelColor, false);
-            guiGraphics.drawString(this.font, "\u6700\u5927PP", editX + moveLabelW + moveW + 10 + 60 + 10 + 20, moveY - 9, -12877066, true);
+            guiGraphics.drawString(this.font, "PP", editX + 310, moveY - 9, labelColor, false);
+            guiGraphics.drawString(this.font, "\u6700\u5927PP", editX + 310 + 60 + 10, moveY - 9, -12877066, true);
             int moveFieldX = editX + moveLabelW + 10;
             int move2Y = moveY + 25;
             int move3Y = moveY + 50;
@@ -3057,6 +3107,22 @@ public class PokemonEditorScreen extends Screen {
                     d.markModified("goldenBottleCap");
                     return true;
                 }
+            }
+
+            // [线性-F01] 右键点击性别切换按钮：向左循环（2→1→0→2）
+            if (button == 1 && this.genderCycleBtn != null && this.genderCycleBtn.isMouseOver(mx, my)) {
+                int cur = this.parseOrDefault(this.genderField, 2);
+                int prev = (cur - 1 + 3) % 3; // 向左循环
+                this.genderField.setValue(String.valueOf(prev));
+                return true;
+            }
+
+            // [线性-F01] 右键点击状态切换按钮：向左循环（无→剧毒→睡眠→冰冻→烧伤→麻痹→中毒→无）
+            if (button == 1 && this.statusCycleBtn != null && this.statusCycleBtn.isMouseOver(mx, my)) {
+                if (this.selectedSlot >= 0) {
+                    this.cycleToPrevStatus();
+                }
+                return true;
             }
 
             return super.mouseClicked(mx, my, button);

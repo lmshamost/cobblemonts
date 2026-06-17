@@ -44,6 +44,8 @@ public class BattleChangeMenuScreen extends Screen {
 
     // [线性-B05f] 静态回调存储（kotlin的Function0<Unit>，用Object存+反射invoke）
     private static Object pendingCaptureCallback = null;
+    // [线性-O05] 缓存kotlin lambda的invoke方法，避免每次触发都反射查找
+    private static Method cachedKotlinInvokeMethod;
 
     public BattleChangeMenuScreen(Screen parentScreen) {
         super(Component.literal("捕捉菜单"));
@@ -58,9 +60,12 @@ public class BattleChangeMenuScreen extends Screen {
     public static void triggerCaptureCallback() {
         if (pendingCaptureCallback != null) {
             try {
-                Method invokeMethod = pendingCaptureCallback.getClass().getMethod("invoke");
-                invokeMethod.setAccessible(true);  // [线性-B05u] 跨模块lambda反射需要setAccessible
-                invokeMethod.invoke(pendingCaptureCallback);
+                // [线性-O05] 缓存invoke方法，避免每次反射查找
+                if (cachedKotlinInvokeMethod == null) {
+                    cachedKotlinInvokeMethod = pendingCaptureCallback.getClass().getMethod("invoke");
+                    cachedKotlinInvokeMethod.setAccessible(true);  // [线性-B05u] 跨模块lambda反射需要setAccessible
+                }
+                cachedKotlinInvokeMethod.invoke(pendingCaptureCallback);
             } catch (Exception e) {
                 com.cobblemon_ts.mod.CobblemonTS.LOGGER.warn("[CaptureMode] 触发捕获回调失败", e);
             }
