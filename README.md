@@ -1,25 +1,46 @@
+# Cobblemon TS
 
-Installation information
-=======
+Cobblemon 辅助增强模组，为你的方块宝可梦之旅添加实用道具、数据化 UI 和重铸版战斗体验。
 
-This template repository can be directly cloned to get you started with a new
-mod. Simply create a new repository cloned from this one, by following the
-instructions provided by [GitHub](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template).
+## 主要功能
 
-Once you have your clone, simply open the repository in the IDE of your choice. The usual recommendation for an IDE is either IntelliJ IDEA or Eclipse.
+### 🎒 道具系统
 
-If at any point you are missing libraries in your IDE, or you've run into problems you can
-run `gradlew --refresh-dependencies` to refresh the local cache. `gradlew clean` to reset everything 
-{this does not affect your code} and then start the process again.
+| 道具 | 功能 |
+|------|------|
+| **闪耀护符** | 提升闪光宝可梦遭遇几率 |
+| **圆形护符** | 加速宝可梦蛋孵化 |
+| **经验护符** | 战斗经验值加成 |
+| **防晃护符** | 提升精灵球捕获率 |
+| **高级学习装置** | 战斗经验全队共享 |
+| **金色王冠** | 赋予宝可梦完美个体值（不修改基础 IV，支持觉醒力量类型计算） |
+| **宝可梦编辑器** | 创造模式工具，右键编辑自己队伍，左键编辑其他玩家队伍 |
+| **道具袋** | 便携道具收纳，左键切换自动收集，右键打开管理界面 |
+| **幸运方块** | 破坏后随机生成宝可梦或物品（含传说、闪光、异兽、物品四种变体） |
 
-Mapping Names:
-============
-By default, the MDK is configured to use the official mapping names from Mojang for methods and fields 
-in the Minecraft codebase. These names are covered by a specific license. All modders should be aware of this
-license. For the latest license text, refer to the mapping file itself, or the reference copy here:
-https://github.com/NeoForged/NeoForm/blob/main/Mojang.md
+### 📊 数据化 UI
 
-Additional Resources: 
-==========
-Community Documentation: https://docs.neoforged.net/  
-NeoForged Discord: https://discord.neoforged.net/
+- **HUD 覆盖层**：实时显示队伍状态、护符激活情况、携带物信息
+- **护符管理面板**：可视化开关各个护符，一键查看效果
+- **携带物管理**：队伍界面直接拖拽/更换宝可梦携带物品
+- **对战信息增强**：战斗界面显示捕获率、个体值等详细数据
+
+### ⚔️ 重铸版战斗丢球
+
+- 战斗中右键打开道具袋快速选择精灵球投掷
+- 防晃护符捕获率提升兼容 Catch Rate Display 模组，正确显示提升后的捕获率
+- 快速战斗模组快捷键自定义（Mixin 修改）
+
+## 依赖
+
+- **NeoForge** 1.21.1
+- **Cobblemon** ≥ 1.7.3
+
+## 可选兼容
+
+- [Catch Rate Display](https://www.curseforge.com/minecraft/mc-mods/catch-rate-display) — 捕获率显示模组
+- [jecharacters](https://www.curseforge.com/minecraft/mc-mods/jecharacters) — 拼音搜索支持
+
+## 许可
+
+All Rights Reserved
