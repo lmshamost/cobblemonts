@@ -570,7 +570,7 @@ public class PokemonEditorScreen extends Screen {
                 this.hiddenPowerType = this.calcHiddenPowerType(hp, atk, def, spa, spd, spe);
             }
         }).pos(ivColX + 5, hpCalcY).size(80, 20).build();
-        int evColX = editX + 260;
+        int evColX = editX + 180;
         this.evHp = this.makeIntBox(evColX + ivLabelW + 10, ivStartY + statRowH * 0, valueW, 0, 252);
         this.evAtk = this.makeIntBox(evColX + ivLabelW + 10, ivStartY + statRowH * 1, valueW, 0, 252);
         this.evDef = this.makeIntBox(evColX + ivLabelW + 10, ivStartY + statRowH * 2, valueW, 0, 252);
@@ -673,9 +673,8 @@ public class PokemonEditorScreen extends Screen {
         this.maxHpField = this.makeIntBox(editX + 50 + 10, battleY + 30, 100, 1, 9999);
         int moveY = battleY + 70;
         int moveLabelW = 50;
-        // [线性-F01] 招式输入框宽度缩短到与HP输入框一致(100)，为清除按钮留空间
-        int moveW = 100;
-        int ppW = 60;
+        int moveW = 90;
+        int ppW = 50;
         int moveFieldX = editX + moveLabelW + 5;
         this.move1Field = new EditBox(this.font, moveFieldX, moveY, moveW, 16, Component.literal(""));
         this.move1Field.setMaxLength(30);
@@ -695,15 +694,12 @@ public class PokemonEditorScreen extends Screen {
         this.clearMove2Btn = Button.builder(Component.literal("\u00d7"), (btn) -> this.move2Field.setValue("")).pos(clearBtnX, moveY + 25 - 4).size(16, 16).build();
         this.clearMove3Btn = Button.builder(Component.literal("\u00d7"), (btn) -> this.move3Field.setValue("")).pos(clearBtnX, moveY + 50 - 4).size(16, 16).build();
         this.clearMove4Btn = Button.builder(Component.literal("\u00d7"), (btn) -> this.move4Field.setValue("")).pos(clearBtnX, moveY + 75 - 4).size(16, 16).build();
-        // [线性-F01] PP字段X坐标：右边界与高级按钮右边界对齐(editX + 440)
-        // MaxPP右边界 = ppFieldX + ppW + 10 + ppW = editX + 440
-        // ppFieldX = editX + 440 - 2 * ppW - 10 = editX + 440 - 120 - 10 = editX + 310
-        int ppFieldX = editX + 310;
+        int ppFieldX = clearBtnX + 16 + 8;
+        int maxPPFieldX = ppFieldX + ppW + 8;
         this.move1PPField = this.makeIntBox(ppFieldX, moveY, ppW, 0, 999);
         this.move2PPField = this.makeIntBox(ppFieldX, moveY + 25, ppW, 0, 999);
         this.move3PPField = this.makeIntBox(ppFieldX, moveY + 50, ppW, 0, 999);
         this.move4PPField = this.makeIntBox(ppFieldX, moveY + 75, ppW, 0, 999);
-        int maxPPFieldX = ppFieldX + ppW + 10;
         this.move1MaxPPField = this.makeIntBox(maxPPFieldX, moveY, ppW, 0, 999);
         this.move2MaxPPField = this.makeIntBox(maxPPFieldX, moveY + 25, ppW, 0, 999);
         this.move3MaxPPField = this.makeIntBox(maxPPFieldX, moveY + 50, ppW, 0, 999);
@@ -924,12 +920,12 @@ public class PokemonEditorScreen extends Screen {
         int totalBtnW = btnW * 4 + btnGap * 3;
         int btnStartX = panelX + 280 - totalBtnW / 2;
         boolean autoClose = (Boolean)CharmConfig.EDITOR_AUTO_CLOSE.get();
-        this.editorAutoCloseBtn = Button.builder(Component.literal(autoClose ? "\u25a0" : "\u25a0").withStyle(autoClose ? ChatFormatting.GREEN : ChatFormatting.RED), (btn) -> {
+        this.editorAutoCloseBtn = Button.builder(Component.literal(autoClose ? "\u81ea\u52a8\u5173\u95ed:\u5f00" : "\u81ea\u52a8\u5173\u95ed:\u5173").withStyle(autoClose ? ChatFormatting.GREEN : ChatFormatting.RED), (btn) -> {
             boolean newVal = !(Boolean)CharmConfig.EDITOR_AUTO_CLOSE.get();
             CharmConfig.EDITOR_AUTO_CLOSE.set(newVal);
             CharmConfig.EDITOR_AUTO_CLOSE.save();
-            btn.setMessage(Component.literal("\u25a0").withStyle(newVal ? ChatFormatting.GREEN : ChatFormatting.RED));
-        }).pos(btnStartX + btnW - 26, btnY - 26).size(22, 22).build();
+            btn.setMessage(Component.literal(newVal ? "\u81ea\u52a8\u5173\u95ed:\u5f00" : "\u81ea\u52a8\u5173\u95ed:\u5173").withStyle(newVal ? ChatFormatting.GREEN : ChatFormatting.RED));
+        }).pos(btnStartX + btnW - 26, btnY - 26).size(60, 20).build();
         this.themeToggleBtn = Button.builder(Component.literal((Boolean)CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? "  \u2600\ufe0f \u4eae\u8272  " : "  \ud83c\udf19 \u6df1\u8272  "), (btn) -> {
             boolean newVal = !(Boolean)CobblemonTSConfig.LIGHT_EDITOR_THEME.get();
             CobblemonTSConfig.LIGHT_EDITOR_THEME.set(newVal);
@@ -1178,7 +1174,7 @@ public class PokemonEditorScreen extends Screen {
                 this.sumNatureField.setValue(PokemonNameMap.natureToChinese(d.nature));
                 this.sumAbilityField.setValue(PokemonNameMap.abilityToChinese(d.ability));
                 this.sumFriendshipField.setValue(String.valueOf(d.friendship));
-                this.sumFormField.setValue(d.formName);
+                this.sumFormField.setValue(PokemonNameMap.formToChinese(d.speciesName, d.formName));
                 this.sumHeldItemField.setValue(PokemonNameMap.itemToChinese(d.heldItem));
                 this.genderField.setValue(String.valueOf(d.gender));
                 this.ivHp.setValue(String.valueOf(d.ivHp));
@@ -1342,6 +1338,33 @@ public class PokemonEditorScreen extends Screen {
         }
     }
 
+    private void applyMoveImmediate(int moveIdx, String selected) {
+        if (this.selectedSlot < 0 || this.selectedSlot >= this.partyData.size()) return;
+        PokemonData d = (PokemonData) this.partyData.get(this.selectedSlot);
+        String enName = PokemonNameMap.moveToEnglish(selected);
+        if (enName != null && !enName.isEmpty()) {
+            int basePP = CobblemonBridge.getBasePP(enName);
+            switch (moveIdx) {
+                case 0: d.move1 = enName; d.move1PP = basePP; d.move1MaxPP = basePP;
+                    this.move1PPField.setValue(String.valueOf(basePP));
+                    this.move1MaxPPField.setValue(String.valueOf(basePP));
+                    break;
+                case 1: d.move2 = enName; d.move2PP = basePP; d.move2MaxPP = basePP;
+                    this.move2PPField.setValue(String.valueOf(basePP));
+                    this.move2MaxPPField.setValue(String.valueOf(basePP));
+                    break;
+                case 2: d.move3 = enName; d.move3PP = basePP; d.move3MaxPP = basePP;
+                    this.move3PPField.setValue(String.valueOf(basePP));
+                    this.move3MaxPPField.setValue(String.valueOf(basePP));
+                    break;
+                case 3: d.move4 = enName; d.move4PP = basePP; d.move4MaxPP = basePP;
+                    this.move4PPField.setValue(String.valueOf(basePP));
+                    this.move4MaxPPField.setValue(String.valueOf(basePP));
+                    break;
+            }
+        }
+    }
+
     private int parseOrDefault(EditBox box, int def) {
         try {
             return Integer.parseInt(box.getValue());
@@ -1385,7 +1408,27 @@ public class PokemonEditorScreen extends Screen {
                 String beforeAbility = d.ability;
                 d.ability = PokemonNameMap.abilityToEnglish(this.sumAbilityField.getValue());
                 PokemonEditorDebug.logEditor("[Screen] ability: UI='{}' \u2192 EN='{}' (was '{}', changed={})", new Object[]{this.sumAbilityField.getValue(), d.ability, beforeAbility, !Objects.equals(d.ability, beforeAbility)});
-                d.formName = this.sumFormField.getValue();
+                String formFieldVal = this.sumFormField.getValue();
+                // 形态字段：纯ASCII=用户手输英文形态ID → 直接使用
+                // 普通/中文=下拉选择 → 逆向查找英文ID；找不到则保留原始值不变
+                if (formFieldVal != null && !formFieldVal.isEmpty() && formFieldVal.chars().allMatch(c -> c < 128)) {
+                    d.formName = formFieldVal;
+                } else if (formFieldVal != null && !formFieldVal.isEmpty()) {
+                    if (formFieldVal.equals("普通")) {
+                        d.formName = ""; // 普通形态=空ID
+                    } else {
+                        String enSpecies = d.speciesName; // 已转英文
+                        List<String> rawForms = CobblemonBridge.getSpeciesForms(enSpecies);
+                        for (String raw : rawForms) {
+                            if (formFieldVal.equals(PokemonNameMap.formToChinese(enSpecies, raw))) {
+                                d.formName = raw;
+                                PokemonEditorDebug.logEditor("[Screen] form reverse-lookup: '{}' -> '{}'", formFieldVal, raw);
+                                break;
+                            }
+                        }
+                    }
+                }
+                // else: field empty, keep d.formName as-is (original raw value)
                 String beforeHeldItem = d.heldItem;
                 d.heldItem = PokemonNameMap.itemToEnglish(this.sumHeldItemField.getValue());
                 PokemonEditorDebug.logEditor("[Screen] heldItem: UI='{}' \u2192 EN='{}' (was '{}', changed={})", new Object[]{this.sumHeldItemField.getValue(), d.heldItem, beforeHeldItem, !Objects.equals(d.heldItem, beforeHeldItem)});
@@ -2044,13 +2087,13 @@ public class PokemonEditorScreen extends Screen {
                     }
 
                     guiGraphics.drawString(this.font, leftText, editX, editY - 13, labelColor, false);
-                    guiGraphics.drawString(this.font, editorTitle, editorTitleX, editY - 13, -12877066, true);
+                    guiGraphics.drawString(this.font, editorTitle, editorTitleX, editY - 13, -12877066, false);
                 } else {
-                    guiGraphics.drawString(this.font, "(\u7a7a\u69fd\u4f4d)", editX, editY - 13, -10193781, true);
-                    guiGraphics.drawString(this.font, editorTitle, editorTitleX, editY - 13, -12877066, true);
+                    guiGraphics.drawString(this.font, "(\u7a7a\u69fd\u4f4d)", editX, editY - 13, -10193781, false);
+                    guiGraphics.drawString(this.font, editorTitle, editorTitleX, editY - 13, -12877066, false);
                 }
             } else {
-                guiGraphics.drawString(this.font, editorTitle, editorTitleX, editY - 13, -12877066, true);
+                guiGraphics.drawString(this.font, editorTitle, editorTitleX, editY - 13, -12877066, false);
             }
         }
 
@@ -2111,41 +2154,41 @@ public class PokemonEditorScreen extends Screen {
             if (this.selectedSlot >= 0 && this.selectedSlot < this.partyData.size()) {
                 PokemonData d = (PokemonData)this.partyData.get(this.selectedSlot);
                 if (d.exists) {
-                    int cardX = editX + 335;
+                    int cardX = editX + 265;
                     int cardY = rowY - 5;
-                    int cardW = 120;
-                    int cardH = 130;
+                    int cardW = 130;
+                    int cardH = 120;
                     int frameColor = (Boolean)CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? -3418655 : -12102295;
                     int bgColor = (Boolean)CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? -197122 : -14800581;
                     int topBarColor = (Boolean)CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? -12877066 : -14326805;
-                    int labelGrey = (Boolean)CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? -7035976 : -10193781;
-                    int valueColor = (Boolean)CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? -1906448 : -14800581;
+                    int cardLabelColor = labelColor;
+                    int cardValueColor = (Boolean)CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? ColorEditorConfig.editorLightInputText() : ColorEditorConfig.editorDarkInputText();
                     guiGraphics.fill(cardX - 1, cardY - 1, cardX + cardW + 1, cardY + cardH + 1, frameColor);
                     guiGraphics.fill(cardX, cardY, cardX + cardW, cardY + cardH, bgColor);
                     guiGraphics.fill(cardX, cardY, cardX + cardW, cardY + 22, topBarColor);
                     String zhName = d.displayName.isEmpty() ? PokemonNameMap.toChinese(d.speciesName) : d.displayName;
                     String cardTitle = zhName + (d.shiny ? " \u2728" : "");
                     guiGraphics.drawString(this.font, cardTitle, cardX + cardW / 2 - this.font.width(cardTitle) / 2, cardY + 7, -1, true);
-                    int infoY = cardY + 30;
-                    int infoX = cardX + 10;
+                    int infoY = cardY + 28;
+                    int infoX = cardX + 6;
                     String natureEffect = PokemonNameMap.natureEffectText(d.nature);
                     String var10000 = PokemonNameMap.natureToChinese(d.nature);
                     String natureDisp = var10000 + natureEffect;
-                    if (natureDisp.length() > 14) {
-                        natureDisp = natureDisp.substring(0, 14);
+                    if (natureDisp.length() > 16) {
+                        natureDisp = natureDisp.substring(0, 16);
                     }
 
-                    String[][] info = new String[][]{{"\u7269\u79cd", d.speciesName}, {"\u7b49\u7ea7", "Lv." + d.level}, {"\u6027\u522b", d.gender == 0 ? "\u2642 \u96c4" : (d.gender == 1 ? "\u2640 \u96cc" : "\u26aa \u65e0")}, {"\u6027\u683c", natureDisp}, {"\u7279\u6027", PokemonNameMap.abilityToChinese(d.ability)}, {"\u5f62\u6001", d.formName.isEmpty() ? "\u666e\u901a" : d.formName}};
+                    String[][] info = new String[][]{{"\u7269\u79cd", d.speciesName}, {"\u7b49\u7ea7", "Lv." + d.level}, {"\u6027\u522b", d.gender == 0 ? "\u2642 \u96c4" : (d.gender == 1 ? "\u2640 \u96cc" : "\u26aa \u65e0")}, {"\u6027\u683c", natureDisp}, {"\u7279\u6027", PokemonNameMap.abilityToChinese(d.ability)}, {"\u5f62\u6001", PokemonNameMap.formToChinese(d.speciesName, d.formName)}};
 
                     for(int i = 0; i < info.length; ++i) {
-                        int yy = infoY + i * 18;
-                        guiGraphics.drawString(this.font, info[i][0] + ":", infoX, yy, labelGrey, true);
+                        int yy = infoY + i * 15;
+                        guiGraphics.drawString(this.font, info[i][0] + ":", infoX, yy, cardLabelColor, false);
                         String val = info[i][1];
-                        if (val != null && val.length() > 14) {
-                            val = val.substring(0, 14);
+                        if (val != null && val.length() > 16) {
+                            val = val.substring(0, 16);
                         }
 
-                        guiGraphics.drawString(this.font, val == null ? "" : val, infoX + 40, yy, valueColor, true);
+                        guiGraphics.drawString(this.font, val == null ? "" : val, infoX + 28, yy, cardValueColor, false);
                     }
                 }
             }
@@ -2154,6 +2197,7 @@ public class PokemonEditorScreen extends Screen {
             int fieldX = editX + fieldLabelW + 10;
             int natureY = rowY + rowStep * 3;
             int abilityY = rowY + rowStep * 4;
+            int formY = rowY + rowStep * 6;
             int dropdownY = -1;
             int activeX = fieldX;
             int activeW = 230;
@@ -2177,6 +2221,12 @@ public class PokemonEditorScreen extends Screen {
                 activeW = this.sumAbilityField.getWidth();
                 q = this.sumAbilityField.getValue().trim();
                 newActiveField = 2;
+            } else if (this.sumFormField.isFocused()) {
+                dropdownY = formY + 20;
+                activeX = this.sumFormField.getX();
+                activeW = this.sumFormField.getWidth();
+                q = this.sumFormField.getValue().trim();
+                newActiveField = 7;
             } else {
                 this.autocompleteStartY = 0;
                 this.autocompleteItems.clear();
@@ -2271,6 +2321,33 @@ public class PokemonEditorScreen extends Screen {
                                 }
                             }
                         }
+                    } else if (newActiveField == 7) {
+                        // [线性-Lform-dropdown] 形态下拉：读取当前物种的所有形态并汉化
+                        List<String> forms = new ArrayList<>();
+                        forms.add("普通");
+                        if (this.selectedSlot >= 0 && this.selectedSlot < this.partyData.size()) {
+                            PokemonData d = (PokemonData)this.partyData.get(this.selectedSlot);
+                            if (d.exists && d.speciesName != null && !d.speciesName.isEmpty()) {
+                                String enName = PokemonNameMap.toEnglish(this.sumSpeciesField.getValue());
+                                if (enName != null && !enName.isEmpty()) {
+                                    List<String> rawForms = CobblemonBridge.getSpeciesForms(enName);
+                                    for (String raw : rawForms) {
+                                        if (raw.equals("normal")) continue; // 普通已添加
+                                        String zh = PokemonNameMap.formToChinese(enName, raw);
+                                        if (!forms.contains(zh)) forms.add(zh);
+                                    }
+                                }
+                            }
+                        }
+                        if (q.isEmpty()) {
+                            this.autocompleteItems.addAll(forms);
+                        } else {
+                            for (String zh : forms) {
+                                if (zh.contains(q)) {
+                                    this.autocompleteItems.add(zh);
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -2281,11 +2358,11 @@ public class PokemonEditorScreen extends Screen {
             int ivStartY = editY + 40;
             int statRowH = 28;
             int ivColX = editX + 10;
-            int evColX = editX + 260;
+            int evColX = editX + 180;
             String ivTitle = "IV (0-31)";
-            guiGraphics.drawString(this.font, ivTitle, ivColX + 60 - this.font.width(ivTitle) / 2, editY + 15, -15681151, true);
+            guiGraphics.drawString(this.font, ivTitle, ivColX + 60 - this.font.width(ivTitle) / 2, editY + 15, -15681151, false);
             String evTitle = "EV (0-252)";
-            guiGraphics.drawString(this.font, evTitle, evColX + 60 - this.font.width(evTitle) / 2, editY + 15, -12877066, true);
+            guiGraphics.drawString(this.font, evTitle, evColX + 60 - this.font.width(evTitle) / 2, editY + 15, -12877066, false);
             String[] statLabels = new String[]{"HP", "\u653b\u51fb", "\u9632\u5fa1", "\u7279\u653b", "\u7279\u9632", "\u901f\u5ea6"};
 
             for(int i = 0; i < statLabels.length; ++i) {
@@ -2302,7 +2379,7 @@ public class PokemonEditorScreen extends Screen {
 
             int sumY = ivStartY + statRowH * 6 - 4;
             int evCap = CobblemonTSConfig.getEVTotalCap();
-            guiGraphics.drawString(this.font, "EV\u603b\u548c: " + evSum + "/" + evCap, evColX, sumY, evSum <= evCap ? -12877066 : -1096636, true);
+            guiGraphics.drawString(this.font, "EV\u603b\u548c: " + evSum + "/" + evCap, evColX, sumY, evSum <= evCap ? -12877066 : -1096636, false);
             if (this.selectedSlot >= 0 && this.crownVisible) {
                 PokemonData d = (PokemonData)this.partyData.get(this.selectedSlot);
                 int bgColor = d.goldenBottleCap ? -11141291 : -43691;
@@ -2344,16 +2421,20 @@ public class PokemonEditorScreen extends Screen {
             guiGraphics.drawString(this.font, "最大HP:", editX, battleY + 34, labelColor, false);
             int moveY = battleY + 70;
             int moveLabelW = 40;
-            int moveW = 100;
+            int moveW = 90;
 
             for(int i = 0; i < 4; ++i) {
                 int y = moveY + 25 * i;
                 guiGraphics.drawString(this.font, "\u62db\u5f0f" + (i + 1) + ":", editX, y + 4, labelColor, false);
             }
 
-            guiGraphics.drawString(this.font, "PP", editX + 310, moveY - 9, labelColor, false);
-            guiGraphics.drawString(this.font, "\u6700\u5927PP", editX + 310 + 60 + 10, moveY - 9, -12877066, true);
             int moveFieldX = editX + moveLabelW + 10;
+            int clearBtnX = moveFieldX + moveW + 2;
+            int ppLabelX = clearBtnX + 16 + 12;
+            int ppFieldW = 50;
+            int maxPPLabelX = ppLabelX + ppFieldW + 12;
+            guiGraphics.drawString(this.font, "PP", ppLabelX, moveY - 15, labelColor, false);
+            guiGraphics.drawString(this.font, "\u6700\u5927PP", maxPPLabelX, moveY - 15, -12877066, false);
             int move2Y = moveY + 25;
             int move3Y = moveY + 50;
             int move4Y = moveY + 75;
@@ -3083,12 +3164,18 @@ public class PokemonEditorScreen extends Screen {
                             this.sumAbilityField.setValue(selected);
                         } else if (this.autocompleteActiveField == 3) {
                             this.move1Field.setValue(selected);
+                            this.applyMoveImmediate(0, selected);
                         } else if (this.autocompleteActiveField == 4) {
                             this.move2Field.setValue(selected);
+                            this.applyMoveImmediate(1, selected);
                         } else if (this.autocompleteActiveField == 5) {
                             this.move3Field.setValue(selected);
+                            this.applyMoveImmediate(2, selected);
                         } else if (this.autocompleteActiveField == 6) {
                             this.move4Field.setValue(selected);
+                            this.applyMoveImmediate(3, selected);
+                        } else if (this.autocompleteActiveField == 7) {
+                            this.sumFormField.setValue(selected);
                         }
 
                         this.autocompleteItems.clear();
@@ -3096,6 +3183,21 @@ public class PokemonEditorScreen extends Screen {
                         return true;
                     }
                 }
+            }
+
+            if (!this.autocompleteItems.isEmpty()) {
+                this.autocompleteItems.clear();
+                this.autocompleteScrollOffset = 0;
+                int af = this.autocompleteActiveField;
+                this.autocompleteActiveField = -1;
+                if (af == 0) this.sumSpeciesField.setFocused(false);
+                else if (af == 1) this.sumNatureField.setFocused(false);
+                else if (af == 2) this.sumAbilityField.setFocused(false);
+                else if (af == 3) this.move1Field.setFocused(false);
+                else if (af == 4) this.move2Field.setFocused(false);
+                else if (af == 5) this.move3Field.setFocused(false);
+                else if (af == 6) this.move4Field.setFocused(false);
+                else if (af == 7) this.sumFormField.setFocused(false);
             }
 
             if (this.selectedSlot >= 0 && this.crownVisible) {

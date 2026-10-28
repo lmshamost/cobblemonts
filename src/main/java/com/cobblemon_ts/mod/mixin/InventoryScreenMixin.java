@@ -438,52 +438,50 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
             guiGraphics.fill(slotX, slotY, slotX + slotW - 2, slotY + slotSize, innerColor);
 
             if (i == 0) {
-                // [线性-L07] 第1格：道具袋
+                // [线性-L07] 第1格：道具袋 — 图标左 + 自动收集文字右
                 if (state.charmManager != null && state.charmManager.isPokebagOwned()) {
-                    // 已拥有：显示道具袋纹理
-                    int pad = 2;
-                    int maxSize = Math.min(slotW - pad * 2, slotSize - pad * 2);
-                    int imgX = slotX + (slotW - maxSize) / 2;
-                    int imgY = slotY + (slotSize - maxSize) / 2;
-                    guiGraphics.blit(PartyUIState.POKEBAG_TEXTURE, imgX, imgY, maxSize, maxSize, 0, 0, 16, 16, 16, 16);
+                    int iconSize = 16;
+                    int iconX = slotX + 2;
+                    int iconY = slotY + (slotSize - iconSize) / 2;
+                    guiGraphics.blit(PartyUIState.POKEBAG_TEXTURE, iconX, iconY, iconSize, iconSize, 0, 0, 16, 16, 16, 16);
 
-                    // [线性-L07] 自动收集状态指示
                     com.cobblemon_ts.mod.PokebagManager bagManager = com.cobblemon_ts.mod.CharmPlayerData.get(
                             Minecraft.getInstance().player).getPokebagManager();
-                    if (bagManager != null && bagManager.isAutoCollect()) {
-                        // 自动收集开启：绿色指示
-                        guiGraphics.fill(slotX + slotW - 5, slotY + 1, slotX + slotW - 1, slotY + 5, 0xFF_00FF00);
-                    }
+
+                    int textX = iconX + iconSize + 3;
+
+                    guiGraphics.drawString(this.font, "自动", textX, slotY + 1, textColor, false);
+                    guiGraphics.drawString(this.font, "收集", textX, slotY + 10, textColor, false);
+
+                    boolean auto = bagManager != null && bagManager.isAutoCollect();
+                    String status = auto ? "开启" : "关闭";
+                    int statusColor = auto ? 0xFF_00FF00 : 0xFF_FF5555;
+                    guiGraphics.drawString(this.font, status, textX, slotY + 19, statusColor, false);
                 }
             } else {
-                // 第2-6格：护符
+                // 第2-6格：护符 — 图标左上 + 标签/值双行文字右侧
                 CharmType type = charmTypes[i - 1];
                 CharmState charmState = state.charmManager != null
                         ? state.charmManager.getCharmState(type)
                         : CharmState.DISABLED;
 
                 if (charmState != CharmState.DISABLED) {
-                    // 图标（居中，16px）
-                    ItemStack icon = new ItemStack(type.getItem());
+                    // 图标 16x16 左上
                     int iconSize = 16;
-                    int iconX = slotX + (slotW - iconSize) / 2;
+                    int iconX = slotX + 2;
                     int iconY = slotY + 2;
+                    ItemStack icon = new ItemStack(type.getItem());
                     guiGraphics.renderItem(icon, iconX, iconY);
 
-                    // 名称（图标下方）
-                    String displayName = getCharmDisplayName(type);
-                    int maxDrawWidth = slotW - 2;
-                    if (this.font.width(displayName) > maxDrawWidth) {
-                        displayName = this.font.plainSubstrByWidth(displayName, maxDrawWidth);
-                    }
-                    int nameX = slotX + (slotW - this.font.width(displayName)) / 2;
-                    int nameY = slotY + slotSize - 12;
-                    guiGraphics.drawString(this.font, displayName, nameX, nameY, textColor, false);
+                    // 右侧文字区域（图标右方）
+                    int textX = iconX + iconSize + 3;
+                    guiGraphics.drawString(this.font, getCharmLine1(type), textX, slotY + 1, textColor, false);
+                    guiGraphics.drawString(this.font, getCharmLine2(type), textX, slotY + 10, textColor, false);
+                    guiGraphics.drawString(this.font, getCharmValue(type), textX, slotY + 19, textColor, false);
 
                     // AVAILABLE 状态：半透明遮罩
                     if (charmState == CharmState.AVAILABLE) {
                         guiGraphics.fill(iconX - 1, iconY - 1, iconX + iconSize + 1, iconY + iconSize + 1, -2130771968);
-                        guiGraphics.drawString(this.font, "\u2715", iconX + iconSize + 2, iconY + 2, 0xFFFFFF00);
                     }
                 } else {
                     // DISABLED 状态：显示 "?"
@@ -560,14 +558,35 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
         poseStack.popPose();
     }
 
-    // 护符显示名称 + 加成值
-    private static String getCharmDisplayName(CharmType type) {
+    // [线性-C03] 护符标签（纯中文）
+    private static String getCharmLine1(CharmType type) {
         return switch (type) {
-            case SHINY    -> "闪耀: " + CharmConfig.SHINY_CHARM_BOOST.get();
-            case OVAL     -> "圆形: " + CharmConfig.OVAL_CHARM_HATCH_BOOST.get();
-            case EXP      -> "经验: " + CharmConfig.EXP_CHARM_BOOST.get();
-            case CATCHING -> "防晃: " + CharmConfig.CATCHING_CHARM_BOOST.get();
-            case EXP_ALL  -> "学习: " + CharmConfig.EXP_ALL_PERCENT.get().intValue() + "%";
+            case SHINY    -> "闪光";
+            case OVAL     -> "孵化";
+            case EXP      -> "经验";
+            case CATCHING -> "捕获";
+            case EXP_ALL  -> "经验";
+        };
+    }
+
+    private static String getCharmLine2(CharmType type) {
+        return switch (type) {
+            case SHINY    -> "概率";
+            case OVAL     -> "倍率";
+            case EXP      -> "倍率";
+            case CATCHING -> "倍率";
+            case EXP_ALL  -> "共享";
+        };
+    }
+
+    // [线性-C04] 护符数值（纯数字/百分比）
+    private static String getCharmValue(CharmType type) {
+        return switch (type) {
+            case SHINY    -> String.format("%.1f", CharmConfig.SHINY_CHARM_BOOST.get());
+            case OVAL     -> String.format("%.1f", CharmConfig.OVAL_CHARM_HATCH_BOOST.get());
+            case EXP      -> String.format("%.1f", CharmConfig.EXP_CHARM_BOOST.get());
+            case CATCHING -> String.format("%.1f", CharmConfig.CATCHING_CHARM_BOOST.get());
+            case EXP_ALL  -> CharmConfig.EXP_ALL_PERCENT.get().intValue() + "%";
         };
     }
 

@@ -2257,4 +2257,26 @@ public class PokemonNameMap {
         ensureDynamicAbilities(); // [线性-L12] 动态初始化，确保包含所有lang翻译的特性
         return new ArrayList<>(ABILITY_ZH_TO_EN.keySet());
     }
+
+    // [线性-Lform] 形态名→中文，优先取Cobblemon自身的cobblemon.aspect.<id>翻译
+    public static String formToChinese(String speciesName, String formName) {
+        if (formName == null || formName.isEmpty()) return "普通";
+        String lower = formName.toLowerCase().trim();
+        // 提取纯形态部分：去掉物种名前缀（如bulbasaurnormal→normal，raticate-alola→alola）
+        String formPart = lower;
+        if (speciesName != null && !speciesName.isEmpty()) {
+            String spLower = speciesName.toLowerCase().trim();
+            if (lower.equals(spLower)) return "普通"; // 形态=物种名 → 基础形态
+            if (lower.startsWith(spLower)) {
+                formPart = lower.substring(spLower.length());
+                if (formPart.startsWith("-") || formPart.startsWith("_"))
+                    formPart = formPart.substring(1);
+            }
+        }
+        if (formPart.isEmpty() || formPart.equals("normal")) return "普通";
+        // lang key: cobblemon.aspect.<formPart>
+        String fromLang = tryLang("cobblemon.aspect." + formPart, null);
+        if (fromLang != null) return fromLang;
+        return formName; // 无翻译时回落原文
+    }
 }

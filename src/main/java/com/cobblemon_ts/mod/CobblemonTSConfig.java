@@ -13,12 +13,19 @@ public class CobblemonTSConfig {
     public static final ModConfigSpec.BooleanValue SHOW_EFFECT_ICONS;
     public static final ModConfigSpec.BooleanValue SHOW_INVENTORY_EFFECT_ICONS;
     public static final ModConfigSpec.BooleanValue HIDE_TOGGLE_BUTTONS;
-    // [线性-L04] 自定义血条/饥饿条/盔甲条开关
+    // [线性-L04] 自定义血条/饥饿条/盔甲条/经验条开关
     public static final ModConfigSpec.BooleanValue HUD_CUSTOM_HEALTH_BAR;
     public static final ModConfigSpec.BooleanValue HUD_CUSTOM_FOOD_BAR;
     public static final ModConfigSpec.BooleanValue HUD_CUSTOM_ARMOR_BAR;
+    public static final ModConfigSpec.BooleanValue HUD_CUSTOM_XP_BAR;
     public static final ModConfigSpec.BooleanValue HUD_ABSORPTION_OVERLAY;
     public static final ModConfigSpec.BooleanValue HUD_SATURATION_OVERLAY;
+
+    // [线性-L10] 统一彩色数值条：总开关→启动后覆盖所有原版HUD，每项独立成条
+    public static final ModConfigSpec.BooleanValue HUD_UNIFIED_COLORED_BARS;
+    public static final ModConfigSpec.BooleanValue HUD_UNIFIED_AIR_BAR;
+    public static final ModConfigSpec.BooleanValue HUD_UNIFIED_VEHICLE_BAR;
+    public static final ModConfigSpec.BooleanValue HUD_UNIFIED_XP_BAR;
 
     // [线性-L06] 护符获取与幸运方块配方开关
     public static final ModConfigSpec.BooleanValue CHARM_LOOT_ENABLED;
@@ -39,32 +46,56 @@ public class CobblemonTSConfig {
         EV_EFFORT_CAP_252X6 = ENABLE_UNLIMITED_EVS;
         BUILDER.pop();
 
-        BUILDER.comment("HUD 显示设置").push("hud");
+        BUILDER.comment("HUD显示设置  —— 顺序：药水效果 → 各状态栏 → 其他").push("hud");
+
+        // ==== [HUD-A] 药水效果 ====
         SHOW_EFFECT_ICONS = BUILDER
                 .comment("是否在屏幕右上角显示药水buff图标(true=显示, false=隐藏)")
                 .define("show_effect_icons", false);
         SHOW_INVENTORY_EFFECT_ICONS = BUILDER
                 .comment("是否在背包界面显示药水buff图标(true=显示, false=隐藏)")
                 .define("show_inventory_effect_icons", false);
+
+        // ==== [HUD-B] 各状态栏 — 统一模式 ====
+        HUD_UNIFIED_COLORED_BARS = BUILDER
+                .comment("统一彩色数值条总开关(true=全部替换为彩色数值条, false=使用下方逐项开关)\n" +
+                         "开启后自动覆盖：生命/伤害吸收/饥饿/饱腹/护甲/韧性/氧气/骑乘生命/经验值")
+                .define("unified_colored_bars", true);
+        HUD_UNIFIED_AIR_BAR = BUILDER
+                .comment("是否显示氧气数值条(true=显示, false=隐藏, 仅在统一彩色条总开关开启时有效)")
+                .define("unified_air_bar", true);
+        HUD_UNIFIED_VEHICLE_BAR = BUILDER
+                .comment("是否显示骑乘生物生命数值条(true=显示, false=隐藏, 仅在统一彩色条总开关开启时有效)")
+                .define("unified_vehicle_bar", true);
+        HUD_UNIFIED_XP_BAR = BUILDER
+                .comment("是否显示经验值数值条(true=显示, false=隐藏, 仅在统一彩色条总开关开启时有效)")
+                .define("unified_xp_bar", true);
+
+        // ==== [HUD-C] 各状态栏 — 逐项开关（统一模式关闭时生效）====
+        HUD_CUSTOM_HEALTH_BAR = BUILDER
+                .comment("是否启用自定义血条(true=自定义血条, false=原版心形)")
+                .define("custom_health_bar", false);
+        HUD_ABSORPTION_OVERLAY = BUILDER
+                .comment("是否在血条上显示伤害吸收金条覆盖(true=显示金条, false=仅显示红血条)")
+                .define("absorption_overlay", false);
+        HUD_CUSTOM_ARMOR_BAR = BUILDER
+                .comment("是否启用自定义盔甲条(true=自定义盔甲条, false=原版盔甲图标)")
+                .define("custom_armor_bar", false);
+        HUD_CUSTOM_FOOD_BAR = BUILDER
+                .comment("是否启用自定义饥饿条(true=自定义饥饿条, false=原版鸡腿)")
+                .define("custom_food_bar", false);
+        HUD_SATURATION_OVERLAY = BUILDER
+                .comment("是否在饥饿条上显示饱腹值金条覆盖(true=显示金条, false=仅显示饥饿条)")
+                .define("saturation_overlay", false);
+        HUD_CUSTOM_XP_BAR = BUILDER
+                .comment("是否启用自定义经验条(true=自定义经验值条, false=原版经验条)")
+                .define("custom_xp_bar", false);
+
+        // ==== [HUD-D] 其他 ====
         HIDE_TOGGLE_BUTTONS = BUILDER
                 .comment("是否隐藏背包精灵栏和护符栏的开关按钮(true=开关按钮变透明不可见, false=显示绿红小方块正常显示)")
                 .define("hide_toggle_buttons", false);
-        // [线性-L04] 自定义血条/饥饿条/盔甲条开关
-        HUD_CUSTOM_HEALTH_BAR = BUILDER
-                .comment("是否启用自定义血条(true=自定义血条+吸收心金条覆盖, false=原版心形)")
-                .define("custom_health_bar", true);
-        HUD_CUSTOM_FOOD_BAR = BUILDER
-                .comment("是否启用自定义饥饿条(true=自定义饥饿条+饱腹金条覆盖, false=原版鸡腿)")
-                .define("custom_food_bar", true);
-        HUD_CUSTOM_ARMOR_BAR = BUILDER
-                .comment("是否启用自定义盔甲条(true=自定义盔甲条, false=原版盔甲图标)")
-                .define("custom_armor_bar", true);
-        HUD_ABSORPTION_OVERLAY = BUILDER
-                .comment("是否在血条上显示伤害吸收金条覆盖(true=显示金条, false=仅显示红血条)")
-                .define("absorption_overlay", true);
-        HUD_SATURATION_OVERLAY = BUILDER
-                .comment("是否在饥饿条上显示饱腹值金条覆盖(true=显示金条, false=仅显示饥饿条)")
-                .define("saturation_overlay", true);
+
         BUILDER.pop();
 
         // [线性-L06] 护符获取与幸运方块配方开关

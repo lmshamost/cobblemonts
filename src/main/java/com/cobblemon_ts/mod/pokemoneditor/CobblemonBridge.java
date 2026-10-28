@@ -2706,4 +2706,59 @@ public class CobblemonBridge {
             }
         }
     }
+
+    // [线性-Lform-dropdown] 提取物种的所有形态ID（纯形态部分，如 "normal"/"alola"）
+    public static List<String> getSpeciesForms(String speciesEnglishName) {
+        List<String> result = new ArrayList<>();
+        if (speciesEnglishName == null || speciesEnglishName.isEmpty()) return result;
+        try {
+            Collection<Species> allSpecies = PokemonSpecies.getSpecies();
+            for (Species s : allSpecies) {
+                if (s.showdownId().equalsIgnoreCase(speciesEnglishName)) {
+                    return extractFormIdsFromSpecies(s);
+                }
+            }
+        } catch (Throwable ignored) {}
+        return result;
+    }
+
+    private static List<String> extractFormIdsFromSpecies(Object speciesObj) {
+        List<String> result = new ArrayList<>();
+        if (speciesObj == null) return result;
+        String speciesSdId = null;
+        try {
+            speciesSdId = extractStringId(speciesObj).toLowerCase();
+        } catch (Throwable ignored) {}
+        if (speciesSdId == null || speciesSdId.isEmpty()) return result;
+
+        try {
+            for (Method m : speciesObj.getClass().getMethods()) {
+                if ((m.getName().equals("getForms") || m.getName().equals("forms"))
+                        && m.getParameterCount() == 0) {
+                    Object formsColl = m.invoke(speciesObj);
+                    if (formsColl instanceof Iterable<?>) {
+                        for (Object formObj : (Iterable<?>) formsColl) {
+                            if (formObj == null) continue;
+                            String formSdId = extractStringId(formObj);
+                            if (formSdId == null || formSdId.isEmpty()) continue;
+                            formSdId = formSdId.toLowerCase();
+                            // 剥离物种名前缀，提取纯形态ID（如 bulbasaurnormal→normal, raticate-alola→alola）
+                            String pureForm = formSdId;
+                            if (formSdId.startsWith(speciesSdId)) {
+                                pureForm = formSdId.substring(speciesSdId.length());
+                                if (pureForm.startsWith("-") || pureForm.startsWith("_"))
+                                    pureForm = pureForm.substring(1);
+                            }
+                            if (pureForm.isEmpty() || pureForm.equals("normal")) pureForm = "normal";
+                            if (!result.contains(pureForm)) result.add(pureForm);
+                        }
+                    }
+                    break;
+                }
+            }
+        } catch (Throwable ignored) {}
+        // 确保「普通」形态始终在列表中
+        if (!result.contains("normal")) result.add(0, "normal");
+        return result;
+    }
 }
