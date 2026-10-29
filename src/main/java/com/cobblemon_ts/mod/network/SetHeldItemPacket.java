@@ -1,6 +1,7 @@
 package com.cobblemon_ts.mod.network;
 
 import com.cobblemon_ts.mod.CobblemonTS;
+import com.cobblemon_ts.mod.SecurityHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -40,6 +41,12 @@ public record SetHeldItemPacket(UUID pokemonUuid, int slotIndex) implements Cust
     public static void handleServerSide(SetHeldItemPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer serverPlayer)) return;
+            // [线性-SEC] 权限校验：仅创造模式或OP
+            if (!SecurityHelper.isTrusted(serverPlayer)) {
+                CobblemonTS.LOGGER.warn("[Security] Unauthorized SetHeldItem from {}",
+                        serverPlayer.getName().getString());
+                return;
+            }
             try {
                 var cobblemonInstance = Class.forName("com.cobblemon.mod.common.Cobblemon")
                         .getDeclaredField("INSTANCE").get(null);

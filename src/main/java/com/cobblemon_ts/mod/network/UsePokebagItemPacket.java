@@ -1,6 +1,7 @@
 package com.cobblemon_ts.mod.network;
 
 import com.cobblemon_ts.mod.CobblemonTS;
+import com.cobblemon_ts.mod.SecurityHelper;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -28,6 +29,15 @@ public record UsePokebagItemPacket(int partySlot, String itemId, int count) impl
     private static Class<?> cachedPokemonClass;
     private static Method cachedPokemonGetMethod;
     private static Method cachedPokemonGetUuidMethod;
+    // [线性-O01a] tryUseItemOnPokemon 治疗/状态反射缓存（避免每次调用getMethod）
+    private static Method cachedGetCurrentHealth;
+    private static Method cachedGetMaxHealth;
+    private static Method cachedSetCurrentHealth;
+    private static Method cachedHeal;
+    private static Method cachedIsFainted;
+    private static Method cachedGetStatus;
+    private static Method cachedSetStatus;
+    private static Class<?> cachedPersistentStatusContainerClass;
     private static Class<?> cachedServerPlayerClass;
     private static boolean reflectionInitialized;
 
@@ -71,6 +81,17 @@ public record UsePokebagItemPacket(int partySlot, String itemId, int count) impl
             cachedPokemonClass = Class.forName("com.cobblemon.mod.common.pokemon.Pokemon");
             cachedPokemonGetUuidMethod = cachedPokemonClass.getMethod("getUuid");
 
+            // [线性-O01a] 缓存治疗/状态反射方法
+            cachedGetCurrentHealth = cachedPokemonClass.getMethod("getCurrentHealth");
+            cachedGetMaxHealth = cachedPokemonClass.getMethod("getMaxHealth");
+            cachedSetCurrentHealth = cachedPokemonClass.getMethod("setCurrentHealth", int.class);
+            cachedHeal = cachedPokemonClass.getMethod("heal");
+            cachedIsFainted = cachedPokemonClass.getMethod("isFainted");
+            cachedGetStatus = cachedPokemonClass.getMethod("getStatus");
+            cachedPersistentStatusContainerClass = Class.forName(
+                    "com.cobblemon.mod.common.pokemon.status.PersistentStatusContainer");
+            cachedSetStatus = cachedPokemonClass.getMethod("setStatus", cachedPersistentStatusContainerClass);
+
             reflectionInitialized = true;
         } catch (Exception e) {
             CobblemonTS.LOGGER.error("[UsePokebagItem] 反射缓存初始化失败", e);
@@ -80,6 +101,13 @@ public record UsePokebagItemPacket(int partySlot, String itemId, int count) impl
     public static void handleServerSide(UsePokebagItemPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer serverPlayer)) return;
+
+            // [线性-SEC] 权限校验：仅创造模式或OP
+            if (!SecurityHelper.isTrusted(serverPlayer)) {
+                CobblemonTS.LOGGER.warn("[Security] Unauthorized UsePokebagItem from {}",
+                        serverPlayer.getName().getString());
+                return;
+            }
 
             // [线性-O01] 确保反射缓存已初始化
             if (!reflectionInitialized) initReflection();
@@ -169,15 +197,8 @@ public record UsePokebagItemPacket(int partySlot, String itemId, int count) impl
             // 2. 尝试治疗/复活类物品
             String itemId = packet.itemId();
 
-            // [线性-O01] 缓存治疗类反射方法
-            var getCurrentHealthMethod = cachedPokemonClass.getMethod("getCurrentHealth");
-            var getMaxHealthMethod = cachedPokemonClass.getMethod("getMaxHealth");
-            var setCurrentHealthMethod = cachedPokemonClass.getMethod("setCurrentHealth", int.class);
-            var healMethod = cachedPokemonClass.getMethod("heal");
-            var isFaintedMethod = cachedPokemonClass.getMethod("isFainted");
-            var getStatusMethod = cachedPokemonClass.getMethod("getStatus");
-            var setStatusMethod = cachedPokemonClass.getMethod("setStatus",
-                    Class.forName("com.cobblemon.mod.common.pokemon.status.PersistentStatusContainer"));
+            // [线性-O01a] 使用静态缓存的反射Method，避免每次调用getMethod
+            if (cachedGetCurrentHealth == null || cachedSetStatus == null) return false;
 
             boolean isHealing = switch (itemId) {
                 case "cobblemon:potion", "cobblemon:super_potion",
@@ -212,43 +233,40 @@ public record UsePokebagItemPacket(int partySlot, String itemId, int count) impl
                     default -> 0;
                 };
 
-                int currentHp = (Integer) getCurrentHealthMethod.invoke(pokemon);
-                int maxHp = (Integer) getMaxHealthMethod.invoke(pokemon);
+                int currentHp = (Integer) cachedGetCurrentHealth.invoke(pokemon);
+                int maxHp = (Integer) cachedGetMaxHealth.invoke(pokemon);
                 if (currentHp < maxHp) {
                     anyEffect = true;
                     if (healAmount == Integer.MAX_VALUE) {
-                        healMethod.invoke(pokemon);
+                        cachedHeal.invoke(pokemon);
                     } else {
                         for (int c = 0; c < packet.count(); c++) {
                             currentHp = Math.min(maxHp, currentHp + healAmount);
                         }
-                        setCurrentHealthMethod.invoke(pokemon, currentHp);
+                        cachedSetCurrentHealth.invoke(pokemon, currentHp);
                     }
                 }
             }
 
             if (isStatusCure) {
-                Object status = getStatusMethod.invoke(pokemon);
+                Object status = cachedGetStatus.invoke(pokemon);
                 if (status != null) {
-                    Method sizeMethod = status.getClass().getMethod("size");
-                    int statusCount = (Integer) sizeMethod.invoke(status);
+                    int statusCount = (Integer) status.getClass().getMethod("size").invoke(status);
                     if (statusCount > 0) {
                         anyEffect = true;
-                        Class<?> containerClass = Class.forName(
-                                "com.cobblemon.mod.common.pokemon.status.PersistentStatusContainer");
-                        Object emptyContainer = containerClass.getDeclaredConstructor().newInstance();
-                        setStatusMethod.invoke(pokemon, emptyContainer);
+                        Object emptyContainer = cachedPersistentStatusContainerClass.getDeclaredConstructor().newInstance();
+                        cachedSetStatus.invoke(pokemon, emptyContainer);
                     }
                 }
             }
 
             if (isRevive) {
-                boolean isFainted = (Boolean) isFaintedMethod.invoke(pokemon);
-                if (isFainted) {
+                boolean fainted = (Boolean) cachedIsFainted.invoke(pokemon);
+                if (fainted) {
                     anyEffect = true;
-                    int maxHp = (Integer) getMaxHealthMethod.invoke(pokemon);
+                    int maxHp = (Integer) cachedGetMaxHealth.invoke(pokemon);
                     int healAmount = itemId.equals("cobblemon:max_revive") ? maxHp : maxHp / 2;
-                    setCurrentHealthMethod.invoke(pokemon, healAmount);
+                    cachedSetCurrentHealth.invoke(pokemon, healAmount);
                 }
             }
 

@@ -11,6 +11,7 @@ import com.cobblemon.mod.common.pokeball.PokeBall;
 import com.cobblemon_ts.mod.CharmPlayerData;
 import com.cobblemon_ts.mod.CobblemonTS;
 import com.cobblemon_ts.mod.PokebagManager;
+import com.cobblemon_ts.mod.SecurityHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -197,6 +198,13 @@ public record ThrowPokeBallPacket(String itemId) implements CustomPacketPayload 
     public static void handleServerSide(ThrowPokeBallPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer serverPlayer)) return;
+
+            // [线性-SEC] 权限校验：仅创造模式或OP
+            if (!SecurityHelper.isTrusted(serverPlayer)) {
+                CobblemonTS.LOGGER.warn("[Security] Unauthorized ThrowPokeBall from {}",
+                        serverPlayer.getName().getString());
+                return;
+            }
 
             // [线性-B05ze] 步骤1：遍历玩家主背包
             for (int i = 0; i < serverPlayer.getInventory().items.size(); i++) {

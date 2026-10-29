@@ -20,6 +20,11 @@ public class PokebagManager {
     // [线性-B02] 自动保存回调：数据一改即时写persistentData
     private Runnable onDirty = () -> {};
 
+    // [线性-B03] 性能优化：拾取物频繁触发NBT序列化 → 改为脏标记 + 限流保存
+    private boolean dirty = false;
+    private long lastFlushTime = 0;
+    private static final long FLUSH_COOLDOWN_MS = 1000; // 1秒最多保存一次
+
     public void setOnDirty(Runnable callback) {
         this.onDirty = callback != null ? callback : () -> {};
     }
@@ -67,9 +72,9 @@ public class PokebagManager {
         if (DebugConfig.DEBUG_POKEBAG.get()) {
             CobblemonTS.LOGGER.info("[PokebagMgr] addItemToBag() 剩余={} (0=全部放入)", result.getCount());
         }
-        // [线性-B02] 物品成功放入 → 触发即时保存
+        // [线性-B03] 物品成功放入 → 标记脏数据（由tick限流保存，不再每次拾取都NBT序列化）
         if (result.getCount() != stack.getCount()) {
-            onDirty.run();
+            dirty = true;
         }
         return result;
     }
@@ -125,6 +130,23 @@ public class PokebagManager {
             // 直接物品ID匹配: cobblemon:poke_ball
             return itemId.equals(entry);
         }
+    }
+
+    // [线性-B03] 限流保存：每1秒最多落盘一次，避免高频拾取卡服
+    public void tryFlush() {
+        if (!dirty) return;
+        long now = System.currentTimeMillis();
+        if (now - lastFlushTime < FLUSH_COOLDOWN_MS) return;
+        dirty = false;
+        lastFlushTime = now;
+        onDirty.run();
+    }
+
+    // [线性-B03] 强制立即保存（指令/手动清空等场景）
+    public void forceFlush() {
+        dirty = true;
+        lastFlushTime = 0;
+        tryFlush();
     }
 
     private static final int MAX_SAVE_COUNT = 64;

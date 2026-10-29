@@ -1,6 +1,7 @@
 package com.cobblemon_ts.mod.network;
 
 import com.cobblemon_ts.mod.CobblemonTS;
+import com.cobblemon_ts.mod.SecurityHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;

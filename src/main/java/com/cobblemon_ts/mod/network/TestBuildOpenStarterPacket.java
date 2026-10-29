@@ -5,6 +5,7 @@ import com.cobblemon.mod.common.api.starter.StarterHandler;
 import com.cobblemon.mod.common.api.storage.player.GeneralPlayerData;
 import com.cobblemon.mod.common.api.storage.player.PlayerInstancedDataStoreManager;
 import com.cobblemon_ts.mod.CobblemonTS;
+import com.cobblemon_ts.mod.SecurityHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
@@ -29,6 +30,12 @@ public record TestBuildOpenStarterPacket() implements CustomPacketPayload {
     public static void handleServerSide(TestBuildOpenStarterPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer serverPlayer) {
+                // [线性-SEC] 权限校验：仅创造模式或OP
+                if (!SecurityHelper.isTrusted(serverPlayer)) {
+                    CobblemonTS.LOGGER.warn("[Security] Unauthorized TestBuildOpenStarter from {}",
+                            serverPlayer.getName().getString());
+                    return;
+                }
                 try {
                     // [线性-L1] 重置初始宝可梦检测标志
                     PlayerInstancedDataStoreManager dataManager = Cobblemon.INSTANCE.getPlayerDataManager();

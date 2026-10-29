@@ -51,4 +51,9 @@ public record SyncCharmStatesS2CPacket(Map<String, Boolean> states) implements C
             latestStates = packet.states;
         });
     }
+
+    // [线性-P03d] 客户端断线清理：清空volatile引用
+    public static void clearCache() {
+        latestStates = null;
+    }
 }
