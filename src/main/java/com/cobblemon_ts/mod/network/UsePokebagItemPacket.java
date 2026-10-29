@@ -2,6 +2,7 @@ package com.cobblemon_ts.mod.network;
 
 import com.cobblemon_ts.mod.CobblemonTS;
 import com.cobblemon_ts.mod.SecurityHelper;
+import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -11,6 +12,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +40,12 @@ public record UsePokebagItemPacket(int partySlot, String itemId, int count) impl
     private static Method cachedGetStatus;
     private static Method cachedSetStatus;
     private static Class<?> cachedPersistentStatusContainerClass;
+    // [线性-O01b] 金色王冠反射缓存
+    private static Method cachedGetIvs;
+    private static Method cachedIsHyperTrained;
+    private static Object[] cachedAllStats;
+    private static Field cachedHyperTrainedIVsField;
+    private static Method cachedPokemonUpdateMethod;
     private static Class<?> cachedServerPlayerClass;
     private static boolean reflectionInitialized;
 
@@ -91,6 +99,24 @@ public record UsePokebagItemPacket(int partySlot, String itemId, int count) impl
             cachedPersistentStatusContainerClass = Class.forName(
                     "com.cobblemon.mod.common.pokemon.status.PersistentStatusContainer");
             cachedSetStatus = cachedPokemonClass.getMethod("setStatus", cachedPersistentStatusContainerClass);
+
+            // [线性-O01b] 缓存金色王冠反射：IVs/Stats/hyperTrainedIVs
+            cachedGetIvs = cachedPokemonClass.getMethod("getIvs");
+            var ivsClass = cachedGetIvs.getReturnType();
+            cachedIsHyperTrained = ivsClass.getMethod("isHyperTrained",
+                    Class.forName("com.cobblemon.mod.common.api.pokemon.stats.Stat"));
+            var statsClass = Class.forName("com.cobblemon.mod.common.api.pokemon.stats.Stats");
+            cachedAllStats = new Object[] {
+                statsClass.getField("HP").get(null),
+                statsClass.getField("ATTACK").get(null),
+                statsClass.getField("DEFENCE").get(null),
+                statsClass.getField("SPECIAL_ATTACK").get(null),
+                statsClass.getField("SPECIAL_DEFENCE").get(null),
+                statsClass.getField("SPEED").get(null)
+            };
+            cachedHyperTrainedIVsField = ivsClass.getDeclaredField("hyperTrainedIVs");
+            cachedHyperTrainedIVsField.setAccessible(true);
+            cachedPokemonUpdateMethod = cachedPokemonClass.getMethod("update");
 
             reflectionInitialized = true;
         } catch (Exception e) {
@@ -179,6 +205,11 @@ public record UsePokebagItemPacket(int partySlot, String itemId, int count) impl
     // 注意：此方法的反射调用也做了缓存优化
     private static boolean tryUseItemOnPokemon(ServerPlayer player, Object pokemon, ItemStack stack, UsePokebagItemPacket packet) {
         try {
+            // 0. 金色王冠特殊处理：切换超级特训状态（道具袋渠道）
+            if ("coblemon_ts:gold_crown".equals(packet.itemId())) {
+                return handleGoldenBottleCapFromBag(player, pokemon);
+            }
+
             // 1. 尝试 PokemonSelectingItem（糖果/进化石等）
             if (stack.getItem() instanceof com.cobblemon.mod.common.api.item.PokemonSelectingItem selectingItem) {
                 if (selectingItem.canUseOnPokemon(stack, (com.cobblemon.mod.common.pokemon.Pokemon) pokemon)) {
@@ -273,6 +304,42 @@ public record UsePokebagItemPacket(int partySlot, String itemId, int count) impl
             return anyEffect;
         } catch (Exception e) {
             CobblemonTS.LOGGER.warn("[UsePokebagItem] tryUseItemOnPokemon failed: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    // [线性-O01b] 金色王冠处理（道具袋渠道）——使用缓存的反射
+    @SuppressWarnings("unchecked")
+    private static boolean handleGoldenBottleCapFromBag(ServerPlayer player, Object pokemon) {
+        try {
+            Object ivs = cachedGetIvs.invoke(pokemon);
+            if (ivs == null) return false;
+
+            java.util.Map<Object, Object> htMap = (java.util.Map<Object, Object>) cachedHyperTrainedIVsField.get(ivs);
+
+            boolean allHyperTrained = true;
+            for (Object stat : cachedAllStats) {
+                if (!(boolean) cachedIsHyperTrained.invoke(ivs, stat)) {
+                    allHyperTrained = false;
+                    break;
+                }
+            }
+
+            if (allHyperTrained) {
+                if (htMap != null) htMap.clear();
+                player.sendSystemMessage(Component.literal("§e已关闭金色王冠"));
+            } else {
+                for (Object stat : cachedAllStats) {
+                    htMap.put(stat, 31);
+                }
+                player.sendSystemMessage(Component.literal("§a已开启金色王冠"));
+            }
+
+            cachedPokemonUpdateMethod.invoke(pokemon);
+            CobblemonTS.LOGGER.info("[UsePokebagItem] golden_crown active={}", !allHyperTrained);
+            return true;
+        } catch (Exception e) {
+            CobblemonTS.LOGGER.error("[UsePokebagItem] 金色王冠处理失败: {}", e.getMessage());
             return false;
         }
     }
