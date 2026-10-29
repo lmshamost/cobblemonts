@@ -6,6 +6,8 @@
 !.gitattributes
 !README.md
 !TEMPLATE_LICENSE.txt
+!LICENSE
+!LICENSE.LGPL
 !build.gradle
 !settings.gradle
 !gradle.properties
