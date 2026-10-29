@@ -221,6 +221,10 @@
   "coblemon_ts.pokebag_config.save_entry": "保存",
   "coblemon_ts.pokebag_config.delete_entry": "删除",
   "coblemon_ts.pokebag_config.cancel_entry": "取消",
+  "coblemon_ts.pokebag_config.pick_from_inv": "物品栏选择",
+  "coblemon_ts.pokebag_config.pick_inv": "选择物品",
+  "coblemon_ts.pokebag_config.pick_hint": "左键=选中/取消  右键=确认添加",
+  "coblemon_ts.pokebag_config.selected": "个物品已选中",
 
   "command.coblemon_ts.cts.set.on": "§a护符 '%s' 已启用",
   "command.coblemon_ts.cts.set.off": "§c护符 '%s' 已禁用",

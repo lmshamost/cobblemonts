@@ -103,7 +103,6 @@ public class PokebagTagListScreen extends Screen {
                     entries.add("");
                     page = newIdx / PAGE_SIZE;
                     rebuildWidgets();
-                    // 自动打开编辑
                     Minecraft.getInstance().setScreen(
                             new PokebagTagEditScreen(isWhitelist, newIdx, "", this));
                 })
@@ -111,11 +110,20 @@ public class PokebagTagListScreen extends Screen {
                 .size(60, 20)
                 .build());
 
+        // [线性-IPC-05] 从物品栏选择物品添加
+        this.addRenderableWidget(Button.builder(
+                Component.translatable("coblemon_ts.pokebag_config.pick_from_inv"),
+                btn -> Minecraft.getInstance().setScreen(
+                        new PokebagInventoryPickScreen(isWhitelist, this)))
+                .pos(this.width / 2 + 70, bottomY)
+                .size(60, 20)
+                .build());
+
         // 保存
         this.addRenderableWidget(Button.builder(
                 Component.translatable("coblemon_ts.pokebag_config.save_list"),
                 btn -> saveList())
-                .pos(this.width / 2 + 75, bottomY)
+                .pos(this.width / 2 + 140, bottomY)
                 .size(60, 20)
                 .build());
 
@@ -123,7 +131,7 @@ public class PokebagTagListScreen extends Screen {
         this.addRenderableWidget(Button.builder(
                 Component.translatable("coblemon_ts.pokebag_config.back_list"),
                 btn -> Minecraft.getInstance().setScreen(parent))
-                .pos(this.width / 2 + 145, bottomY)
+                .pos(this.width / 2 + 210, bottomY)
                 .size(60, 20)
                 .build());
 

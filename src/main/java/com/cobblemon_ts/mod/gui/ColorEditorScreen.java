@@ -10,10 +10,14 @@ import net.minecraft.network.chat.Component;
 // [线性-L1] 颜色编辑器GUI：精灵栏/护符栏/宝可梦编辑器 颜色自定义
 //   Tab布局：亮色一行(精灵栏→护符栏→编辑器) / 暗色一行(精灵栏→护符栏→编辑器)
 //   竖向RGB输入 + 十六进制可编辑输入框 + 颜色预览 + 应用按钮
+// [线性-RESP-01] 面板尺寸响应式：根据屏幕尺寸动态计算，支持GUI缩放
 public class ColorEditorScreen extends Screen {
 
-    private static final int PANEL_W = 620;
-    private static final int PANEL_H = 380;
+    private static final int BASE_PANEL_W = 620;
+    private static final int BASE_PANEL_H = 380;
+    private static final int MIN_PANEL_W = 400;
+    private static final int MIN_PANEL_H = 260;
+    private int PANEL_W, PANEL_H;
     private int panelX, panelY;
 
     // [线性-L10] tabLayout {{0,2,4},{1,3,5}} → 上排全亮色, 下排全暗色, 每排固定: 精灵栏→护符栏→编辑器
@@ -65,6 +69,9 @@ public class ColorEditorScreen extends Screen {
 
     @Override
     protected void init() {
+        // [线性-RESP-01] 响应式面板尺寸：取基础值和屏幕可用空间的较小值，不低于最小值
+        PANEL_W = Math.min(BASE_PANEL_W, Math.max(MIN_PANEL_W, this.width - 20));
+        PANEL_H = Math.min(BASE_PANEL_H, Math.max(MIN_PANEL_H, this.height - 10));
         panelX = (this.width - PANEL_W) / 2;
         panelY = (this.height - PANEL_H) / 2;
 
@@ -410,10 +417,12 @@ public class ColorEditorScreen extends Screen {
         graphics.fill(previewX, previewY, previewX + previewSize, previewY + previewSize, 0xFF000000);
         graphics.fill(previewX + 1, previewY + 1, previewX + previewSize - 1, previewY + previewSize - 1, currentColor);
 
-        // ===== 右侧预览区 =====
-        int previewAreaX = panelX + 310;
+        // ===== 右侧预览区 ===== [线性-RESP-01] 使用动态PANEL_W计算，微面板也能显示
+        int fieldAreaW = 206; // 标签14 + 输入52 + 间距 ~ 206
+        int previewAreaX = fieldX + fieldAreaW + 10;
+        if (previewAreaX > panelX + PANEL_W - 60) previewAreaX = panelX + PANEL_W - 60;
         int previewAreaY = panelY + 35;
-        int previewAreaW = PANEL_W - 320;
+        int previewAreaW = panelX + PANEL_W - previewAreaX - 10;
         int previewAreaH = PANEL_H - 65;
         drawPreviewPanel(graphics, previewAreaX, previewAreaY, previewAreaW, previewAreaH);
     }
