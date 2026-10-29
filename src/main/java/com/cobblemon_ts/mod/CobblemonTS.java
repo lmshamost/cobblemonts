@@ -35,6 +35,10 @@ import com.cobblemon_ts.mod.network.TestBuildOpenStarterPacket;
 import com.cobblemon_ts.mod.network.ThrowPokeBallPacket;
 import com.cobblemon_ts.mod.network.RequestPokebagContentsPacket;
 import com.cobblemon_ts.mod.network.SyncPokebagContentsPacket;
+import com.cobblemon_ts.mod.network.UpdateCharmStatePacket;
+import com.cobblemon_ts.mod.network.RequestCharmStatesPacket;
+import com.cobblemon_ts.mod.network.SyncCharmStatesS2CPacket;
+import com.cobblemon_ts.mod.command.ClearCharmCommand;
 import com.cobblemon_ts.mod.lucky.LuckyBlocks;
 import com.cobblemon_ts.mod.lucky.LuckyRecipeCondition;
 import com.cobblemon_ts.mod.gui.ColorEditorConfig;
@@ -140,6 +144,8 @@ public class CobblemonTS {
         if (FMLEnvironment.dist == Dist.CLIENT) {
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(CobblemonTS::onClientTick);
         }
+        // [线性-CMD03] 注册 /cts clear 指令
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(ClearCharmCommand::register);
         LOGGER.info("Cobblemon TS initialized!");
     }
 
@@ -356,6 +362,26 @@ public class CobblemonTS {
                 PokemonEditorNetwork.DeletePokemonPacket.TYPE,
                 PokemonEditorNetwork.DeletePokemonPacket.STREAM_CODEC,
                 PokemonEditorNetwork::handleDeletePokemon
+        );
+
+        // ==== TestBuild Charm State Packets ====
+        // [线性-P04] 客户端请求护符状态快照 C→S
+        registrar.playToServer(
+                RequestCharmStatesPacket.TYPE,
+                RequestCharmStatesPacket.STREAM_CODEC,
+                RequestCharmStatesPacket::handleServerSide
+        );
+        // [线性-P04a] 服务端响应护符状态快照 S→C
+        registrar.playToClient(
+                SyncCharmStatesS2CPacket.TYPE,
+                SyncCharmStatesS2CPacket.STREAM_CODEC,
+                SyncCharmStatesS2CPacket::handleClientSide
+        );
+        // [线性-P04b] 客户端护符开关保存 C→S
+        registrar.playToServer(
+                UpdateCharmStatePacket.TYPE,
+                UpdateCharmStatePacket.STREAM_CODEC,
+                UpdateCharmStatePacket::handleServerSide
         );
     }
 

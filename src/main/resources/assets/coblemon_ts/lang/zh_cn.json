@@ -185,11 +185,17 @@
   "coblemon_ts.testbuild.exp_boost": "经验倍率:",
   "coblemon_ts.testbuild.hatch_boost": "孵化倍率:",
   "coblemon_ts.testbuild.exp_all_percent": "经验共享%:",
+  "coblemon_ts.testbuild.bag_stack": "道具袋堆叠:",
   "coblemon_ts.testbuild.save_charm_config": "保存护符配置",
   "coblemon_ts.testbuild.charm_saved": "§a护符配置已保存",
   "coblemon_ts.testbuild.input_error": "§c输入格式错误，请检查数值",
   "coblemon_ts.testbuild.tooltip.build_time": "构建时间: %s",
   "coblemon_ts.testbuild.tooltip.open_menu": "右击打开功能菜单",
+
+  "command.coblemon_ts.cts.set.on": "§a护符 '%s' 已启用",
+  "command.coblemon_ts.cts.set.off": "§c护符 '%s' 已禁用",
+  "command.coblemon_ts.cts.set.success_on": "已为 %d 名玩家启用护符 '%s'",
+  "command.coblemon_ts.cts.set.success_off": "已为 %d 名玩家禁用护符 '%s'",
 
   "coblemon_ts.ui.party": "队伍",
   "coblemon_ts.ui.charms": "护符",
