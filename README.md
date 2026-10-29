@@ -87,5 +87,7 @@ Cobblemon 辅助增强模组，为你的方块宝可梦之旅添加实用道具�
 - [jecharacters](https://www.curseforge.com/minecraft/mc-mods/jecharacters) — 拼音搜索支持
 
 ## License / 许可
+This project is licensed under the **GPL-3.0-only**.
+See the [LICENSE](./LICENSE) file for details.
 
-All Rights Reserved
+本项目采用 **GPL-3.0-only** 协议开源，详见 [LICENSE](./LICENSE) 文件。
