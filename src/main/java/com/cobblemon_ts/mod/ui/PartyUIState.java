@@ -40,7 +40,7 @@ public class PartyUIState {
     // 第一个"精灵槽位"位置留空（= SLOT_SIZE + SLOT_SPACING = 31）
     // 然后每个护符单元 = SLOT_SIZE + SLOT_SPACING = 31（与精灵槽位+间距同高，完美对齐）
     // 5个护符 → 从精灵2的Y位置开始依次对应精灵2,3,4,5,6
-    public static final int CHARM_DRAWER_MAX_OFFSET = 60;              // 抽屉宽度 = 精灵栏宽度
+    public static final int CHARM_DRAWER_MAX_OFFSET = 60;              // 抽屉宽度（与精灵栏同宽，缩写英文标签可容纳） | Drawer width (abbreviated EN labels fit)
     public static final int CHARM_ANIM_STEP = 3;
     public static final int ARROW_HITBOX_W = 12;
     public static final int ARROW_HITBOX_H = 12;

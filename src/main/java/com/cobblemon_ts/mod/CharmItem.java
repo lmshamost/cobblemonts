@@ -30,19 +30,19 @@ public class CharmItem extends Item {
                 stack.shrink(1);
                 
                 if (CharmConfig.SHOW_CHARM_MESSAGES.get()) {
-                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.coblemon_ts.charm_obtained", charmType.getDisplayName()));
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.coblemon_ts.charm_obtained", charmType.getDisplayComponent()));
                 }
                 CobblemonTS.LOGGER.info("护符 " + charmType.getDisplayName() + " 已获得并激活");
                 
                 return InteractionResultHolder.consume(stack);
             } else if (currentState == CharmState.AVAILABLE) {
                 if (CharmConfig.SHOW_CHARM_MESSAGES.get()) {
-                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.coblemon_ts.charm_already_owned", charmType.getDisplayName()));
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.coblemon_ts.charm_already_owned", charmType.getDisplayComponent()));
                 }
                 CobblemonTS.LOGGER.info("护符 " + charmType.getDisplayName() + " 已拥有，点击GUI中的护符槽激活");
             } else {
                 if (CharmConfig.SHOW_CHARM_MESSAGES.get()) {
-                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.coblemon_ts.charm_already_active", charmType.getDisplayName()));
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.coblemon_ts.charm_already_active", charmType.getDisplayComponent()));
                 }
                 CobblemonTS.LOGGER.info("护符 " + charmType.getDisplayName() + " 已激活");
             }

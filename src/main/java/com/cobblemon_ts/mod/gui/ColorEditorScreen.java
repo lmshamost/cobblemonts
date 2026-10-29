@@ -18,7 +18,15 @@ public class ColorEditorScreen extends Screen {
 
     // [线性-L10] tabLayout {{0,2,4},{1,3,5}} → 上排全亮色, 下排全暗色, 每排固定: 精灵栏→护符栏→编辑器
     private int activeTab = 0;
-    private static final String[] TAB_NAMES = {"精灵栏亮色", "精灵栏暗色", "护符栏亮色", "护符栏暗色", "编辑器亮色", "编辑器暗色"};
+    // [线性-L10] tab翻译键 | tab translation keys: party/charm/editor × light/dark
+    private static final String[] TAB_KEYS = {
+        "coblemon_ts.coloreditor.tab.party_light",
+        "coblemon_ts.coloreditor.tab.party_dark",
+        "coblemon_ts.coloreditor.tab.charm_light",
+        "coblemon_ts.coloreditor.tab.charm_dark",
+        "coblemon_ts.coloreditor.tab.editor_light",
+        "coblemon_ts.coloreditor.tab.editor_dark"
+    };
 
     // 当前组内选中的颜色项索引
     private int selectedColorIndex = 0;
@@ -27,24 +35,32 @@ public class ColorEditorScreen extends Screen {
     private EditBox rField, gField, bField, hexField;
     private Button applyBtn;
 
-    // 每组颜色项
-    private static final String[][] COLOR_GROUPS = {
+    // 每组颜色项翻译键 | color item translation keys per group
+    private static final String[][] COLOR_ITEM_KEYS = {
         // 0: 精灵栏亮色
-        {"面板底色", "面板边框", "面板文字", "槽位底色", "槽位悬停底色", "槽位边框", "槽位选中边框", "槽位悬停边框"},
+        {"coblemon_ts.coloreditor.item.panel_bg","coblemon_ts.coloreditor.item.panel_border","coblemon_ts.coloreditor.item.panel_text",
+         "coblemon_ts.coloreditor.item.slot_bg","coblemon_ts.coloreditor.item.slot_hover_bg","coblemon_ts.coloreditor.item.slot_border",
+         "coblemon_ts.coloreditor.item.slot_selected_border","coblemon_ts.coloreditor.item.slot_hover_border"},
         // 1: 精灵栏暗色
-        {"面板外层", "面板内层", "面板文字"},
-        // 2: 护符栏亮色（与精灵栏共用颜色配置）
-        {"面板底色", "面板边框", "面板文字", "槽位底色", "槽位悬停底色", "槽位边框", "槽位选中边框", "槽位悬停边框"},
-        // 3: 护符栏暗色（与精灵栏共用颜色配置）
-        {"面板外层", "面板内层", "面板文字"},
+        {"coblemon_ts.coloreditor.item.panel_outer","coblemon_ts.coloreditor.item.panel_inner","coblemon_ts.coloreditor.item.panel_text"},
+        // 2: 护符栏亮色
+        {"coblemon_ts.coloreditor.item.panel_bg","coblemon_ts.coloreditor.item.panel_border","coblemon_ts.coloreditor.item.panel_text",
+         "coblemon_ts.coloreditor.item.slot_bg","coblemon_ts.coloreditor.item.slot_hover_bg","coblemon_ts.coloreditor.item.slot_border",
+         "coblemon_ts.coloreditor.item.slot_selected_border","coblemon_ts.coloreditor.item.slot_hover_border"},
+        // 3: 护符栏暗色
+        {"coblemon_ts.coloreditor.item.panel_outer","coblemon_ts.coloreditor.item.panel_inner","coblemon_ts.coloreditor.item.panel_text"},
         // 4: 编辑器亮色
-        {"容器背景", "容器边框", "标签文字", "输入框背景", "输入框边框", "输入框文字", "Tab活跃色"},
+        {"coblemon_ts.coloreditor.item.container_bg","coblemon_ts.coloreditor.item.container_border","coblemon_ts.coloreditor.item.label_text",
+         "coblemon_ts.coloreditor.item.input_bg","coblemon_ts.coloreditor.item.input_border","coblemon_ts.coloreditor.item.input_text",
+         "coblemon_ts.coloreditor.item.tab_active"},
         // 5: 编辑器暗色
-        {"容器背景", "容器边框", "标签文字", "输入框背景", "输入框边框", "输入框文字", "Tab活跃色"},
+        {"coblemon_ts.coloreditor.item.container_bg","coblemon_ts.coloreditor.item.container_border","coblemon_ts.coloreditor.item.label_text",
+         "coblemon_ts.coloreditor.item.input_bg","coblemon_ts.coloreditor.item.input_border","coblemon_ts.coloreditor.item.input_text",
+         "coblemon_ts.coloreditor.item.tab_active"},
     };
 
     public ColorEditorScreen() {
-        super(Component.literal("颜色编辑器"));
+        super(Component.translatable("coblemon_ts.coloreditor.title"));
     }
 
     @Override
@@ -65,7 +81,7 @@ public class ColorEditorScreen extends Screen {
                 int tabY = row == 0 ? tabY1 : tabY2;
                 int finalI = i;
                 this.addRenderableWidget(Button.builder(
-                        Component.literal(TAB_NAMES[i]),
+                        Component.translatable(TAB_KEYS[i]),
                         btn -> { activeTab = finalI; selectedColorIndex = 0; refreshRGBFields(); clearAndRebuild(); })
                         .pos(tabX, tabY)
                         .size(tabW, tabH)
@@ -78,11 +94,11 @@ public class ColorEditorScreen extends Screen {
         int listY = tabY2 + tabH + 8;
         int listW = 120;
         int itemH = 16;
-        String[] items = COLOR_GROUPS[activeTab];
+        String[] items = COLOR_ITEM_KEYS[activeTab];
         for (int i = 0; i < items.length; i++) {
             int idx = i;
             this.addRenderableWidget(Button.builder(
-                    Component.literal(items[i]),
+                    Component.translatable(items[i]),
                     btn -> { selectedColorIndex = idx; refreshRGBFields(); })
                     .pos(listX, listY + i * (itemH + 2))
                     .size(listW, itemH)
@@ -128,14 +144,14 @@ public class ColorEditorScreen extends Screen {
 
         // 应用按钮（放在十六进制输入框下面）
         int btnY = hexY + rowSpacing + 2;
-        applyBtn = Button.builder(Component.literal("应用颜色"), btn -> applyColor())
+        applyBtn = Button.builder(Component.translatable("coblemon_ts.coloreditor.apply"), btn -> applyColor())
                 .pos(fieldX + labelGap, btnY)
                 .size(66, 18)
                 .build();
         this.addRenderableWidget(applyBtn);
 
         // 返回按钮
-        this.addRenderableWidget(Button.builder(Component.literal("返回"),
+        this.addRenderableWidget(Button.builder(Component.translatable("coblemon_ts.coloreditor.back"),
                 btn -> this.onClose())
                 .pos(panelX + PANEL_W - 55, panelY + PANEL_H - 25)
                 .size(45, 20)
@@ -433,8 +449,10 @@ public class ColorEditorScreen extends Screen {
             graphics.fill(x + 5, y + 5, x + 55, y + h - 5, inner);
         }
 
-        // 标题：精灵栏→"队伍"，护符栏→"护符"
-        graphics.drawCenteredString(this.font, isCharm ? "护符" : "队伍", x + 30, y + 4, textColor);
+        // 标题 | Title
+        graphics.drawCenteredString(this.font,
+                Component.translatable(isCharm ? "coblemon_ts.ui.charms" : "coblemon_ts.ui.party").getString(),
+                x + 30, y + 4, textColor);
 
         // 槽位预览
         int slotY = y + 18;

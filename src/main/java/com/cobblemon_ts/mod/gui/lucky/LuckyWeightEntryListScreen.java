@@ -33,7 +33,7 @@ public class LuckyWeightEntryListScreen extends Screen {
     private Button backBtn;
 
     public LuckyWeightEntryListScreen(ResourceLocation blockId, String blockDisplayName, Screen parent) {
-        super(Component.literal("编辑 - " + blockDisplayName));
+        super(Component.translatable("coblemon_ts.lucky.list.title", blockDisplayName));
         this.blockId = blockId;
         this.blockDisplayName = blockDisplayName;
         this.parent = parent;
@@ -60,17 +60,19 @@ public class LuckyWeightEntryListScreen extends Screen {
             int y = listStartY + (i - start) * itemH;
             LuckyWeightManager.WeightEntry<?> entry = entries.get(i);
 
-            // 构建显示文本: 物品名 | 权重:xx | 保底:xx/yy
+            // 构建显示文本: 物品名 | Weight:xx | 保底:xx/yy
             String itemsStr = formatEntryItems(entry);
             String guaranteeStr;
             if (entry.guarantee > 0) {
                 int remaining = entry.remainingToGuarantee();
-                guaranteeStr = "§6保底:" + entry.getCounter() + "/" + entry.guarantee
-                        + " §7(还需" + remaining + "次)";
+                guaranteeStr = Component.translatable("coblemon_ts.lucky.list.guarantee_progress",
+                        entry.getCounter(), entry.guarantee, remaining).getString();
             } else {
-                guaranteeStr = "§7保底:无";
+                guaranteeStr = Component.translatable("coblemon_ts.lucky.list.guarantee_none").getString();
             }
-            String display = itemsStr + "  §a权重:" + entry.weight + "  " + guaranteeStr;
+            String display = itemsStr + "  "
+                    + Component.translatable("coblemon_ts.lucky.list.weight_label", entry.weight).getString()
+                    + "  " + guaranteeStr;
 
             this.addRenderableWidget(Button.builder(
                     Component.literal(display),
@@ -84,7 +86,7 @@ public class LuckyWeightEntryListScreen extends Screen {
         // 翻页按钮
         int bottomY = this.height - 60;
         prevBtn = this.addRenderableWidget(Button.builder(
-                Component.literal("上一页"),
+                Component.translatable("coblemon_ts.lucky.list.prev_page"),
                 btn -> { page--; rebuildWidgets(); })
                 .pos(this.width / 2 - 120, bottomY)
                 .size(60, 20)
@@ -92,7 +94,7 @@ public class LuckyWeightEntryListScreen extends Screen {
         prevBtn.active = page > 0;
 
         nextBtn = this.addRenderableWidget(Button.builder(
-                Component.literal("下一页"),
+                Component.translatable("coblemon_ts.lucky.list.next_page"),
                 btn -> { page++; rebuildWidgets(); })
                 .pos(this.width / 2 + 60, bottomY)
                 .size(60, 20)
@@ -101,7 +103,7 @@ public class LuckyWeightEntryListScreen extends Screen {
 
         // 添加条目按钮
         addBtn = this.addRenderableWidget(Button.builder(
-                Component.literal("+ 添加条目"),
+                Component.translatable("coblemon_ts.lucky.list.add_entry"),
                 btn -> {
                     // [线性-B03] 添加空条目，同时同步到本地列表和配置缓存
                     LuckyWeightManager.WeightEntry<?> newEntry = new LuckyWeightManager.WeightEntry<>(
@@ -121,7 +123,7 @@ public class LuckyWeightEntryListScreen extends Screen {
 
         // 保存按钮
         saveBtn = this.addRenderableWidget(Button.builder(
-                Component.literal("§a保存配置"),
+                Component.translatable("coblemon_ts.lucky.list.save_config"),
                 btn -> saveConfig())
                 .pos(this.width / 2 - 90, bottomY + 25)
                 .size(80, 20)
@@ -129,7 +131,7 @@ public class LuckyWeightEntryListScreen extends Screen {
 
         // 清理空条目按钮
         this.addRenderableWidget(Button.builder(
-                Component.literal("§c清理空条目"),
+                Component.translatable("coblemon_ts.lucky.list.clean_empty"),
                 btn -> {
                     // [线性-B03a] 同时清理本地列表和配置缓存
                     entries.removeIf(e -> e.entries.isEmpty() ||
@@ -148,7 +150,7 @@ public class LuckyWeightEntryListScreen extends Screen {
 
         // 返回按钮
         backBtn = this.addRenderableWidget(Button.builder(
-                Component.literal("返回"),
+                Component.translatable("coblemon_ts.lucky.list.back"),
                 btn -> Minecraft.getInstance().setScreen(parent))
                 .pos(this.width / 2 + 90, bottomY + 25)
                 .size(80, 20)
@@ -161,7 +163,7 @@ public class LuckyWeightEntryListScreen extends Screen {
         for (Object obj : entry.entries) {
             String s = obj.toString();
             if (s.isEmpty()) {
-                names.add("§7[空]");
+                names.add(Component.translatable("coblemon_ts.lucky.empty_entry").getString());
             } else {
                 names.add(toDisplayName(s));
             }
@@ -175,7 +177,7 @@ public class LuckyWeightEntryListScreen extends Screen {
 
     // 将物品ID/精灵名转为显示名（中文）
     static String toDisplayName(String raw) {
-        if (raw == null || raw.isEmpty()) return "§7[空]";
+        if (raw == null || raw.isEmpty()) return Component.translatable("coblemon_ts.lucky.empty_entry").getString();
         // 标签格式
         if (raw.startsWith("tag:")) return "§d" + raw;
         // NBT格式
@@ -274,7 +276,7 @@ public class LuckyWeightEntryListScreen extends Screen {
         // 提示玩家
         if (Minecraft.getInstance().player != null) {
             Minecraft.getInstance().player.displayClientMessage(
-                    Component.literal("§a配置已保存! 方块: " + blockDisplayName + " 共" + entries.size() + "条"),
+                    Component.translatable("coblemon_ts.lucky.list.saved", blockDisplayName, entries.size()),
                     false);
         }
     }
@@ -285,9 +287,9 @@ public class LuckyWeightEntryListScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font, this.title,
                 this.width / 2, 15, 0xFFFFFF);
+        int totalPages = Math.max(1, (entries.size() + PAGE_SIZE - 1) / PAGE_SIZE);
         graphics.drawCenteredString(this.font,
-                "§7共" + entries.size() + "条  |  第" + (page + 1) + "/" +
-                        Math.max(1, (entries.size() + PAGE_SIZE - 1) / PAGE_SIZE) + "页  |  点击条目编辑",
+                Component.translatable("coblemon_ts.lucky.list.status", entries.size(), page + 1, totalPages).getString(),
                 this.width / 2, 32, 0xAAAAAA);
     }
 

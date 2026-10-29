@@ -17,7 +17,7 @@ public class HudSettingsScreen extends Screen {
     private static final int ROW_STEP = BTN_H + BTN_GAP;
 
     public HudSettingsScreen() {
-        super(Component.literal("HUD设置"));
+        super(Component.translatable("coblemon_ts.hud.title"));
     }
 
     @Override
@@ -27,49 +27,49 @@ public class HudSettingsScreen extends Screen {
         int y = 28;
 
         // ==== 第1行: 药水效果 ====
-        addToggleBtn(leftX,  y, "药水buff(右上)",   CobblemonTSConfig.SHOW_EFFECT_ICONS);
-        addToggleBtn(rightX, y, "药水buff(背包内)",  CobblemonTSConfig.SHOW_INVENTORY_EFFECT_ICONS);
+        addToggleBtn(leftX,  y, "coblemon_ts.hud.effect_icons_top",      CobblemonTSConfig.SHOW_EFFECT_ICONS);
+        addToggleBtn(rightX, y, "coblemon_ts.hud.effect_icons_inv",       CobblemonTSConfig.SHOW_INVENTORY_EFFECT_ICONS);
         y += ROW_STEP;
 
         // ==== 第2行: 统一彩色条总开关 ====
-        addToggleBtn(leftX,  y, "统一彩色条总开关",   CobblemonTSConfig.HUD_UNIFIED_COLORED_BARS);
-        addToggleBtn(rightX, y, "隐藏背包切换按钮",   CobblemonTSConfig.HIDE_TOGGLE_BUTTONS);
+        addToggleBtn(leftX,  y, "coblemon_ts.hud.colored_bars",           CobblemonTSConfig.HUD_UNIFIED_COLORED_BARS);
+        addToggleBtn(rightX, y, "coblemon_ts.hud.hide_toggle_btns",       CobblemonTSConfig.HIDE_TOGGLE_BUTTONS);
         y += ROW_STEP;
 
         // ==== 第3行: 逐项-血条/饥饿 ====
-        addToggleBtn(leftX,  y, "逐项·自定义血条",   CobblemonTSConfig.HUD_CUSTOM_HEALTH_BAR);
-        addToggleBtn(rightX, y, "逐项·自定义饥饿条", CobblemonTSConfig.HUD_CUSTOM_FOOD_BAR);
+        addToggleBtn(leftX,  y, "coblemon_ts.hud.custom_health_bar",      CobblemonTSConfig.HUD_CUSTOM_HEALTH_BAR);
+        addToggleBtn(rightX, y, "coblemon_ts.hud.custom_food_bar",        CobblemonTSConfig.HUD_CUSTOM_FOOD_BAR);
         y += ROW_STEP;
 
         // ==== 第4行: 覆盖层 ====
-        addToggleBtn(leftX,  y, "吸收值金条覆盖",     CobblemonTSConfig.HUD_ABSORPTION_OVERLAY);
-        addToggleBtn(rightX, y, "饱腹值金条覆盖",     CobblemonTSConfig.HUD_SATURATION_OVERLAY);
+        addToggleBtn(leftX,  y, "coblemon_ts.hud.absorption_overlay",     CobblemonTSConfig.HUD_ABSORPTION_OVERLAY);
+        addToggleBtn(rightX, y, "coblemon_ts.hud.saturation_overlay",     CobblemonTSConfig.HUD_SATURATION_OVERLAY);
         y += ROW_STEP;
 
         // ==== 第5行: 盔甲/经验 ====
-        addToggleBtn(leftX,  y, "逐项·自定义盔甲条",  CobblemonTSConfig.HUD_CUSTOM_ARMOR_BAR);
-        addToggleBtn(rightX, y, "逐项·自定义经验条",  CobblemonTSConfig.HUD_CUSTOM_XP_BAR);
+        addToggleBtn(leftX,  y, "coblemon_ts.hud.custom_armor_bar",       CobblemonTSConfig.HUD_CUSTOM_ARMOR_BAR);
+        addToggleBtn(rightX, y, "coblemon_ts.hud.custom_xp_bar",          CobblemonTSConfig.HUD_CUSTOM_XP_BAR);
         y += ROW_STEP;
 
         // ==== 返回按钮 ====
         y += 6;
         int cx = this.width / 2;
         this.addRenderableWidget(Button.builder(
-                Component.literal("← 返回"),
+                Component.translatable("coblemon_ts.hud.back"),
                 btn -> this.onClose())
                 .pos(cx - BTN_W / 2, y)
                 .size(BTN_W, BTN_H)
                 .build());
     }
 
-    // [线性-H2] 开关按钮: 标签 + §a开/§c关
-    private void addToggleBtn(int x, int y, String label, ModConfigSpec.BooleanValue config) {
+    // [线性-H2] 开关按钮: 翻译键标签 + §aON/§cOFF
+    private void addToggleBtn(int x, int y, String labelKey, ModConfigSpec.BooleanValue config) {
         Button btn = Button.builder(
-                Component.literal(formatLabel(label, config.get())),
+                Component.literal(formatLabel(labelKey, config.get())),
                 b -> {
                     config.set(!config.get());
                     config.save();
-                    b.setMessage(Component.literal(formatLabel(label, config.get())));
+                    b.setMessage(Component.literal(formatLabel(labelKey, config.get())));
                 })
                 .pos(x, y)
                 .size(BTN_W, BTN_H)
@@ -77,9 +77,11 @@ public class HudSettingsScreen extends Screen {
         this.addRenderableWidget(btn);
     }
 
-    // [线性-H3] 格式化: "标签: §a开" / "标签: §c关"
-    private static String formatLabel(String label, boolean on) {
-        return label + ": " + (on ? "§a开" : "§c关");
+    // [线性-H3] 格式化: "标签: §aON" / "标签: §cOFF"
+    private static String formatLabel(String labelKey, boolean on) {
+        String label = Component.translatable(labelKey).getString();
+        String status = Component.translatable(on ? "coblemon_ts.hud.on" : "coblemon_ts.hud.off").getString();
+        return label + ": " + (on ? "§a" : "§c") + status;
     }
 
     @Override

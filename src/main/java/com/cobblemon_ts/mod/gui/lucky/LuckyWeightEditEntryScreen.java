@@ -35,7 +35,7 @@ public class LuckyWeightEditEntryScreen extends Screen {
 
     public LuckyWeightEditEntryScreen(ResourceLocation blockId, String blockDisplayName,
                                       int entryIndex, LuckyWeightManager.WeightEntry<?> entry, Screen parent) {
-        super(Component.literal("编辑条目 #" + (entryIndex + 1)));
+        super(Component.translatable("coblemon_ts.lucky.edit.title", entryIndex + 1));
         this.blockId = blockId;
         this.blockDisplayName = blockDisplayName;
         this.entryIndex = entryIndex;
@@ -55,7 +55,7 @@ public class LuckyWeightEditEntryScreen extends Screen {
 
         // 方块名称
         this.addRenderableWidget(Button.builder(
-                Component.literal("§6方块: " + blockDisplayName),
+                Component.translatable("coblemon_ts.lucky.edit.block_label", blockDisplayName),
                 btn -> {})
                 .pos(centerX - 100, 10)
                 .size(200, 18)
@@ -75,7 +75,9 @@ public class LuckyWeightEditEntryScreen extends Screen {
                 }).toList());
 
         this.addRenderableWidget(Button.builder(
-                Component.literal(isPokemonBlock ? "精灵名称" : "物品ID"),
+                Component.translatable(isPokemonBlock
+                        ? "coblemon_ts.lucky.edit.pokemon_name"
+                        : "coblemon_ts.lucky.edit.item_id"),
                 btn -> {})
                 .pos(labelX, y)
                 .size(60, fieldH)
@@ -91,9 +93,9 @@ public class LuckyWeightEditEntryScreen extends Screen {
 
         // 提示文字
         this.addRenderableWidget(Button.builder(
-                Component.literal(isPokemonBlock
-                        ? "§7提示: 精灵名支持中文/英文, 逗号分隔多个, 如: 皮卡丘,妙蛙种子"
-                        : "§7提示: 格式 modid:item, 或 tag:#tagid, 或 nbt:item@{...}, 逗号分隔"),
+                Component.translatable(isPokemonBlock
+                        ? "coblemon_ts.lucky.edit.hint_pokemon"
+                        : "coblemon_ts.lucky.edit.hint_item"),
                 btn -> {})
                 .pos(labelX, y)
                 .size(fieldW, 14)
@@ -102,7 +104,7 @@ public class LuckyWeightEditEntryScreen extends Screen {
 
         // 权重输入框
         this.addRenderableWidget(Button.builder(
-                Component.literal("权重值"),
+                Component.translatable("coblemon_ts.lucky.edit.weight"),
                 btn -> {})
                 .pos(labelX, y)
                 .size(60, fieldH)
@@ -118,7 +120,7 @@ public class LuckyWeightEditEntryScreen extends Screen {
 
         // 保底输入框
         this.addRenderableWidget(Button.builder(
-                Component.literal("保底值"),
+                Component.translatable("coblemon_ts.lucky.edit.guarantee"),
                 btn -> {})
                 .pos(labelX, y)
                 .size(60, fieldH)
@@ -142,9 +144,9 @@ public class LuckyWeightEditEntryScreen extends Screen {
         }
         int thisWeight = entry.weight;
         String preview = totalWeight > 0
-                ? "§7当前概率: §e" + thisWeight + "/" + totalWeight
-                + " §7= §a" + String.format("%.1f%%", 100.0 * thisWeight / totalWeight)
-                : "§7当前概率: 无法计算(总权重=0)";
+                ? Component.translatable("coblemon_ts.lucky.edit.probability",
+                        thisWeight, totalWeight, String.format("%.1f", 100.0 * thisWeight / totalWeight)).getString()
+                : Component.translatable("coblemon_ts.lucky.edit.probability_zero").getString();
         this.addRenderableWidget(Button.builder(
                 Component.literal(preview),
                 btn -> {})
@@ -155,7 +157,7 @@ public class LuckyWeightEditEntryScreen extends Screen {
 
         // 保存按钮
         this.addRenderableWidget(Button.builder(
-                Component.literal("§a保存"),
+                Component.translatable("coblemon_ts.lucky.edit.save"),
                 btn -> saveEntry())
                 .pos(centerX - 100, y + 5)
                 .size(80, 20)
@@ -163,7 +165,7 @@ public class LuckyWeightEditEntryScreen extends Screen {
 
         // 删除按钮
         this.addRenderableWidget(Button.builder(
-                Component.literal("§c删除此条目"),
+                Component.translatable("coblemon_ts.lucky.edit.delete"),
                 btn -> {
                     LuckyWeightManager.LuckyWeightConfig cfg = LuckyWeightManager.getConfig(blockId);
                     if (cfg != null && entryIndex < cfg.allEntries.size()) {
@@ -181,7 +183,7 @@ public class LuckyWeightEditEntryScreen extends Screen {
 
         // 返回按钮
         this.addRenderableWidget(Button.builder(
-                Component.literal("返回"),
+                Component.translatable("coblemon_ts.lucky.edit.back"),
                 btn -> {
                     // 直接返回，不保存修改
                     Minecraft.getInstance().setScreen(parent);
@@ -242,16 +244,21 @@ public class LuckyWeightEditEntryScreen extends Screen {
             if (isPokemonBlock) {
                 List<String> zhNames = new ArrayList<>();
                 for (String en : items) {
-                    if (en.isEmpty()) { zhNames.add("[空]"); continue; }
+                    if (en.isEmpty()) {
+                        zhNames.add(Component.translatable("coblemon_ts.lucky.empty_entry").getString());
+                        continue;
+                    }
                     String zh = PokemonNameMap.toChinese(en);
                     zhNames.add(zh.equals(en) ? en : zh);
                 }
                 display = String.join(",", zhNames);
             }
-            String typeLabel = isPokemonBlock ? "宝可梦" : "物品";
+            String typeLabel = Component.translatable(isPokemonBlock
+                    ? "coblemon_ts.lucky.edit.type_pokemon"
+                    : "coblemon_ts.lucky.edit.type_item").getString();
             Minecraft.getInstance().player.displayClientMessage(
-                    Component.literal("§a条目已更新! " + typeLabel + ": " + display
-                            + " 权重:" + weight + " 保底:" + guarantee),
+                    Component.translatable("coblemon_ts.lucky.edit.updated",
+                            typeLabel, display, weight, guarantee),
                     false);
         }
 

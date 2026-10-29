@@ -1128,19 +1128,26 @@ public class PokemonNameMap {
         if (en == null || en.isEmpty()) return "";
         double[] eff = NATURE_EFFECTS.get(en.toLowerCase().trim());
         if (eff == null) return "";
-        String[] names = {"HP", "攻击", "防御", "特攻", "特防", "速度"};
+        String[] statKeys = {
+            "coblemon_ts.editor.stat.hp",
+            "coblemon_ts.editor.stat.attack",
+            "coblemon_ts.editor.stat.defense",
+            "coblemon_ts.editor.stat.sp_atk",
+            "coblemon_ts.editor.stat.sp_def",
+            "coblemon_ts.editor.stat.speed"
+        };
         StringBuilder sb = new StringBuilder();
         boolean hasAny = false;
         for (int i = 0; i < 6; i++) {
             if (eff[i] > 0) {
-                sb.append(" +").append(names[i]);
+                sb.append(" +").append(Component.translatable(statKeys[i]).getString());
                 hasAny = true;
             } else if (eff[i] < 0) {
-                sb.append(" -").append(names[i]);
+                sb.append(" -").append(Component.translatable(statKeys[i]).getString());
                 hasAny = true;
             }
         }
-        if (!hasAny) return " 无变化";
+        if (!hasAny) return " " + Component.translatable("coblemon_ts.editor.nature_no_change").getString();
         return sb.toString();
     }
 
@@ -2258,22 +2265,23 @@ public class PokemonNameMap {
         return new ArrayList<>(ABILITY_ZH_TO_EN.keySet());
     }
 
-    // [线性-Lform] 形态名→中文，优先取Cobblemon自身的cobblemon.aspect.<id>翻译
+    // [线性-Lform] 形态名→本地化（优先Cobblemon的cobblemon.aspect.<id>翻译，回落本模组翻译）
     public static String formToChinese(String speciesName, String formName) {
-        if (formName == null || formName.isEmpty()) return "普通";
+        String normalForm = Component.translatable("coblemon_ts.editor.form_normal").getString();
+        if (formName == null || formName.isEmpty()) return normalForm;
         String lower = formName.toLowerCase().trim();
         // 提取纯形态部分：去掉物种名前缀（如bulbasaurnormal→normal，raticate-alola→alola）
         String formPart = lower;
         if (speciesName != null && !speciesName.isEmpty()) {
             String spLower = speciesName.toLowerCase().trim();
-            if (lower.equals(spLower)) return "普通"; // 形态=物种名 → 基础形态
+            if (lower.equals(spLower)) return normalForm; // 形态=物种名 → 基础形态
             if (lower.startsWith(spLower)) {
                 formPart = lower.substring(spLower.length());
                 if (formPart.startsWith("-") || formPart.startsWith("_"))
                     formPart = formPart.substring(1);
             }
         }
-        if (formPart.isEmpty() || formPart.equals("normal")) return "普通";
+        if (formPart.isEmpty() || formPart.equals("normal")) return normalForm;
         // lang key: cobblemon.aspect.<formPart>
         String fromLang = tryLang("cobblemon.aspect." + formPart, null);
         if (fromLang != null) return fromLang;

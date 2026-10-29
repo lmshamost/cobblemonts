@@ -32,9 +32,9 @@ public class TestBuildItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
-        tooltip.add(Component.literal("构建时间: " + BuildInfo.BUILD_TIME));
+        tooltip.add(Component.translatable("coblemon_ts.testbuild.tooltip.build_time", BuildInfo.BUILD_TIME));
         tooltip.add(Component.literal(""));
-        tooltip.add(Component.literal("右击打开功能菜单"));
+        tooltip.add(Component.translatable("coblemon_ts.testbuild.tooltip.open_menu"));
     }
 
     @Override

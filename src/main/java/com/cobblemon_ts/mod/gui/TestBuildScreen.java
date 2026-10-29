@@ -22,7 +22,7 @@ public class TestBuildScreen extends Screen {
     private EditBox expAllPercentField;
 
     public TestBuildScreen() {
-        super(Component.literal("测试功能选择"));
+        super(Component.translatable("coblemon_ts.testbuild.title"));
     }
 
     @Override
@@ -30,14 +30,14 @@ public class TestBuildScreen extends Screen {
         int btnW = 100;
         int btnH = 20;
         int centerX = this.width / 2;
-        int col0X = centerX - 110;
-        int col1X = centerX + 10;
+        int col0X = centerX - 125;                                        // [线性-COLUMN] 左移以容纳75px英文标签
+        int col1X = centerX + 5;                                          // 右列微调避免与左列输入框重叠
         int startY = this.height / 2 - 60;
         int rowStep = 25;
 
         // [线性-T1-1] 按钮1: 初始宝可梦选择 (col 0)
         this.addRenderableWidget(Button.builder(
-                Component.literal("宝可梦选择"),
+                Component.translatable("coblemon_ts.testbuild.starter_select"),
                 btn -> {
                     PacketDistributor.sendToServer(new TestBuildOpenStarterPacket());
                     this.onClose();
@@ -48,12 +48,12 @@ public class TestBuildScreen extends Screen {
 
         // [线性-T1-2] 按钮2: 统一主题切换 (col 1)
         this.addRenderableWidget(Button.builder(
-                Component.literal(getThemeToggleLabel()),
+                Component.translatable(getThemeToggleKey()),
                 btn -> {
                     boolean current = CobblemonTSConfig.LIGHT_PANEL_THEME.get();
                     CobblemonTSConfig.LIGHT_PANEL_THEME.set(!current);
                     CobblemonTSConfig.LIGHT_EDITOR_THEME.set(!current);
-                    btn.setMessage(Component.literal(getThemeToggleLabel()));
+                    btn.setMessage(Component.translatable(getThemeToggleKey()));
                 })
                 .pos(col1X, startY)
                 .size(btnW, btnH)
@@ -61,7 +61,7 @@ public class TestBuildScreen extends Screen {
 
         // [线性-T1-3] 按钮3: 颜色编辑器 (col 0, row 1)
         this.addRenderableWidget(Button.builder(
-                Component.literal("颜色编辑器"),
+                Component.translatable("coblemon_ts.testbuild.color_editor"),
                 btn -> Minecraft.getInstance().setScreen(new ColorEditorScreen()))
                 .pos(col0X, startY + rowStep)
                 .size(btnW, btnH)
@@ -69,7 +69,7 @@ public class TestBuildScreen extends Screen {
 
         // [线性-T1-4] 按钮4: 清除所有护符 (col 1, row 1)
         this.addRenderableWidget(Button.builder(
-                Component.literal("清除护符"),
+                Component.translatable("coblemon_ts.testbuild.clear_charms"),
                 btn -> {
                     PacketDistributor.sendToServer(new ClearAllCharmsPacket());
                     this.onClose();
@@ -80,7 +80,7 @@ public class TestBuildScreen extends Screen {
 
         // [线性-T1-5] 按钮5: 幸运方块权重编辑器 (col 0, row 2)
         this.addRenderableWidget(Button.builder(
-                Component.literal("幸运方块权重"),
+                Component.translatable("coblemon_ts.testbuild.lucky_weight"),
                 btn -> Minecraft.getInstance().setScreen(new com.cobblemon_ts.mod.gui.lucky.LuckyWeightEditorScreen()))
                 .pos(col0X, startY + rowStep * 2)
                 .size(btnW, btnH)
@@ -88,7 +88,7 @@ public class TestBuildScreen extends Screen {
 
         // [线性-T1-6] 按钮6: HUD设置 (col 1, row 2)
         this.addRenderableWidget(Button.builder(
-                Component.literal("HUD设置"),
+                Component.translatable("coblemon_ts.testbuild.hud_settings"),
                 btn -> Minecraft.getInstance().setScreen(new HudSettingsScreen()))
                 .pos(col1X, startY + rowStep * 2)
                 .size(btnW, btnH)
@@ -97,7 +97,7 @@ public class TestBuildScreen extends Screen {
         // ===== 护符属性编辑区域 =====
         int fieldW = 50;
         int fieldH = 16;
-        int labelW = 48;
+        int labelW = 75;                                             // [线性-LABEL] 扩展以容纳英文标签（如"Catch Boost:"）
         int editStartY = startY + rowStep * 3 + 5;
 
         // Row 0: 闪光概率 | 捕获倍率
@@ -130,17 +130,17 @@ public class TestBuildScreen extends Screen {
 
         // Row 3: 保存按钮
         this.addRenderableWidget(Button.builder(
-                Component.literal("保存护符配置"),
+                Component.translatable("coblemon_ts.testbuild.save_charm_config"),
                 btn -> saveCharmConfig())
                 .pos(col0X + labelW + fieldW + 5, editStartY + rowStep * 2)
                 .size(btnW, btnH)
                 .build());
     }
 
-    // [线性-T2] 主题切换标签
-    private String getThemeToggleLabel() {
+    // [线性-T2] 主题切换键名
+    private String getThemeToggleKey() {
         boolean light = CobblemonTSConfig.LIGHT_PANEL_THEME.get();
-        return light ? "亮色主题" : "暗色主题";
+        return light ? "coblemon_ts.testbuild.theme_light" : "coblemon_ts.testbuild.theme_dark";
     }
 
     // [线性-T3] 保存护符配置到 Config + 持久化
@@ -168,12 +168,12 @@ public class TestBuildScreen extends Screen {
 
             if (Minecraft.getInstance().player != null) {
                 Minecraft.getInstance().player.displayClientMessage(
-                        Component.literal("§a护符配置已保存"), false);
+                        Component.translatable("coblemon_ts.testbuild.charm_saved"), false);
             }
         } catch (NumberFormatException e) {
             if (Minecraft.getInstance().player != null) {
                 Minecraft.getInstance().player.displayClientMessage(
-                        Component.literal("§c输入格式错误，请检查数值"), false);
+                        Component.translatable("coblemon_ts.testbuild.input_error"), false);
             }
         }
     }
@@ -186,9 +186,9 @@ public class TestBuildScreen extends Screen {
         int centerX = this.width / 2;
         int startY = this.height / 2 - 60;
         int rowStep = 25;
-        int col0X = centerX - 110;
-        int col1X = centerX + 10;
-        int labelW = 48;
+        int col0X = centerX - 125;                                        // [线性-COLUMN] 与 init() 保持一致
+        int col1X = centerX + 5;                                          // [线性-COLUMN] 与 init() 保持一致
+        int labelW = 75;                                                  // [线性-LABEL] 与 init() 保持一致
         int editStartY = startY + rowStep * 3 + 5;
 
         // 标题
@@ -197,11 +197,11 @@ public class TestBuildScreen extends Screen {
         // [线性-T4] 护符编辑区域标签 (灰色提示)
         int labelColor = 0xFF_AAAAAA;
         int fieldLabelY = editStartY + 4;
-        graphics.drawString(this.font, "闪光概率:", col0X, fieldLabelY, labelColor, false);
-        graphics.drawString(this.font, "捕获倍率:", col1X, fieldLabelY, labelColor, false);
-        graphics.drawString(this.font, "经验倍率:", col0X, fieldLabelY + rowStep, labelColor, false);
-        graphics.drawString(this.font, "孵化倍率:", col1X, fieldLabelY + rowStep, labelColor, false);
-        graphics.drawString(this.font, "经验共享%:", col0X, fieldLabelY + rowStep * 2, labelColor, false);
+        graphics.drawString(this.font, Component.translatable("coblemon_ts.testbuild.shiny_boost").getString(), col0X, fieldLabelY, labelColor, false);
+        graphics.drawString(this.font, Component.translatable("coblemon_ts.testbuild.catch_boost").getString(), col1X, fieldLabelY, labelColor, false);
+        graphics.drawString(this.font, Component.translatable("coblemon_ts.testbuild.exp_boost").getString(), col0X, fieldLabelY + rowStep, labelColor, false);
+        graphics.drawString(this.font, Component.translatable("coblemon_ts.testbuild.hatch_boost").getString(), col1X, fieldLabelY + rowStep, labelColor, false);
+        graphics.drawString(this.font, Component.translatable("coblemon_ts.testbuild.exp_all_percent").getString(), col0X, fieldLabelY + rowStep * 2, labelColor, false);
     }
 
     @Override

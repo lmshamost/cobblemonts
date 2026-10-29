@@ -21,15 +21,15 @@ public class LuckyWeightEditorScreen extends Screen {
     // 所有幸运方块ID → 显示名称
     private static final LinkedHashMap<ResourceLocation, String> ALL_BLOCKS = new LinkedHashMap<>();
     static {
-        ALL_BLOCKS.put(ResourceLocation.parse("coblemon_ts:lucky_block"), "随机宝可梦幸运方块");
-        ALL_BLOCKS.put(ResourceLocation.parse("coblemon_ts:legendary_lucky_block"), "传说宝可梦幸运方块");
-        ALL_BLOCKS.put(ResourceLocation.parse("coblemon_ts:ultra_beast_lucky_block"), "究极异兽幸运方块");
-        ALL_BLOCKS.put(ResourceLocation.parse("coblemon_ts:shiny_lucky_block"), "闪光宝可梦幸运方块");
-        ALL_BLOCKS.put(ResourceLocation.parse("coblemon_ts:item_lucky_block"), "物品幸运方块");
+        ALL_BLOCKS.put(ResourceLocation.parse("coblemon_ts:lucky_block"), "coblemon_ts.lucky.block.random_pokemon");
+        ALL_BLOCKS.put(ResourceLocation.parse("coblemon_ts:legendary_lucky_block"), "coblemon_ts.lucky.block.legendary");
+        ALL_BLOCKS.put(ResourceLocation.parse("coblemon_ts:ultra_beast_lucky_block"), "coblemon_ts.lucky.block.ultra_beast");
+        ALL_BLOCKS.put(ResourceLocation.parse("coblemon_ts:shiny_lucky_block"), "coblemon_ts.lucky.block.shiny");
+        ALL_BLOCKS.put(ResourceLocation.parse("coblemon_ts:item_lucky_block"), "coblemon_ts.lucky.block.items");
     }
 
     public LuckyWeightEditorScreen() {
-        super(Component.literal("幸运方块权重编辑器"));
+        super(Component.translatable("coblemon_ts.lucky.title"));
     }
 
     @Override
@@ -42,13 +42,15 @@ public class LuckyWeightEditorScreen extends Screen {
         int index = 0;
         for (Map.Entry<ResourceLocation, String> entry : ALL_BLOCKS.entrySet()) {
             ResourceLocation blockId = entry.getKey();
-            String displayName = entry.getValue();
+            String displayKey = entry.getValue();
+            String displayName = Component.translatable(displayKey).getString();
 
             // 显示配置状态提示
             LuckyWeightManager.LuckyWeightConfig config = LuckyWeightManager.getConfig(blockId);
-            String suffix = (config != null && !config.allEntries.isEmpty())
-                    ? " §a[" + config.allEntries.size() + "条]"
-                    : " §7[无配置]";
+            int entryCount = (config != null) ? config.allEntries.size() : 0;
+            String suffix = entryCount > 0
+                    ? " §a[" + entryCount + " " + Component.translatable("coblemon_ts.lucky.entries_count").getString() + "]"
+                    : " §7[" + Component.translatable("coblemon_ts.lucky.no_config").getString() + "]";
 
             this.addRenderableWidget(Button.builder(
                     Component.literal(displayName + suffix),
@@ -62,7 +64,7 @@ public class LuckyWeightEditorScreen extends Screen {
 
         // 返回按钮
         this.addRenderableWidget(Button.builder(
-                Component.literal("返回"),
+                Component.translatable("coblemon_ts.lucky.back"),
                 btn -> this.onClose())
                 .pos(centerX - 50, startY + index * 26 + 10)
                 .size(100, 20)
@@ -75,7 +77,8 @@ public class LuckyWeightEditorScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font, this.title,
                 this.width / 2, 20, 0xFFFFFF);
-        graphics.drawCenteredString(this.font, "§7点击幸运方块查看和编辑其权重配置",
+        graphics.drawCenteredString(this.font,
+                Component.translatable("coblemon_ts.lucky.hint"),
                 this.width / 2, 35, 0xAAAAAA);
     }
 
