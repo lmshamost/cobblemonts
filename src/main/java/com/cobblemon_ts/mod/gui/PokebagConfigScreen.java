@@ -8,6 +8,10 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+// [线性-RESP-02] 双列布局修复：左列(label+field/toggle) 与 右列(label+field) 不重叠
+//   列A: labelX=centerX-155, fieldX=centerX-80
+//   列B: labelX=centerX+10, fieldX=centerX+80
+//   白名单/黑名单按钮响应式宽度
 public class PokebagConfigScreen extends Screen {
 
     private EditBox bagSlotsField;
@@ -16,11 +20,11 @@ public class PokebagConfigScreen extends Screen {
     private Button extractToggleBtn;
     private boolean extractLimitEnabled;
 
-    private int centerX, leftLabelX, leftFieldX, startY, rowStep;
+    private int centerX;
     private static final int LABEL_W = 75;
     private static final int FIELD_W = 52;
     private static final int FIELD_H = 16;
-    private static final int BTN_W = 100;
+    private static final int TOGGLE_W = 80;
     private static final int BTN_H = 20;
 
     public PokebagConfigScreen() {
@@ -30,63 +34,72 @@ public class PokebagConfigScreen extends Screen {
     @Override
     protected void init() {
         centerX = this.width / 2;
-        leftLabelX = centerX - 130;
-        leftFieldX = leftLabelX + LABEL_W + 3;
-        startY = this.height / 2 - 80;
-        rowStep = 25;
+
+        // [线性-RESP-02] 列A: label=centerX-155, field=centerX-80 (field终点=centerX-28)
+        //   列B: label=centerX+10, field=centerX+80 (field终点=centerX+132)
+        //   平行标签间距=38px, 不会重叠
+        int leftLabelX = centerX - 155;
+        int leftFieldX = centerX - 80;
+        int rightLabelX = centerX + 10;
+        int rightFieldX = centerX + 80;
+        int startY = this.height / 2 - 85;
+        int rowStep = 26;
 
         this.extractLimitEnabled = CharmConfig.POKEBAG_EXTRACT_LIMIT_ENABLED.get();
 
-        // 行0: 容量 + 堆叠上限
+        // ── Row0: 容量 | 堆叠上限 ──
         this.bagSlotsField = addEditBox(leftFieldX, startY, FIELD_W, FIELD_H,
                 String.valueOf(CharmConfig.POKEBAG_SLOTS.get()));
-        this.maxStackField = addEditBox(leftFieldX + 120, startY, FIELD_W, FIELD_H,
+        this.maxStackField = addEditBox(rightFieldX, startY, FIELD_W, FIELD_H,
                 String.valueOf(CharmConfig.POKEBAG_MAX_STACK_SIZE.get()));
 
-        // 行1: 取出限制开关 + 每次取出
+        // ── Row1: 取出限制开关 | 每次取出 ──
         this.extractToggleBtn = this.addRenderableWidget(Button.builder(
                 Component.translatable(getExtractToggleKey()),
                 btn -> {
                     extractLimitEnabled = !extractLimitEnabled;
                     btn.setMessage(Component.translatable(getExtractToggleKey()));
                 })
-                .pos(leftFieldX, startY + rowStep).size(BTN_W, BTN_H).build());
+                .pos(leftFieldX, startY + rowStep).size(TOGGLE_W, BTN_H).build());
 
-        this.extractLimitField = addEditBox(leftFieldX + 120, startY + rowStep, FIELD_W, FIELD_H,
+        this.extractLimitField = addEditBox(rightFieldX, startY + rowStep, FIELD_W, FIELD_H,
                 String.valueOf(CharmConfig.POKEBAG_EXTRACT_LIMIT.get()));
 
-        // 行2: 编辑白名单按钮（含条目数）
+        // ── Row2: 白名单按钮 ── [线性-RESP-02] 响应式宽度
+        int listBtnW = Math.min(300, this.width - 30);
+        int listBtnX = centerX - listBtnW / 2;
         int whitelistCount = CharmConfig.POKEBAG_WHITELIST_TAGS.get().size();
         this.addRenderableWidget(Button.builder(
                 Component.translatable("coblemon_ts.pokebag_config.edit_whitelist")
                         .append(" §a[" + whitelistCount + "]"),
                 btn -> Minecraft.getInstance().setScreen(
                         new PokebagTagListScreen(true, this)))
-                .pos(centerX - 115, startY + rowStep * 2 + 10)
-                .size(230, BTN_H).build());
+                .pos(listBtnX, startY + rowStep * 2 + 8)
+                .size(listBtnW, BTN_H).build());
 
-        // 行3: 编辑黑名单按钮（含条目数）
+        // ── Row3: 黑名单按钮 ──
         int blacklistCount = CharmConfig.POKEBAG_BLACKLIST_TAGS.get().size();
         this.addRenderableWidget(Button.builder(
                 Component.translatable("coblemon_ts.pokebag_config.edit_blacklist")
                         .append(" §7[" + blacklistCount + "]"),
                 btn -> Minecraft.getInstance().setScreen(
                         new PokebagTagListScreen(false, this)))
-                .pos(centerX - 115, startY + rowStep * 3 + 10)
-                .size(230, BTN_H).build());
+                .pos(listBtnX, startY + rowStep * 3 + 8)
+                .size(listBtnW, BTN_H).build());
 
-        // 底部: 保存 | 返回
+        // ── Row4: 保存 | 返回 ──
+        int saveBtnW = 100;
         this.addRenderableWidget(Button.builder(
                 Component.translatable("coblemon_ts.pokebag_config.save"),
                 btn -> saveConfig())
-                .pos(centerX - BTN_W - 5, startY + rowStep * 5 + 5)
-                .size(BTN_W, BTN_H).build());
+                .pos(centerX - saveBtnW - 4, startY + rowStep * 5 + 5)
+                .size(saveBtnW, BTN_H).build());
 
         this.addRenderableWidget(Button.builder(
                 Component.translatable("coblemon_ts.pokebag_config.back"),
                 btn -> Minecraft.getInstance().setScreen(null))
-                .pos(centerX + 5, startY + rowStep * 5 + 5)
-                .size(BTN_W, BTN_H).build());
+                .pos(centerX + 4, startY + rowStep * 5 + 5)
+                .size(saveBtnW, BTN_H).build());
     }
 
     private EditBox addEditBox(int x, int y, int w, int h, String val) {
@@ -138,25 +151,30 @@ public class PokebagConfigScreen extends Screen {
         this.renderBackground(g, mouseX, mouseY, partial);
         super.render(g, mouseX, mouseY, partial);
 
-        int labelY = startY + 4;
+        int leftLabelX = centerX - 155;
+        int rightLabelX = centerX + 10;
+        int startY = this.height / 2 - 85;
+        int rowStep = 26;
+        int labelY1 = startY + 4;
+        int labelY2 = labelY1 + rowStep;
 
-        g.drawCenteredString(this.font, this.title, centerX, this.height / 2 - 100, 0xFFFFFF);
+        g.drawCenteredString(this.font, this.title, centerX, this.height / 2 - 105, 0xFFFFFF);
 
-        // 容量 + 堆叠上限
+        // ── Row0标签：容量 / 堆叠上限 ──
         g.drawString(this.font,
                 Component.translatable("coblemon_ts.pokebag_config.bag_slots").getString(),
-                leftLabelX, labelY, 0xCCCCCC, false);
+                leftLabelX, labelY1, 0xCCCCCC, false);
         g.drawString(this.font,
                 Component.translatable("coblemon_ts.pokebag_config.max_stack").getString(),
-                leftLabelX + 120, labelY, 0xCCCCCC, false);
+                rightLabelX, labelY1, 0xCCCCCC, false);
 
-        // 取出限制 + 每次取出
+        // ── Row1标签：取出限制 / 每次取出 ──
         g.drawString(this.font,
                 Component.translatable("coblemon_ts.pokebag_config.extract_toggle").getString(),
-                leftLabelX, labelY + rowStep, 0xCCCCCC, false);
+                leftLabelX, labelY2, 0xCCCCCC, false);
         g.drawString(this.font,
                 Component.translatable("coblemon_ts.pokebag_config.extract_limit").getString(),
-                leftLabelX + 120, labelY + rowStep, 0xCCCCCC, false);
+                rightLabelX, labelY2, 0xCCCCCC, false);
     }
 
     @Override
