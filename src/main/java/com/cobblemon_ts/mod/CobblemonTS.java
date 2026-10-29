@@ -127,7 +127,6 @@ public class CobblemonTS {
         modEventBus.register(CobblemonTS.class);
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
-            modEventBus.addListener(this::registerKeyBindings);
             modEventBus.addListener(this::registerScreens);
         }
         modEventBus.addListener(this::registerPayloads);
@@ -140,8 +139,6 @@ public class CobblemonTS {
         // 注册 NeoForge 游戏事件总线（用于客户端 Tick 同步 Cobblemon 原生 UI）
         if (FMLEnvironment.dist == Dist.CLIENT) {
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(CobblemonTS::onClientTick);
-            // [线性-C02] 注册按键事件监听道具袋快捷键
-            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(CobblemonTS::onKeyInput);
         }
         LOGGER.info("Cobblemon TS initialized!");
     }
@@ -258,24 +255,6 @@ public class CobblemonTS {
                 cachedPartyField.set(cachedStorageInstance, fromStore);
             }
         } catch (Throwable ignored) {}
-    }
-
-    // [线性-C02] 按键事件：监听道具袋快捷键按下
-    @net.neoforged.api.distmarker.OnlyIn(Dist.CLIENT)
-    public static void onKeyInput(net.neoforged.neoforge.client.event.InputEvent.Key event) {
-        if (Minecraft.getInstance().player == null) return;
-        if (QuickBattleKeys.OPEN_POKEBAG.consumeClick()) {
-            // [线性-C02] 检查玩家是否拥有道具袋，未拥有则不打开
-            var playerData = CharmPlayerData.get(Minecraft.getInstance().player);
-            if (playerData != null && playerData.getCharmSlotManager().isPokebagOwned()) {
-                net.neoforged.neoforge.network.PacketDistributor.sendToServer(new OpenPokebagPacket());
-            }
-        }
-    }
-
-    private void registerKeyBindings(net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent event) {
-        event.register(QuickBattleKeys.QUICK_BATTLE);
-        event.register(QuickBattleKeys.OPEN_POKEBAG);  // [线性-C02] 注册道具袋快捷键
     }
 
     private void registerScreens(RegisterMenuScreensEvent event) {

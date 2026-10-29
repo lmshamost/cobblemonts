@@ -61,6 +61,15 @@ public class PartyUIState {
 
     public static final CharmType[] CHARM_TYPES = CharmType.values();
 
+    // [线性-P04] 预缓存护符图标 ItemStack，避免 drawCharmDrawer 每帧 new ItemStack 触发 GC
+    public static final ItemStack[] CHARM_ICON_STACKS;
+    static {
+        CHARM_ICON_STACKS = new ItemStack[CHARM_TYPES.length];
+        for (int i = 0; i < CHARM_TYPES.length; i++) {
+            CHARM_ICON_STACKS[i] = new ItemStack(CHARM_TYPES[i].getItem());
+        }
+    }
+
     // ===== 面板主题：亮色白底 / 暗色深灰（颜色值从 ColorEditorConfig 读取，支持热修改） =====
     public static int getVanillaWhiteBg() { return ColorEditorConfig.panelLightBg(); }
     public static int getPanelBorderGray() { return ColorEditorConfig.panelLightBorder(); }
@@ -139,6 +148,10 @@ public class PartyUIState {
             // 新 State 实例：从持久化值初始化
             s.partyHidden = persistentPartyHidden;
             s.charmDrawerOut = persistentCharmDrawerOut;
+            // [线性-P01] 恢复时跳过展开动画：如果之前是展开状态，直接到最终位置
+            if (persistentCharmDrawerOut) {
+                s.charmDrawerOffset = CHARM_DRAWER_MAX_OFFSET;
+            }
             return s;
         });
     }
@@ -705,18 +718,28 @@ public class PartyUIState {
     }
 
     /** 获取物种英文 ID（如 bulbasaur）—— 与 extractStringId 一致：去掉命名空间前缀 */
+    // [线性-P03] 缓存 getResourceIdentifier 对应的 class，避免不同species子类反复getMethod
+    private static Class<?> lastSpeciesIdClass;
+    // [线性-P05] 缓存 ResourceLocation.getPath() Method
+    private static Method cachedGetPathMethod;
     private static String getSpeciesId(Object species) {
         try {
-            if (speciesResourceIdMethod == null) {
-                speciesResourceIdMethod = species.getClass().getMethod("getResourceIdentifier");
+            // [线性-P03] 检查缓存：只有 class 变了才重新 getMethod
+            Class<?> spClass = species.getClass();
+            if (speciesResourceIdMethod == null || lastSpeciesIdClass != spClass) {
+                speciesResourceIdMethod = spClass.getMethod("getResourceIdentifier");
                 speciesResourceIdMethod.setAccessible(true);
+                lastSpeciesIdClass = spClass;
             }
             Object idObj = speciesResourceIdMethod.invoke(species);
             if (idObj != null) {
                 // 优先：如果是 ResourceLocation，尝试调用 getPath()
                 try {
-                    Method getPathMethod = idObj.getClass().getMethod("getPath");
-                    String path = (String) getPathMethod.invoke(idObj);
+                    // [线性-P05] 缓存 getPath Method（ResourceLocation 类固定不变）
+                    if (cachedGetPathMethod == null) {
+                        cachedGetPathMethod = idObj.getClass().getMethod("getPath");
+                    }
+                    String path = (String) cachedGetPathMethod.invoke(idObj);
                     if (path != null) return path.toLowerCase().trim();
                 } catch (Throwable ignored) {}
                 // 兜底：toString() 后去掉 : 前缀（如 cobblemon:bulbasaur → bulbasaur）
@@ -775,13 +798,23 @@ public class PartyUIState {
         }
     }
 
+    // [线性-P02] 缓存 getIcon Method，避免每帧 getMethod 产生性能瓶颈
+    private static Method cachedGetIconMethod;
+    private static Class<?> cachedStatusClass;
+
     public static ResourceLocation getPokemonStatusIcon(Pokemon pokemon) {
         if (pokemon == null) return null;
         try {
             Object status = pokemon.getStatus();
             if (status == null) return null;
-            Method getIcon = status.getClass().getMethod("getIcon");
-            Object icon = getIcon.invoke(status);
+            // [线性-P02] 缓存 Method：同一status类不会变，避免每帧6次getMethod
+            Class<?> statusCls = status.getClass();
+            if (cachedGetIconMethod == null || cachedStatusClass != statusCls) {
+                cachedGetIconMethod = statusCls.getMethod("getIcon");
+                cachedGetIconMethod.setAccessible(true);
+                cachedStatusClass = statusCls;
+            }
+            Object icon = cachedGetIconMethod.invoke(status);
             if (icon instanceof ResourceLocation loc) {
                 return loc;
             }

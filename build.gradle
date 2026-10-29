@@ -123,8 +123,6 @@ dependencies {
     compileOnly files("lib/catchrate-display-neoforge-2.8.22.jar")
     // [线性-L15] jecharacters 拼音搜索：编译时可用，运行时可选（未安装则退化为普通搜索）
     compileOnly files("bbb/[通用拼音搜索] jecharacters-1.21-neoforge-4.5.24.jar")
-    // Pixelmon 仅作参考源码，不加载进游戏（否则与 Cobblemon 冲突）
-    compileOnly files("aaa/[像素宝可梦 重铸] Pixelmon-1.21.1-9.3.16-universal.jar")
 
     // For more info:
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html

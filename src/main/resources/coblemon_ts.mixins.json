@@ -15,8 +15,6 @@
     "cobblemon.BattleGeneralActionSelectionMixin",
     "cobblemon.BattleGUIBackButtonMixin",
     "cobblemon.SummaryInfoWidgetMixin",
-    "quickbattle.QuickBattleKeyMixin",
-    "quickbattle.TargetIndicatorRendererMixin",
     "GuiEffectIconMixin",
     "GuiHealthFoodMixin"
   ],

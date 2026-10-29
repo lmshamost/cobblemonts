@@ -470,7 +470,8 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
                     int iconSize = 16;
                     int iconX = slotX + 2;
                     int iconY = slotY + 2;
-                    ItemStack icon = new ItemStack(type.getItem());
+                    // [线性-P04] 使用预缓存的 ItemStack，避免每帧 new
+                    ItemStack icon = PartyUIState.CHARM_ICON_STACKS[i - 1];
                     guiGraphics.renderItem(icon, iconX, iconY);
 
                     // 右侧文字区域（图标右方）
