@@ -23,7 +23,7 @@ public class CharmItems {
             () -> new CharmItem(new Item.Properties().stacksTo(1), CharmType.EXP_ALL));
 
     public static final DeferredItem<Item> GOLD_CROWN = ITEMS.register("gold_crown",
-            () -> new GoldCrownItem(new Item.Properties().stacksTo(1)));
+            () -> new GoldCrownItem(new Item.Properties().stacksTo(64)));
 
     public static final DeferredItem<TestBuildItem> TEST_BUILD = ITEMS.register("test_build",
             () -> new TestBuildItem(new Item.Properties().stacksTo(1)));

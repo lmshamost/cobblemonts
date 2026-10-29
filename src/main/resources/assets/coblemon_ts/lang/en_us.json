@@ -170,11 +170,17 @@
   "coblemon_ts.testbuild.exp_boost": "EXP Boost:",
   "coblemon_ts.testbuild.hatch_boost": "Hatch Boost:",
   "coblemon_ts.testbuild.exp_all_percent": "EXP All %:",
+  "coblemon_ts.testbuild.bag_stack": "Bag Stack:",
   "coblemon_ts.testbuild.save_charm_config": "Save Charm Config",
   "coblemon_ts.testbuild.charm_saved": "§aCharm config saved",
   "coblemon_ts.testbuild.input_error": "§cInput format error, check values",
   "coblemon_ts.testbuild.tooltip.build_time": "Build time: %s",
   "coblemon_ts.testbuild.tooltip.open_menu": "Right-click to open the function menu",
+
+  "command.coblemon_ts.cts.set.on": "§aCharm '%s' enabled",
+  "command.coblemon_ts.cts.set.off": "§cCharm '%s' disabled",
+  "command.coblemon_ts.cts.set.success_on": "Enabled charm '%s' for %d player(s)",
+  "command.coblemon_ts.cts.set.success_off": "Disabled charm '%s' for %d player(s)",
 
   "coblemon_ts.ui.party": "Party",
   "coblemon_ts.ui.charms": "Charms",
