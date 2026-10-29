@@ -587,15 +587,36 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
         }
     }
 
-    // [修复-F02] 消耗物品：只检查光标（玩家用鼠标拿着物品对精灵栏使用，物品始终在光标上）
+    // [修复-F02a] 消耗物品：光标 → 主手 → 副手，覆盖所有使用渠道
     private static void consumeItems(ServerPlayer player, int count) {
+        int remaining = count;
+
+        // 1. 先尝试光标（PokemonEditor直接拖拽使用）
         ItemStack cursorStack = player.containerMenu.getCarried();
         if (!cursorStack.isEmpty()) {
-            int shrinkCount = Math.min(count, cursorStack.getCount());
+            int shrinkCount = Math.min(remaining, cursorStack.getCount());
             cursorStack.shrink(shrinkCount);
+            remaining -= shrinkCount;
             if (cursorStack.isEmpty()) {
                 player.containerMenu.setCarried(ItemStack.EMPTY);
             }
+            if (remaining <= 0) return;
+        }
+
+        // 2. 再尝试主手（实体交互：手持物品右键精灵实体）
+        ItemStack mainHand = player.getMainHandItem();
+        if (!mainHand.isEmpty()) {
+            int shrinkCount = Math.min(remaining, mainHand.getCount());
+            mainHand.shrink(shrinkCount);
+            remaining -= shrinkCount;
+            if (remaining <= 0) return;
+        }
+
+        // 3. 最后尝试副手
+        ItemStack offHand = player.getOffhandItem();
+        if (!offHand.isEmpty()) {
+            int shrinkCount = Math.min(remaining, offHand.getCount());
+            offHand.shrink(shrinkCount);
         }
     }
 }
