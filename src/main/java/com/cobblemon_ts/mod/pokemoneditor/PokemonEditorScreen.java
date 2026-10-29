@@ -1103,7 +1103,7 @@ public class PokemonEditorScreen extends Screen {
             PokemonData d = (PokemonData)this.partyData.get(slot);
             String label;
             if (d.exists) {
-                String display = d.displayName.isEmpty() ? PokemonNameMap.toChinese(d.speciesName) : d.displayName;
+                String display = d.displayName.isEmpty() ? PokemonNameMap.speciesToDisplay(d.speciesName) : d.displayName;
                 String shinyText = d.shiny ? " \u2728" : "";
                 label = "  Lv" + d.level + " " + display + shinyText + "  ";
             } else {
@@ -1146,7 +1146,7 @@ public class PokemonEditorScreen extends Screen {
                 this.sumSpeciesField.setValue("");
                 this.sumLevelField.setValue("1");
                 this.sumNameField.setValue("");
-                List<String> natureList = PokemonNameMap.natureList();
+                List<String> natureList = PokemonNameMap.natureDisplayList();
                 this.sumNatureField.setValue(natureList.isEmpty() ? "" : (String)natureList.get(0));
                 this.sumAbilityField.setValue("");
                 this.sumFriendshipField.setValue("0");
@@ -1183,11 +1183,11 @@ public class PokemonEditorScreen extends Screen {
                 this.advUUIDField.setValue("");
                 d.shiny = false;
             } else {
-                this.sumSpeciesField.setValue(PokemonNameMap.toChinese(d.speciesName));
+                this.sumSpeciesField.setValue(PokemonNameMap.speciesToDisplay(d.speciesName));
                 this.sumLevelField.setValue(String.valueOf(d.level));
                 this.sumNameField.setValue(d.displayName);
-                this.sumNatureField.setValue(PokemonNameMap.natureToChinese(d.nature));
-                this.sumAbilityField.setValue(PokemonNameMap.abilityToChinese(d.ability));
+                this.sumNatureField.setValue(PokemonNameMap.natureToDisplay(d.nature));
+                this.sumAbilityField.setValue(PokemonNameMap.abilityToDisplay(d.ability));
                 this.sumFriendshipField.setValue(String.valueOf(d.friendship));
                 this.sumFormField.setValue(PokemonNameMap.formToChinese(d.speciesName, d.formName));
                 this.sumHeldItemField.setValue(PokemonNameMap.itemToChinese(d.heldItem));
@@ -1429,13 +1429,13 @@ public class PokemonEditorScreen extends Screen {
                 if (formFieldVal != null && !formFieldVal.isEmpty() && formFieldVal.chars().allMatch(c -> c < 128)) {
                     d.formName = formFieldVal;
                 } else if (formFieldVal != null && !formFieldVal.isEmpty()) {
-                    if (formFieldVal.equals("普通")) {
+                    if (formFieldVal.equals(PokemonNameMap.formToDisplay(null, null))) {
                         d.formName = ""; // 普通形态=空ID
                     } else {
                         String enSpecies = d.speciesName; // 已转英文
                         List<String> rawForms = CobblemonBridge.getSpeciesForms(enSpecies);
                         for (String raw : rawForms) {
-                            if (formFieldVal.equals(PokemonNameMap.formToChinese(enSpecies, raw))) {
+                            if (formFieldVal.equals(PokemonNameMap.formToDisplay(enSpecies, raw))) {
                                 d.formName = raw;
                                 PokemonEditorDebug.logEditor("[Screen] form reverse-lookup: '{}' -> '{}'", formFieldVal, raw);
                                 break;
@@ -2090,7 +2090,7 @@ public class PokemonEditorScreen extends Screen {
             if (this.selectedSlot >= 0 && this.selectedSlot < this.partyData.size()) {
                 PokemonData d = (PokemonData)this.partyData.get(this.selectedSlot);
                 if (d.exists) {
-                    String title = d.displayName.isEmpty() ? PokemonNameMap.toChinese(d.speciesName) : d.displayName;
+                    String title = d.displayName.isEmpty() ? PokemonNameMap.speciesToDisplay(d.speciesName) : d.displayName;
                     String leftText = Component.translatable("coblemon_ts.editor.label.editing", title + (d.shiny ? " \u2728" : "")).getString();
                     if (this.font.width(leftText) > maxLeftW && maxLeftW > 20) {
                         String ellipsis = "...";
@@ -2192,13 +2192,13 @@ public class PokemonEditorScreen extends Screen {
                     guiGraphics.fill(cardX - 1, cardY - 1, cardX + cardW + 1, cardY + cardH + 1, frameColor);
                     guiGraphics.fill(cardX, cardY, cardX + cardW, cardY + cardH, bgColor);
                     guiGraphics.fill(cardX, cardY, cardX + cardW, cardY + 22, topBarColor);
-                    String zhName = d.displayName.isEmpty() ? PokemonNameMap.toChinese(d.speciesName) : d.displayName;
+                    String zhName = d.displayName.isEmpty() ? PokemonNameMap.speciesToDisplay(d.speciesName) : d.displayName;
                     String cardTitle = zhName + (d.shiny ? " \u2728" : "");
                     guiGraphics.drawString(this.font, cardTitle, cardX + cardW / 2 - this.font.width(cardTitle) / 2, cardY + 7, -1, true);
                     int infoY = cardY + 28;
                     int infoX = cardX + 6;
                     String natureEffect = PokemonNameMap.natureEffectText(d.nature);
-                    String natureName = PokemonNameMap.natureToChinese(d.nature);
+                    String natureName = PokemonNameMap.natureToDisplay(d.nature);
                     String natureDisp = natureName + natureEffect;
                     if (natureDisp.length() > 16) {
                         natureDisp = natureDisp.substring(0, 16);
@@ -2209,7 +2209,7 @@ public class PokemonEditorScreen extends Screen {
                         {Component.translatable("coblemon_ts.editor.label.level").getString(), "Lv." + d.level},
                         {Component.translatable("coblemon_ts.editor.label.gender").getString(), d.gender == 0 ? Component.translatable("coblemon_ts.editor.gender.male_short").getString() : (d.gender == 1 ? Component.translatable("coblemon_ts.editor.gender.female_short").getString() : Component.translatable("coblemon_ts.editor.gender.none_short").getString())},
                         {Component.translatable("coblemon_ts.editor.label.nature").getString(), natureDisp},
-                        {Component.translatable("coblemon_ts.editor.label.ability").getString(), PokemonNameMap.abilityToChinese(d.ability)},
+                        {Component.translatable("coblemon_ts.editor.label.ability").getString(), PokemonNameMap.abilityToDisplay(d.ability)},
                         {Component.translatable("coblemon_ts.editor.label.form").getString(), PokemonNameMap.formToChinese(d.speciesName, d.formName)}
                     };
 
@@ -2284,7 +2284,7 @@ public class PokemonEditorScreen extends Screen {
                     this.autocompleteItems.clear();
                     this.autocompleteScrollOffset = 0;
                     if (newActiveField == 0) {
-                        List<String> species = PokemonNameMap.speciesList();
+                        List<String> species = PokemonNameMap.speciesDisplayList();
                         if (q.isEmpty()) {
                             this.autocompleteItems.addAll(species);
                         } else {
@@ -2301,7 +2301,7 @@ public class PokemonEditorScreen extends Screen {
                                     for(Map.Entry<Integer, String> e : numMap.entrySet()) {
                                         int dexNum = (Integer)e.getKey();
                                         if (dexNum != num && String.valueOf(dexNum).startsWith(q)) {
-                                            String z = PokemonNameMap.toChinese((String)e.getValue());
+                                            String z = PokemonNameMap.speciesToDisplay((String)e.getValue());
                                             if (z != null && !this.autocompleteItems.contains(z)) {
                                                 this.autocompleteItems.add(z);
                                             }
@@ -2323,32 +2323,32 @@ public class PokemonEditorScreen extends Screen {
                             }
                         }
                     } else if (newActiveField == 1) {
-                        List<String> natures = PokemonNameMap.natureList();
+                        List<String> natures = PokemonNameMap.natureDisplayList();
                         if (q.isEmpty()) {
                             this.autocompleteItems.addAll(natures);
                         } else {
-                            for(String zh : natures) {
-                                if (zh.contains(q)) {
-                                    this.autocompleteItems.add(zh);
+                            for (String display : natures) {
+                                if (display.contains(q)) {
+                                    this.autocompleteItems.add(display);
                                 }
                             }
                         }
                     } else if (newActiveField == 2) {
-                        List<String> abilities = PokemonNameMap.abilityList();
+                        List<String> abilities = PokemonNameMap.abilityDisplayList();
                         if (this.selectedSlot >= 0 && this.selectedSlot < this.partyData.size()) {
                             PokemonData d = (PokemonData)this.partyData.get(this.selectedSlot);
                             if (d.exists && d.possibleAbilities != null && !d.possibleAbilities.isEmpty()) {
-                                List<String> zhAbilities = new ArrayList();
+                                List<String> filteredAbilities = new ArrayList();
 
                                 for(String enAbility : d.possibleAbilities) {
-                                    String zh = PokemonNameMap.abilityToChinese(enAbility);
-                                    if (zh != null && !zh.isEmpty() && !zhAbilities.contains(zh)) {
-                                        zhAbilities.add(zh);
+                                    String display = PokemonNameMap.abilityToDisplay(enAbility);
+                                    if (display != null && !display.isEmpty() && !filteredAbilities.contains(display)) {
+                                        filteredAbilities.add(display);
                                     }
                                 }
 
-                                if (!zhAbilities.isEmpty()) {
-                                    abilities = zhAbilities;
+                                if (!filteredAbilities.isEmpty()) {
+                                    abilities = filteredAbilities;
                                 }
                             }
                         }
@@ -2363,9 +2363,9 @@ public class PokemonEditorScreen extends Screen {
                             }
                         }
                     } else if (newActiveField == 7) {
-                        // [线性-Lform-dropdown] 形态下拉：读取当前物种的所有形态并汉化
+                        // [线性-Lform-dropdown] 形态下拉：读取当前物种的所有形态并本地化
                         List<String> forms = new ArrayList<>();
-                        forms.add("普通");
+                        forms.add(PokemonNameMap.formToDisplay(null, null));
                         if (this.selectedSlot >= 0 && this.selectedSlot < this.partyData.size()) {
                             PokemonData d = (PokemonData)this.partyData.get(this.selectedSlot);
                             if (d.exists && d.speciesName != null && !d.speciesName.isEmpty()) {
@@ -2374,8 +2374,8 @@ public class PokemonEditorScreen extends Screen {
                                     List<String> rawForms = CobblemonBridge.getSpeciesForms(enName);
                                     for (String raw : rawForms) {
                                         if (raw.equals("normal")) continue; // 普通已添加
-                                        String zh = PokemonNameMap.formToChinese(enName, raw);
-                                        if (!forms.contains(zh)) forms.add(zh);
+                                        String display = PokemonNameMap.formToDisplay(enName, raw);
+                                        if (!forms.contains(display)) forms.add(display);
                                     }
                                 }
                             }
@@ -2383,9 +2383,9 @@ public class PokemonEditorScreen extends Screen {
                         if (q.isEmpty()) {
                             this.autocompleteItems.addAll(forms);
                         } else {
-                            for (String zh : forms) {
-                                if (zh.contains(q)) {
-                                    this.autocompleteItems.add(zh);
+                            for (String display : forms) {
+                                if (display.contains(q)) {
+                                    this.autocompleteItems.add(display);
                                 }
                             }
                         }
@@ -2530,22 +2530,22 @@ public class PokemonEditorScreen extends Screen {
                 if (searchChanged) {
                     this.autocompleteItems.clear();
                     this.autocompleteScrollOffset = 0;
-                    List<String> allMoves = PokemonNameMap.moveList();
+                    List<String> allMoves = PokemonNameMap.moveDisplayList();
                     if (q.isEmpty()) {
-                        for(String zh : allMoves) {
-                            this.autocompleteItems.add(zh);
+                        for (String display : allMoves) {
+                            this.autocompleteItems.add(display);
                         }
                     } else {
                         String lowerQ = q.toLowerCase(Locale.ROOT);
 
-                        for(String zhName : allMoves) {
-                            String enName = PokemonNameMap.moveToEnglish(zhName);
-                            if ((zhName.contains(q) || enName != null && enName.contains(lowerQ)) && !this.autocompleteItems.contains(zhName)) {
-                                this.autocompleteItems.add(zhName);
+                        for (String displayName : allMoves) {
+                            String enName = PokemonNameMap.moveToEnglish(displayName);
+                            if ((displayName.contains(q) || enName != null && enName.contains(lowerQ)) && !this.autocompleteItems.contains(displayName)) {
+                                this.autocompleteItems.add(displayName);
                             }
 
-                            if (!this.autocompleteItems.contains(zhName) && CobblemonBridge.pinyinContains(zhName, q)) {
-                                this.autocompleteItems.add(zhName);
+                            if (!this.autocompleteItems.contains(displayName) && PokemonNameMap.isChineseLocale() && CobblemonBridge.pinyinContains(displayName, q)) {
+                                this.autocompleteItems.add(displayName);
                             }
                         }
                     }

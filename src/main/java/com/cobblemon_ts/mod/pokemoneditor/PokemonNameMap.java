@@ -13,6 +13,33 @@ import java.util.Map;
 
 public class PokemonNameMap {
 
+    // ========== 语言检测 ==========
+    public static String currentLocaleCode() {
+        try {
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+            if (mc != null && mc.getLanguageManager() != null) {
+                String lang = mc.getLanguageManager().getSelected();
+                if (lang != null) return lang;
+            }
+        } catch (Throwable ignored) {}
+        return "en_us";
+    }
+
+    public static boolean isChineseLocale() {
+        String lang = currentLocaleCode();
+        return lang.contains("zh") || lang.contains("ZH");
+    }
+
+    // [线性-i18n] 显示列表缓存：语言切换时自动重建，避免每次按键重复查询翻译
+    private static String natureDisplayLang = null;
+    private static final List<String> NATURE_DISPLAY_CACHE = new ArrayList<>();
+    private static String abilityDisplayLang = null;
+    private static final List<String> ABILITY_DISPLAY_CACHE = new ArrayList<>();
+    private static String moveDisplayLang = null;
+    private static final List<String> MOVE_DISPLAY_CACHE = new ArrayList<>();
+    private static String speciesDisplayLang = null;
+    private static final List<String> SPECIES_DISPLAY_CACHE = new ArrayList<>();
+
     // ============================================================
     // lang 翻译：优先用 Minecraft 的语言系统（zh_cn.lang），失败才回落硬编码映射
     // ============================================================
@@ -1014,6 +1041,33 @@ public class PokemonNameMap {
         add("miraidon", "密勒顿");
     }
 
+    // [线性-i18n] 语言感知的性格显示（英文客户端显示英文，中文客户端显示中文）
+    public static String natureToDisplay(String en) {
+        if (en == null || en.isEmpty()) return en;
+        String id = en.toLowerCase().trim();
+        String fromLang = tryLang("cobblemon.nature." + id, null);
+        if (fromLang != null) return fromLang;
+        return isChineseLocale() ? NATURE_EN_TO_ZH.getOrDefault(id, en) : en;
+    }
+
+    // [线性-i18n] 语言感知的性格下拉列表
+    public static List<String> natureDisplayList() {
+        String lang = currentLocaleCode();
+        if (lang.equals(natureDisplayLang) && !NATURE_DISPLAY_CACHE.isEmpty()) {
+            return NATURE_DISPLAY_CACHE;
+        }
+        NATURE_DISPLAY_CACHE.clear();
+        for (String en : NATURE_EN_TO_ZH.keySet()) {
+            String display = tryLang("cobblemon.nature." + en, null);
+            if (display == null) {
+                display = isChineseLocale() ? NATURE_EN_TO_ZH.get(en) : en;
+            }
+            NATURE_DISPLAY_CACHE.add(display);
+        }
+        natureDisplayLang = lang;
+        return NATURE_DISPLAY_CACHE;
+    }
+
     // ===== 性格映射 =====
     public static final Map<String, String> NATURE_EN_TO_ZH = new LinkedHashMap<>();
     public static final Map<String, String> NATURE_ZH_TO_EN = new LinkedHashMap<>();
@@ -1708,6 +1762,52 @@ public class PokemonNameMap {
             MOVE_ZH_TO_EN.put(zh, en);
         }
     }
+    // [线性-i18n] 语言感知的招式显示
+    public static String moveToDisplay(String en) {
+        if (en == null || en.isEmpty()) return en;
+        String raw = cleanItemName(en).toLowerCase().trim();
+        String fromLang = tryLang("cobblemon.move." + raw, null);
+        if (fromLang != null) return fromLang;
+        return isChineseLocale() ? MOVE_EN_TO_ZH.getOrDefault(raw, raw) : raw;
+    }
+
+    // [线性-i18n] 语言感知的招式下拉列表（优先用Cobblemon真实ID，lang键格式完全一致）
+    public static List<String> moveDisplayList() {
+        String lang = currentLocaleCode();
+        if (lang.equals(moveDisplayLang) && !MOVE_DISPLAY_CACHE.isEmpty()) {
+            return MOVE_DISPLAY_CACHE;
+        }
+        MOVE_DISPLAY_CACHE.clear();
+        // 使用 Cobblemon API 返回的真实 ID（无下划线，与 lang key 格式一致）
+        List<String> rawIds = CobblemonBridge.getAllMoveIds();
+        if (rawIds != null && !rawIds.isEmpty()) {
+            for (String enId : rawIds) {
+                if (enId == null || enId.isEmpty()) continue;
+                String lowerId = enId.toLowerCase().trim();
+                String display = tryLang("cobblemon.move." + lowerId, null);
+                if (display == null) {
+                    // 回落：尝试硬编码映射 → 原始 ID
+                    display = MOVE_EN_TO_ZH.getOrDefault(lowerId, lowerId);
+                }
+                if (!MOVE_DISPLAY_CACHE.contains(display)) {
+                    MOVE_DISPLAY_CACHE.add(display);
+                }
+            }
+        } else {
+            // 回落：硬编码映射（API 不可用时）
+            ensureDynamicMoves();
+            for (String enId : MOVE_EN_TO_ZH.keySet()) {
+                String display = tryLang("cobblemon.move." + enId, null);
+                if (display == null) {
+                    display = isChineseLocale() ? MOVE_EN_TO_ZH.get(enId) : enId;
+                }
+                MOVE_DISPLAY_CACHE.add(display);
+            }
+        }
+        moveDisplayLang = lang;
+        return MOVE_DISPLAY_CACHE;
+    }
+
     public static String moveToChinese(String en) {
         if (en == null || en.isEmpty()) return en;
         String raw = cleanItemName(en);
@@ -1980,6 +2080,51 @@ public class PokemonNameMap {
         }
     }
 
+    // [线性-i18n] 语言感知的特性显示
+    public static String abilityToDisplay(String en) {
+        if (en == null || en.isEmpty()) return en;
+        String id = en.toLowerCase().trim();
+        String fromLang = tryLang("cobblemon.ability." + id, null);
+        if (fromLang != null) return fromLang;
+        return isChineseLocale() ? ABILITY_EN_TO_ZH.getOrDefault(id, en) : en;
+    }
+
+    // [线性-i18n] 语言感知的特性下拉列表（优先用Cobblemon真实ID，lang键格式完全一致）
+    public static List<String> abilityDisplayList() {
+        String lang = currentLocaleCode();
+        if (lang.equals(abilityDisplayLang) && !ABILITY_DISPLAY_CACHE.isEmpty()) {
+            return ABILITY_DISPLAY_CACHE;
+        }
+        ABILITY_DISPLAY_CACHE.clear();
+        // 使用 Cobblemon API 返回的真实 ID（无下划线，与 lang key 格式一致）
+        List<String> rawIds = CobblemonBridge.getAllAbilityIds();
+        if (rawIds != null && !rawIds.isEmpty()) {
+            for (String enId : rawIds) {
+                if (enId == null || enId.isEmpty()) continue;
+                String lowerId = enId.toLowerCase().trim();
+                String display = tryLang("cobblemon.ability." + lowerId, null);
+                if (display == null) {
+                    display = ABILITY_EN_TO_ZH.getOrDefault(lowerId, lowerId);
+                }
+                if (!ABILITY_DISPLAY_CACHE.contains(display)) {
+                    ABILITY_DISPLAY_CACHE.add(display);
+                }
+            }
+        } else {
+            // 回落
+            ensureDynamicAbilities();
+            for (String enId : ABILITY_EN_TO_ZH.keySet()) {
+                String display = tryLang("cobblemon.ability." + enId, null);
+                if (display == null) {
+                    display = isChineseLocale() ? ABILITY_EN_TO_ZH.get(enId) : enId;
+                }
+                ABILITY_DISPLAY_CACHE.add(display);
+            }
+        }
+        abilityDisplayLang = lang;
+        return ABILITY_DISPLAY_CACHE;
+    }
+
     public static String abilityToChinese(String en) {
         if (en == null || en.isEmpty()) return en;
         String id = en.toLowerCase().trim();
@@ -2073,6 +2218,46 @@ public class PokemonNameMap {
     public static List<String> speciesList() {
         ensureDynamicSpecies();
         return SPECIES_ZH_LIST;
+    }
+
+    // [线性-i18n] 语言感知的物种显示名：始终查询当前语言的 cobblemon.species.<id>.name
+    public static String speciesToDisplay(String en) {
+        if (en == null || en.isEmpty()) return en;
+        String id = en.toLowerCase().trim();
+        String fromLang = tryLang("cobblemon.species." + id + ".name", null);
+        if (fromLang != null) return fromLang;
+        return EN_TO_ZH.getOrDefault(id, en);
+    }
+
+    // [线性-i18n] 语言感知的物种下拉列表：语言切换时自动重建，按图鉴编号排序
+    public static List<String> speciesDisplayList() {
+        String currentLang = currentLocaleCode();
+        if (!currentLang.equals(speciesDisplayLang)) {
+            speciesDisplayLang = currentLang;
+            SPECIES_DISPLAY_CACHE.clear();
+            ensureDynamicSpecies();
+            java.util.List<java.util.Map.Entry<Integer, String>> sorted = new java.util.ArrayList<>(NUMBER_TO_ID.entrySet());
+            sorted.sort(java.util.Map.Entry.comparingByKey());
+            java.util.List<String> seen = new java.util.ArrayList<>();
+            for (java.util.Map.Entry<Integer, String> entry : sorted) {
+                String enId = entry.getValue();
+                String name = speciesToDisplay(enId);
+                if (name != null && !name.isEmpty() && !seen.contains(name)) {
+                    SPECIES_DISPLAY_CACHE.add(name);
+                    seen.add(name);
+                }
+            }
+            for (String enId : EN_TO_ZH.keySet()) {
+                if (!ID_TO_NUMBER.containsKey(enId)) {
+                    String name = speciesToDisplay(enId);
+                    if (name != null && !name.isEmpty() && !seen.contains(name)) {
+                        SPECIES_DISPLAY_CACHE.add(name);
+                        seen.add(name);
+                    }
+                }
+            }
+        }
+        return SPECIES_DISPLAY_CACHE;
     }
 
     // [线性-L15] 通过图鉴编号获取中文名（用于序号搜索）
@@ -2265,6 +2450,11 @@ public class PokemonNameMap {
         return new ArrayList<>(ABILITY_ZH_TO_EN.keySet());
     }
 
+    // [线性-i18n] 语言感知的形态显示（优先lang翻译，已经语言感知）
+    public static String formToDisplay(String speciesName, String formName) {
+        return formToChinese(speciesName, formName);
+    }
+
     // [线性-Lform] 形态名→本地化（优先Cobblemon的cobblemon.aspect.<id>翻译，回落本模组翻译）
     public static String formToChinese(String speciesName, String formName) {
         String normalForm = Component.translatable("coblemon_ts.editor.form_normal").getString();
@@ -2282,8 +2472,8 @@ public class PokemonNameMap {
             }
         }
         if (formPart.isEmpty() || formPart.equals("normal")) return normalForm;
-        // lang key: cobblemon.aspect.<formPart>
-        String fromLang = tryLang("cobblemon.aspect." + formPart, null);
+        // lang key: cobblemon.ui.pokedex.info.form.<formPart>（已核对Cobblemon 1.7.3 真实键）
+        String fromLang = tryLang("cobblemon.ui.pokedex.info.form." + formPart, null);
         if (fromLang != null) return fromLang;
         return formName; // 无翻译时回落原文
     }
