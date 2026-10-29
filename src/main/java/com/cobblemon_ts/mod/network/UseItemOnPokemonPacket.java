@@ -2,6 +2,7 @@ package com.cobblemon_ts.mod.network;
 
 import com.cobblemon_ts.mod.CobblemonTS;
 import com.cobblemon_ts.mod.SecurityHelper;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
@@ -18,7 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count, boolean allMoves) implements CustomPacketPayload {
+public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count, boolean allMoves,
+        boolean fromPokebag) implements CustomPacketPayload {
 
     public static final Type<UseItemOnPokemonPacket> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath("coblemon_ts", "use_item_on_pokemon"));
@@ -26,21 +28,23 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
     public static final StreamCodec<RegistryFriendlyByteBuf, UseItemOnPokemonPacket> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public UseItemOnPokemonPacket decode(RegistryFriendlyByteBuf buf) {
-            return new UseItemOnPokemonPacket(
-                    buf.readUUID(),
-                    buf.readUtf(),
-                    buf.readVarInt(),
-                    buf.readBoolean()
-            );
-        }
+                    return new UseItemOnPokemonPacket(
+                            buf.readUUID(),
+                            buf.readUtf(),
+                            buf.readVarInt(),
+                            buf.readBoolean(),
+                            buf.readBoolean()
+                    );
+                }
 
-        @Override
-        public void encode(RegistryFriendlyByteBuf buf, UseItemOnPokemonPacket packet) {
-            buf.writeUUID(packet.pokemonUuid());
-            buf.writeUtf(packet.itemId());
-            buf.writeVarInt(packet.count());
-            buf.writeBoolean(packet.allMoves());
-        }
+                @Override
+                public void encode(RegistryFriendlyByteBuf buf, UseItemOnPokemonPacket packet) {
+                    buf.writeUUID(packet.pokemonUuid());
+                    buf.writeUtf(packet.itemId());
+                    buf.writeVarInt(packet.count());
+                    buf.writeBoolean(packet.allMoves());
+                    buf.writeBoolean(packet.fromPokebag());
+                }
     };
 
     @Override
@@ -89,15 +93,16 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
                     if (uuid.equals(packet.pokemonUuid())) {
                         // ★ PP极限药特殊处理：直接对技能使用，无需选择技能UI
                         if ("cobblemon:pp_max".equals(packet.itemId())) {
-                            if (handlePPMax(serverPlayer, pokemon, packet)) {
-                                // 物品已在handlePPMax内部消耗
+                            int ppmUsed = handlePPMax(serverPlayer, pokemon, packet);
+                            if (ppmUsed > 0 && packet.fromPokebag()) {
+                                deductFromPokebag(serverPlayer, packet.itemId(), ppmUsed);
                             }
                             break;
                         }
                         // ★ 金色王冠特殊处理：切换金色王冠状态（NBT持久化），无需选择技能UI
                         if ("coblemon_ts:gold_crown".equals(packet.itemId())) {
                             if (handleGoldenBottleCap(serverPlayer, pokemon, packet)) {
-                                // 物品已在handleGoldenBottleCap内部消耗
+                                if (packet.fromPokebag()) deductFromPokebag(serverPlayer, packet.itemId(), packet.count());
                             }
                             break;
                         }
@@ -105,20 +110,28 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
                         if ("cobblemon:ability_capsule".equals(packet.itemId())
                                 || "cobblemon:ability_patch".equals(packet.itemId())) {
                             if (handleAbilityChange(serverPlayer, pokemon, packet)) {
-                                // 物品已在handleAbilityChange内部消耗
+                                if (packet.fromPokebag()) deductFromPokebag(serverPlayer, packet.itemId(), packet.count());
                             }
                             break;
                         }
-                        // 优先用 PokemonSelectingItem 原生逻辑（糖果/进化石等）
-                        if (tryPokemonSelectingItem(serverPlayer, pokemon, packet)) {
-                            // applyToPokemon 内部已处理物品消耗，不需要额外 consumeItem
+                        // [线性-EVOL-01] 优先走 PokemonSelectingItem（糖果等）→ 进化物品(火之石等) → 药水治疗
+                        int psiUsed = tryPokemonSelectingItem(serverPlayer, pokemon, packet);
+                        if (psiUsed > 0) {
+                            if (packet.fromPokebag()) deductFromPokebag(serverPlayer, packet.itemId(), psiUsed);
+                        } else if (tryEvolutionItem(serverPlayer, pokemon, packet) > 0) {
+                            // [线性-EVOL-01] 进化成功：对齐Cobblemon原生evolutionUnlocked() → consume(1)
+                            if (!packet.fromPokebag()) consumeItems(serverPlayer, 1);
+                            else deductFromPokebag(serverPlayer, packet.itemId(), 1);
                         } else if (applyItemEffect(pokemon, packet, getCurrentHealthMethod, getMaxHealthMethod,
                                 setCurrentHealthMethod, healMethod, isFaintedMethod,
                                 getStatusMethod, setStatusMethod)) {
-                            // 只有治疗/复活等逻辑真正生效了才消耗物品
-                            consumeItem(serverPlayer, packet);
+                            if (!packet.fromPokebag()) {
+                                consumeItem(serverPlayer, packet);
+                            } else {
+                                deductFromPokebag(serverPlayer, packet.itemId(), packet.count());
+                            }
                         }
-                        // 否则什么都不做——物品既不是 PokemonSelectingItem 也不是治疗类，不消耗
+                        // 否则什么都不做——物品不匹配任何类型，不消耗
                         break;
                     }
                 }
@@ -219,35 +232,112 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
         return anyEffect;
     }
 
-    private static boolean tryPokemonSelectingItem(ServerPlayer player, Object pokemon,
-                                                   UseItemOnPokemonPacket packet) {
+    // [线性-FIX-baguse-07] 匹配Cobblemon原生PokemonSelectingItem.use()行为:
+    //   - Cobblemon: applyToPokemon()返回值==null → pass(没处理), !=null → 已处理(不区分成败)
+    //   - Cobblemon: 物品消耗由applyToPokemon内部自行shrink stack
+    //   - 本方法: 比对temp stack count变化推算出实际消耗数量, 返回0=未消耗
+    private static int tryPokemonSelectingItem(ServerPlayer player, Object pokemon,
+                                               UseItemOnPokemonPacket packet) {
         try {
-            ItemStack cursorStack = player.containerMenu.getCarried();
-            if (cursorStack.isEmpty()) return false;
+            ItemStack cursorStack;
+            if (packet.fromPokebag()) {
+                var itemOpt = net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(
+                        ResourceLocation.parse(packet.itemId()));
+                if (itemOpt.isEmpty()) return 0;
+                cursorStack = new ItemStack(itemOpt.get(), packet.count());
+            } else {
+                cursorStack = player.containerMenu.getCarried();
+            }
+            if (cursorStack.isEmpty()) return 0;
 
             if (!(cursorStack.getItem() instanceof com.cobblemon.mod.common.api.item.PokemonSelectingItem selectingItem)) {
-                return false;
+                return 0;
             }
 
-            // 检查是否能对这只精灵使用
-            if (!selectingItem.canUseOnPokemon(cursorStack, 
-                    (com.cobblemon.mod.common.pokemon.Pokemon) pokemon)) {
-                return false;
-            }
+            int before = cursorStack.getCount();
+            int totalUsed = 0;
 
-            // 应用物品
             for (int i = 0; i < packet.count(); i++) {
                 var result = selectingItem.applyToPokemon(player, cursorStack,
                         (com.cobblemon.mod.common.pokemon.Pokemon) pokemon);
-                // applyToPokemon 返回 InteractionResultHolder，如果失败就停止
-                if (result.getResult() != net.minecraft.world.InteractionResult.SUCCESS) {
-                    return i > 0; // 如果已经用了至少1个，也算成功
+                if (result == null) break;
+                cursorStack = result.getObject();
+                int after = cursorStack.getCount();
+                int consumedThisRound = before - after;
+                if (consumedThisRound <= 0) break;
+                totalUsed += consumedThisRound;
+                before = after;
+            }
+
+            if (totalUsed > 0) {
+                if (!packet.fromPokebag()) {
+                    consumeItems(player, totalUsed);
+                }
+                return totalUsed;
+            }
+
+            return 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    // [线性-EVOL-01] 进化物品走ItemInteractionEvolution — 对齐PokemonEntity.attemptItemInteraction原生逻辑
+    //   ┌─ pokemon.getLockedEvolutions() → filterIsInstance<ItemInteractionEvolution>
+    //   ├─ 非optional进化优先 → 只匹配第一个
+    //   ├─ optional进化其次 → 允许同时解锁多个
+    //   ├─ attemptEvolution内部: testContext(物品匹配) + test(条件满足) → evolve(执行进化)
+    //   └─ 返回1=进化成功消耗1个物品, 0=无匹配进化(不消耗)
+    private static int tryEvolutionItem(ServerPlayer player, Object pokemonObj,
+                                        UseItemOnPokemonPacket packet) {
+        try {
+            var pokemon = (com.cobblemon.mod.common.pokemon.Pokemon) pokemonObj;
+
+            if (pokemon.getOwnerPlayer() != player) return 0;
+
+            var itemOpt = BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(packet.itemId()));
+            if (itemOpt.isEmpty()) return 0;
+            ItemStack stack = new ItemStack(itemOpt.get(), 1);
+
+            var context = new com.cobblemon.mod.common.pokemon.evolution.variants
+                    .ItemInteractionEvolution.ItemInteractionContext(stack, player.level());
+
+            List<com.cobblemon.mod.common.pokemon.evolution.variants.ItemInteractionEvolution> itemEvols = new ArrayList<>();
+            for (var evo : pokemon.getLockedEvolutions()) {
+                if (evo instanceof com.cobblemon.mod.common.pokemon.evolution.variants.ItemInteractionEvolution iie) {
+                    itemEvols.add(iie);
                 }
             }
-            return true;
+
+            if (itemEvols.isEmpty()) {
+                CobblemonTS.LOGGER.info("tryEvolutionItem: no ItemInteractionEvolution for {} on {}",
+                        packet.itemId(), pokemon.getSpecies().getName());
+                return 0;
+            }
+
+            for (var evo : itemEvols) {
+                if (!evo.getOptional() && evo.attemptEvolution(pokemon, context)) {
+                    CobblemonTS.LOGGER.info("tryEvolutionItem: forced evolution SUCCESS {} -> {}",
+                            packet.itemId(), pokemon.getSpecies().getName());
+                    return 1;
+                }
+            }
+
+            for (var evo : itemEvols) {
+                if (evo.getOptional() && evo.attemptEvolution(pokemon, context)) {
+                    CobblemonTS.LOGGER.info("tryEvolutionItem: optional evolution SUCCESS {} -> {}",
+                            packet.itemId(), pokemon.getSpecies().getName());
+                    return 1;
+                }
+            }
+
+            CobblemonTS.LOGGER.info("tryEvolutionItem: no matching evolution for {} on {}",
+                    packet.itemId(), pokemon.getSpecies().getName());
+            return 0;
         } catch (Exception e) {
-            CobblemonTS.LOGGER.warn("PokemonSelectingItem use failed: {}", e.getMessage());
-            return false;
+            CobblemonTS.LOGGER.warn("tryEvolutionItem failed: {} - {}",
+                    e.getClass().getSimpleName(), e.getMessage());
+            return 0;
         }
     }
 
@@ -296,25 +386,29 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
     //   │   ├─ move==null → skip(空技能无效)
     //   │   ├─ raisedPpStages>=3 → skip(已最大)
     //   │   └─ 可用 → 构造新Move(raised=3, pp=maxPP) → setMove
-    //   ├─ !allMoves → 只处理第一个可用技能(break)
-    //   └─ allMoves → 遍历全部4个技能
+    //   ├─ 道具袋(pokebag): packet.count()=N → 尝试依次使用N个PPmax到前N个可用技能
+    //   ├─ 普通UI+Shift: allMoves=true → 1个PPmax强化全部4个技能
+    //   └─ 普通UI无Shift: allMoves=false → 只强化第一个可用技能
     //   [优化-F03] 反射全部缓存为静态字段，避免每次Class.forName/getMethod
-    private static boolean handlePPMax(ServerPlayer player, Object pokemon, UseItemOnPokemonPacket packet) {
+    private static int handlePPMax(ServerPlayer player, Object pokemon, UseItemOnPokemonPacket packet) {
         try {
-            if (!initPPMReflection()) return false;
+            if (!initPPMReflection()) return 0;
 
             // [优化-F03] 复用缓存的getMoveSet反射
             Object moveSet = pokemon.getClass().getMethod("getMoveSet").invoke(pokemon);
-            if (moveSet == null) return false;
+            if (moveSet == null) return 0;
 
             Method getMove = moveSet.getClass().getMethod("get", int.class);
             Method setMove = moveSet.getClass().getMethod("setMove", int.class, cachedMoveClass);
 
-            boolean allMoves = packet.allMoves();
-            int itemsConsumed = 0;
+            // [线性-FIX-baguse-06] 道具袋: N个PPmax → N个技能依次使用; 普通UI: allMoves控制
+            int maxUses = packet.fromPokebag()
+                    ? Math.min(packet.count(), 4)
+                    : (packet.allMoves() ? 4 : 1);
+            int boosted = 0;
 
             // 遍历4个技能槽位
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 4 && boosted < maxUses; i++) {
                 Object move = getMove.invoke(moveSet, i);
                 if (move == null) continue; // 空技能无效
 
@@ -335,20 +429,19 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
                 Object newMove = cachedMoveCtor.newInstance(template, maxPP, 3);
                 setMove.invoke(moveSet, i, newMove);
 
-                itemsConsumed++;
-
-                // 非Shift/Alt模式：只处理第一个可用技能
-                if (!allMoves) break;
+                boosted++;
             }
 
-            if (itemsConsumed > 0) {
-                consumeItems(player, itemsConsumed);
-                return true;
+            if (boosted > 0) {
+                if (!packet.fromPokebag()) {
+                    consumeItems(player, boosted);
+                }
+                return boosted;
             }
-            return false;
+            return 0;
         } catch (Exception e) {
             CobblemonTS.LOGGER.error("handlePPMax: PP极限药处理失败 - {}", e.getMessage());
-            return false;
+            return 0;
         }
     }
 
@@ -489,7 +582,9 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
                     Class.forName("com.cobblemon.mod.common.api.abilities.Ability"))
                     .invoke(pokemon, newAbility);
 
-            consumeItems(player, 1);
+            if (!packet.fromPokebag()) {
+                consumeItems(player, 1);
+            }
             CobblemonTS.LOGGER.info("handleAbilityChange: SUCCESS! {} -> {}", currentId, targetAbilityId);
             return true;
         } catch (Exception e) {
@@ -578,7 +673,9 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
                 updateMethod.invoke(pokemon);
             } catch (Throwable ignored) {}
 
-            consumeItems(player, 1);
+            if (!packet.fromPokebag()) {
+                consumeItems(player, 1);
+            }
             CobblemonTS.LOGGER.info("handleGoldenBottleCap: golden_crown active={}", !allHyperTrained);
             return true;
         } catch (Exception e) {
@@ -617,6 +714,67 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
         if (!offHand.isEmpty()) {
             int shrinkCount = Math.min(remaining, offHand.getCount());
             offHand.shrink(shrinkCount);
+        }
+    }
+
+    // [线性-FIX-baguse-04] 道具袋库存扣除——仅在物品真正生效后调用
+    //   原理：UseItemOnPokemonPacket(fromPokebag=true) 确认物品生效 → 从道具袋扣库存 → 同步客户端
+    //   对比旧方案：UsePokebagItemPacket 无视结果并发扣库存 → 火之石给超梦用也扣
+    private static void deductFromPokebag(ServerPlayer serverPlayer, String itemId, int count) {
+        try {
+            var playerData = com.cobblemon_ts.mod.CharmPlayerData.get(serverPlayer);
+            var bagManager = playerData.getPokebagManager();
+            if (bagManager == null) return;
+
+            var inventory = bagManager.getBagInventory();
+            int remaining = count;
+            for (int i = 0; i < inventory.getContainerSize() && remaining > 0; i++) {
+                ItemStack stack = inventory.getItem(i);
+                if (stack.isEmpty()) continue;
+                String stackId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+                if (stackId.equals(itemId)) {
+                    int consume = Math.min(remaining, stack.getCount());
+                    stack.shrink(consume);
+                    remaining -= consume;
+                    if (stack.isEmpty()) {
+                        inventory.setItem(i, ItemStack.EMPTY);
+                    }
+                }
+            }
+
+            // 同步客户端道具袋
+            syncPokebagToClient(serverPlayer, bagManager);
+
+            if (remaining > 0) {
+                CobblemonTS.LOGGER.warn("[deductFromPokebag] insufficient: need {} of {}", count, itemId);
+            }
+        } catch (Exception e) {
+            CobblemonTS.LOGGER.error("[deductFromPokebag] deduct failed", e);
+        }
+    }
+
+    private static void syncPokebagToClient(ServerPlayer player, Object bagManager) {
+        try {
+            var inventory = bagManager.getClass().getMethod("getBagInventory").invoke(bagManager);
+            if (inventory == null) return;
+
+            var sizeMethod = inventory.getClass().getMethod("getContainerSize");
+            int size = (int) sizeMethod.invoke(inventory);
+
+            List<SyncPokebagContentsPacket.ItemEntry> entries = new ArrayList<>();
+            var getItemMethod = inventory.getClass().getMethod("getItem", int.class);
+            for (int i = 0; i < size; i++) {
+                var stack = (ItemStack) getItemMethod.invoke(inventory, i);
+                if (!stack.isEmpty()) {
+                    String id = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+                    entries.add(new SyncPokebagContentsPacket.ItemEntry(id, stack.getCount()));
+                }
+            }
+
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                    new SyncPokebagContentsPacket(entries));
+        } catch (Exception e) {
+            CobblemonTS.LOGGER.error("[syncPokebagToClient] sync failed", e);
         }
     }
 }

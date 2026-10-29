@@ -535,6 +535,9 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
         int menuW = maxTextWidth + 12;
         state.contextMenuWidth = menuW;  // 缓存宽度供交互检测
 
+        // [线性-FIX-menu-01] 渲染时用实际宽度重新修正菜单位置
+        PartyUIState.recomputeContextMenuPosition(state);
+
         PoseStack poseStack = guiGraphics.pose();
         poseStack.pushPose();
         poseStack.translate(0, 0, 500.0F);

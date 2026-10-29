@@ -894,7 +894,6 @@ public class PartyUIState {
 
     // ===== 交互处理 =====
     public static void handleInteractionContextMenu(double mouseX, double mouseY, int button, State state, Object screen) {
-        // 无条件日志：记录每一次右键菜单点击事件
         CobblemonTS.LOGGER.info("[PartyUI-Menu] btn={} clickPos=({},{}) menuSlot={} menuPos=({},{}) width={}",
                 button, (int) mouseX, (int) mouseY, state.contextMenuSlot, state.contextMenuX, state.contextMenuY, state.contextMenuWidth);
 
@@ -904,20 +903,13 @@ public class PartyUIState {
         }
 
         int itemH = CONTEXT_MENU_ITEM_HEIGHT;
+        // [线性-FIX-menu-01] 坐标已由recomputeContextMenuPosition预修正，直接使用state中的值
         int menuW = state.contextMenuWidth > 0 ? state.contextMenuWidth : 70;
-        // [线性-C02] 动态菜单高度：基础5项 + 可能有"使用道具"
         boolean hasPokebag = state.charmManager != null && state.charmManager.isPokebagOwned();
         int menuItemCount = hasPokebag ? 6 : 5;
         int menuH = menuItemCount * itemH;
-        int screenW = Minecraft.getInstance().getWindow().getGuiScaledWidth();
-        int screenH = Minecraft.getInstance().getWindow().getGuiScaledHeight();
-
         int menuX = state.contextMenuX;
         int menuY = state.contextMenuY;
-        if (menuX + menuW > screenW) menuX = screenW - menuW - 4;
-        if (menuY + menuH > screenH) menuY = screenH - menuH - 4;
-        if (menuX < 0) menuX = 4;
-        if (menuY < 0) menuY = 4;
 
         CobblemonTS.LOGGER.info("[PartyUI-Menu] rect x={} y={} w={} h={}", menuX, menuY, menuW, menuH);
 
@@ -985,6 +977,39 @@ public class PartyUIState {
     public static void handleInteractionRightClick(int slotIndex, State state) {
         state.contextMenuOpen = true;
         state.contextMenuSlot = slotIndex;
+        // [线性-FIX-menu-01] 右键时预计算菜单修正坐标，确保渲染和点击检测一致
+        recomputeContextMenuPosition(state);
+    }
+
+    // [线性-FIX-menu-01] 右键菜单位置修正：底部出界→往上放，右侧出界→左偏
+    //   渲染和点击检测共用一个位置，避免GUI缩放导致的判定偏差
+    public static void recomputeContextMenuPosition(State state) {
+        int menuW = state.contextMenuWidth > 0 ? state.contextMenuWidth : 70;
+        // [线性-C02] 动态菜单高度
+        boolean hasPokebag = state.charmManager != null && state.charmManager.isPokebagOwned();
+        int menuItemCount = hasPokebag ? 6 : 5;
+        int menuH = menuItemCount * CONTEXT_MENU_ITEM_HEIGHT;
+        int screenW = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+        int screenH = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+
+        int menuX = state.contextMenuX;
+        int menuY = state.contextMenuY;
+
+        // [线性-FIX-menu-01] 底部溢出 → 菜单放在点击位置上方
+        if (menuY + menuH > screenH) {
+            menuY = Math.max(4, menuY - menuH);
+        }
+        // 右侧溢出 → 左偏
+        if (menuX + menuW > screenW) {
+            menuX = Math.max(4, screenW - menuW - 4);
+        }
+        // 顶部溢出兜底
+        if (menuY < 4) menuY = 4;
+        // 左侧溢出兜底
+        if (menuX < 4) menuX = 4;
+
+        state.contextMenuX = menuX;
+        state.contextMenuY = menuY;
     }
 
     public static void handleInteractionHeldItemClick(int slotIndex, State state) {
@@ -1052,35 +1077,37 @@ public class PartyUIState {
         }
     }
 
-    public static void handleUseItemOnPokemon(int slotIndex, ItemStack cursorStack, State state) {
+    // [线性-FIX-baguse-03] fromPokebag=声明的重载——UsePokebagItemPacket发此包时不扣玩家物品栏
+    public static void handleUseItemOnPokemon(int slotIndex, ItemStack cursorStack, State state, boolean fromPokebag) {
         Pokemon pokemon = getPartyPokemon(slotIndex);
         if (pokemon == null || cursorStack.isEmpty()) return;
         try {
             boolean altHeld = net.minecraft.client.gui.screens.Screen.hasAltDown();
             boolean shiftHeld = net.minecraft.client.gui.screens.Screen.hasShiftDown();
-            int useCount = Math.min(altHeld ? cursorStack.getCount() : 1, cursorStack.getCount());
+            // [线性-FIX-baguse-05] 道具袋已显式选数，不钳制到1；普通UI仍需alt放行
+            int useCount = fromPokebag ? cursorStack.getCount() :
+                    Math.min(altHeld ? cursorStack.getCount() : 1, cursorStack.getCount());
             UUID pokemonUuid = pokemon.getUuid();
-            // [修复-F01] PP Max 的 allMoves 改为 alt/shift 均可触发，与其他物品操作逻辑一致
             boolean isPPMax = BuiltInRegistries.ITEM.getKey(cursorStack.getItem()).toString()
                     .equals("cobblemon:pp_max");
             boolean allMoves = (shiftHeld || altHeld) && isPPMax;
             com.cobblemon_ts.mod.network.UseItemOnPokemonPacket packet =
                     new com.cobblemon_ts.mod.network.UseItemOnPokemonPacket(pokemonUuid,
-                            BuiltInRegistries.ITEM.getKey(cursorStack.getItem()).toString(), useCount, allMoves);
+                            BuiltInRegistries.ITEM.getKey(cursorStack.getItem()).toString(), useCount, allMoves, fromPokebag);
             net.neoforged.neoforge.network.PacketDistributor.sendToServer(packet);
 
-            // ★ 修复假消耗：不再在客户端抢先shrink
-            // 物品消耗统一由服务端UseItemOnPokemonPacket.handleServerSide处理
-            // 服务端确认消耗后，背包同步机制会自动更新客户端显示
-
             if (debugSlot()) {
-                CobblemonTS.LOGGER.info("[PartyUI] useItem sent slot={} count={} shift={} allMoves={}",
-                        slotIndex, useCount, shiftHeld, allMoves);
+                CobblemonTS.LOGGER.info("[PartyUI] useItem sent slot={} count={} shift={} allMoves={} fromPokebag={}",
+                        slotIndex, useCount, shiftHeld, allMoves, fromPokebag);
             }
             state.ticksTillClick = 10;
         } catch (Exception e) {
             CobblemonTS.LOGGER.error("[PartyUI] Failed to use item on pokemon: " + e.getMessage());
         }
+    }
+
+    public static void handleUseItemOnPokemon(int slotIndex, ItemStack cursorStack, State state) {
+        handleUseItemOnPokemon(slotIndex, cursorStack, state, false);
     }
 
     public static void moveToPC(int slotIndex, State state) {

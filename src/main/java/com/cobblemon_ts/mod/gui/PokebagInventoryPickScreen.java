@@ -54,7 +54,10 @@ public class PokebagInventoryPickScreen extends Screen {
     }
 
     private int calcRows() {
-        return Math.max(1, Math.min(6, (displayIds.size() + COLS - 1) / COLS));
+        // [线性-RESP-06] 行数受可用高度限制：面板(17+rows*18+7) + 底部提示约40px 必须放得下
+        int byHeight = Math.max(1, (this.height - 17 - 7 - 40) / 18);
+        int byItems = Math.max(1, (displayIds.size() + COLS - 1) / COLS);
+        return Math.max(1, Math.min(6, Math.min(byItems, byHeight)));
     }
 
     private int calcPanelHeight(int rows) {

@@ -9,7 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
-// [线性-PTE-01] 道具袋白名单/黑名单单条编辑界面（仿LuckyWeightEditEntryScreen按键模式）
+// [线性-RESP-04] 响应式布局：输入框/按钮按屏幕宽度动态计算，支持GUI缩放
 @OnlyIn(Dist.CLIENT)
 public class PokebagTagEditScreen extends Screen {
 
@@ -33,18 +33,23 @@ public class PokebagTagEditScreen extends Screen {
     @Override
     protected void init() {
         int centerX = this.width / 2;
-        int y = 50;
+
+        // [线性-RESP-04] 内容宽度响应式
+        int contentWidth = Math.min(360, this.width - 30);
+        int fieldX = centerX - contentWidth / 2;
+
+        int y = 48;
 
         // 提示文字
         this.addRenderableWidget(Button.builder(
                 Component.translatable("coblemon_ts.pokebag_config.edit_hint"),
                 btn -> {})
-                .pos(centerX - 180, 30)
-                .size(360, 14)
+                .pos(fieldX, 30)
+                .size(contentWidth, 14)
                 .build());
 
         // 输入框
-        tagField = new EditBox(this.font, centerX - 175, y, 350, 20,
+        tagField = new EditBox(this.font, fieldX, y, contentWidth, 20,
                 Component.literal("entry"));
         tagField.setMaxLength(200);
         tagField.setValue(originalValue != null ? originalValue : "");
@@ -52,12 +57,18 @@ public class PokebagTagEditScreen extends Screen {
 
         y += 35;
 
+        // [线性-RESP-04] 底部3按钮响应式排列
+        int btnW = Math.min(80, contentWidth / 3 - 4);
+        int btnGap = 6;
+        int totalBtnW = btnW * 3 + btnGap * 2;
+        int btnStart = centerX - totalBtnW / 2;
+
         // 保存
         this.addRenderableWidget(Button.builder(
                 Component.translatable("coblemon_ts.pokebag_config.save_entry"),
                 btn -> saveEntry())
-                .pos(centerX - 100, y)
-                .size(80, 20)
+                .pos(btnStart, y)
+                .size(btnW, 20)
                 .build());
 
         // 删除
@@ -69,16 +80,16 @@ public class PokebagTagEditScreen extends Screen {
                     }
                     Minecraft.getInstance().setScreen(parent);
                 })
-                .pos(centerX - 10, y)
-                .size(80, 20)
+                .pos(btnStart + btnW + btnGap, y)
+                .size(btnW, 20)
                 .build());
 
         // 返回
         this.addRenderableWidget(Button.builder(
                 Component.translatable("coblemon_ts.pokebag_config.cancel_entry"),
                 btn -> Minecraft.getInstance().setScreen(parent))
-                .pos(centerX + 80, y)
-                .size(60, 20)
+                .pos(btnStart + (btnW + btnGap) * 2, y)
+                .size(btnW, 20)
                 .build());
     }
 

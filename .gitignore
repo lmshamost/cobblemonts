@@ -30,6 +30,9 @@
 !META-INF/mods.toml
 !META-INF/neoforge.mods.toml
 
+# Temp extraction / decompile
+bbb/
+
 # Common ignore patterns
 build/
 .gradle/

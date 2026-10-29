@@ -48,7 +48,7 @@ public class PokemonEntityInteractHandler {
             UUID uuid = (UUID) getUuidMethod.invoke(pokemon);
 
             // ★ 发送到服务端处理
-            UseItemOnPokemonPacket packet = new UseItemOnPokemonPacket(uuid, itemId, 1, false);
+            UseItemOnPokemonPacket packet = new UseItemOnPokemonPacket(uuid, itemId, 1, false, false);
             PacketDistributor.sendToServer(packet);
 
             CobblemonTS.LOGGER.info("EntityInteract: sent gold_crown for {}", uuid);
