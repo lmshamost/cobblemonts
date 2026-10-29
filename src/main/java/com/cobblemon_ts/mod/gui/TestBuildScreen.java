@@ -121,11 +121,17 @@ public class TestBuildScreen extends Screen {
         this.bagStackField = addEditBox(col1X + fieldX_off, charmStartY + rowStep * 2 + 1, fieldW, fieldH,
                 String.valueOf(CharmConfig.POKEBAG_MAX_STACK_SIZE.get()));
 
-        // ===== 保存按钮 (row+3) =====
+        // ===== 行3: 保存护符配置 | 道具袋编辑器（对称布局） =====
         this.addRenderableWidget(Button.builder(
                 Component.translatable("coblemon_ts.testbuild.save_charm_config"),
                 btn -> saveAll())
-                .pos(centerX - btnW / 2, charmStartY + rowStep * 3 + 5)
+                .pos(col0X, charmStartY + rowStep * 3 + 5)
+                .size(btnW, btnH).build());
+
+        this.addRenderableWidget(Button.builder(
+                Component.translatable("coblemon_ts.testbuild.pokebag_editor"),
+                btn -> Minecraft.getInstance().setScreen(new PokebagConfigScreen()))
+                .pos(col1X, charmStartY + rowStep * 3 + 5)
                 .size(btnW, btnH).build());
 
         // [线性-TB-V3e] 请求服务端护符状态
