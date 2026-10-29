@@ -1,6 +1,7 @@
 package com.cobblemon_ts.mod.network;
 
 import com.cobblemon_ts.mod.CobblemonTS;
+import com.cobblemon_ts.mod.SecurityHelper;
 import com.cobblemon_ts.mod.pokemoneditor.CobblemonBridge;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -36,6 +37,12 @@ public record ReleasePokemonPacket(int slot) implements CustomPacketPayload {
         ctx.enqueueWork(() -> {
             try {
                 ServerPlayer player = (ServerPlayer) ctx.player();
+                // [线性-SEC] 权限校验：仅创造模式或OP
+                if (!SecurityHelper.isTrusted(player)) {
+                    CobblemonTS.LOGGER.warn("[Security] Unauthorized ReleasePokemon from {}",
+                            player.getName().getString());
+                    return;
+                }
                 CobblemonTS.LOGGER.info("[Release] RECEIVED slot={} player={} uuid={}",
                         pkt.slot(), player.getName().getString(), player.getUUID());
                 CobblemonTS.LOGGER.info("[Release] → calling CobblemonBridge.deletePokemonFromSlot(player, null, {})", pkt.slot());

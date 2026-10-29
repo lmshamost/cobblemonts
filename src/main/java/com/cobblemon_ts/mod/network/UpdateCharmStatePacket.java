@@ -6,6 +6,7 @@ import com.cobblemon_ts.mod.CharmPlayerData;
 import com.cobblemon_ts.mod.CharmSlotManager;
 import com.cobblemon_ts.mod.CharmState;
 import com.cobblemon_ts.mod.CharmType;
+import com.cobblemon_ts.mod.SecurityHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
@@ -36,6 +37,10 @@ public record UpdateCharmStatePacket(String charmId, boolean owned) implements C
     public static void handleServerSide(UpdateCharmStatePacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer sp) {
+                // [线性-SEC] 权限校验：仅创造模式或OP
+                if (!SecurityHelper.isTrusted(sp)) {
+                    return;
+                }
                 CharmPlayerData playerData = CharmPlayerData.get(sp);
                 if (playerData == null) return;
                 CharmSlotManager manager = playerData.getCharmSlotManager();

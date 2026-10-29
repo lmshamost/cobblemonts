@@ -1,5 +1,7 @@
 package com.cobblemon_ts.mod.network;
 
+import com.cobblemon_ts.mod.CobblemonTS;
+import com.cobblemon_ts.mod.SecurityHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
@@ -112,6 +114,10 @@ public record PartyToPCPacket(UUID pokemonUuid) implements CustomPacketPayload {
                 }
 
                 ServerPlayer player = (ServerPlayer) context.player();
+                // [线性-SEC] 权限校验
+                if (!SecurityHelper.isTrusted(player)) {
+                    return;
+                }
                 com.cobblemon_ts.mod.CobblemonTS.LOGGER.info("[PartyToPC] received packet for uuid={} player={}",
                         packet.pokemonUuid(), player.getName().getString());
 

@@ -6,6 +6,7 @@ import com.cobblemon_ts.mod.CharmSlotManager;
 import com.cobblemon_ts.mod.CharmState;
 import com.cobblemon_ts.mod.CharmType;
 import com.cobblemon_ts.mod.PokebagManager;
+import com.cobblemon_ts.mod.SecurityHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -28,6 +29,10 @@ public record ClearAllCharmsPacket() implements CustomPacketPayload {
     public static void handleServerSide(ClearAllCharmsPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer sp) {
+                // [线性-SEC] 权限校验：仅创造模式或OP
+                if (!SecurityHelper.isTrusted(sp)) {
+                    return;
+                }
                 CharmPlayerData playerData = CharmPlayerData.get(sp);
                 if (playerData == null) return;
 

@@ -54,6 +54,11 @@ public class CharmEventListener {
     @SubscribeEvent
     public static void onPlayerLogout(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
         Player player = event.getEntity();
+        // [线性-B03] 登出前强制落盘道具袋脏数据
+        CharmPlayerData data = playerDataMap.get(player.getStringUUID());
+        if (data != null) {
+            data.getPokebagManager().forceFlush();
+        }
         savePlayerData(player);
         playerDataMap.remove(player.getStringUUID());
     }
@@ -81,6 +86,13 @@ public class CharmEventListener {
     @SubscribeEvent
     public static void onPlayerSave(net.neoforged.neoforge.event.entity.player.PlayerEvent.SaveToFile event) {
         savePlayerData(event.getEntity());
+    }
+
+    // [线性-P04] 服务端停止时兜底清理playerDataMap，防止崩服后内存泄漏
+    @SubscribeEvent
+    public static void onServerStopping(net.neoforged.neoforge.event.server.ServerStoppingEvent event) {
+        playerDataMap.clear();
+        CobblemonTS.LOGGER.debug("[Cleanup] 服务端停止，已清空playerDataMap");
     }
     
     public static CharmPlayerData getPlayerData(Player player) {
@@ -113,6 +125,17 @@ public class CharmEventListener {
         if (data != null) {
             CompoundTag tag = player.getPersistentData();
             tag.put("CharmPlayerData", data.serializeNBT(player.registryAccess()));
+        }
+    }
+
+    // [线性-B03] 每tick检查在线玩家的道具袋脏标记，限流落盘（1秒最多1次）
+    @SubscribeEvent
+    public static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event) {
+        for (var player : event.getServer().getPlayerList().getPlayers()) {
+            CharmPlayerData data = playerDataMap.get(player.getStringUUID());
+            if (data != null) {
+                data.getPokebagManager().tryFlush();
+            }
         }
     }
 }
