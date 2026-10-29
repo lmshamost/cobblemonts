@@ -112,7 +112,8 @@ public class CharmConfig {
                 "#cobblemon:feathers",
                 "#cobblemon:mints",
                 "#cobblemon:candies",
-                "#cobblemon:vitamins"
+                "#cobblemon:vitamins",
+                "#coblemon_ts:baguse"
             ), obj -> obj instanceof String);
 
         POKEBAG_SLOTS = BUILDER
