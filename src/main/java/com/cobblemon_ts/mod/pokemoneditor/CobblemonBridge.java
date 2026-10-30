@@ -1585,17 +1585,61 @@ public class CobblemonBridge {
                 PokemonEditorDebug.warnEditor("setSpecies failed: {}", e.getMessage());
             }
         }
-        // 形态修改
-        if ((modifiedFields.contains("formName") || modifiedFields.isEmpty()) && pkt.formName() != null && !pkt.formName().isEmpty()) {
+        // [线性-F06] 形态修改：原生API forcedAspects → updateAspects() → updateForm()
+        //   FormData含aspects(List<String>)，设置Pokemon.forcedAspects再updateAspects/updateForm
+        //   空值=清空forcedAspects=恢复标准形态
+        if ((modifiedFields.contains("formName") || modifiedFields.isEmpty()) && pkt.formName() != null) {
             try {
-                for (Method m : pokemon.getClass().getMethods()) {
-                    if ((m.getName().equals("setForm") || m.getName().equals("form")) && m.getParameterCount() == 1) {
-                        m.invoke(pokemon, pkt.formName());
-                        PokemonEditorDebug.logEditor("form: {}", pkt.formName());
+                Object species = callNoArgs(pokemon, "getSpecies");
+                String speciesSdId = extractStringId(species);
+                if (speciesSdId != null) speciesSdId = speciesSdId.toLowerCase();
+
+                java.util.Set<String> targetAspects = java.util.Collections.emptySet();
+
+                if (!pkt.formName().isEmpty()) {
+                    String wantLower = pkt.formName().toLowerCase();
+                    Object forms = callNoArgs(species, "getForms");
+                    if (forms instanceof Iterable<?>) {
+                        for (Object f : (Iterable<?>) forms) {
+                            if (f == null) continue;
+                            String formSdId = extractStringId(f);
+                            if (formSdId == null) continue;
+                            formSdId = formSdId.toLowerCase();
+                            String pureForm = formSdId;
+                            if (speciesSdId != null && formSdId.startsWith(speciesSdId)) {
+                                pureForm = formSdId.substring(speciesSdId.length());
+                                if (pureForm.startsWith("-") || pureForm.startsWith("_"))
+                                    pureForm = pureForm.substring(1);
+                            }
+                            if (pureForm.isEmpty()) pureForm = "normal";
+                            if (pureForm.equalsIgnoreCase(wantLower) || formSdId.equalsIgnoreCase(wantLower)) {
+                                // 找到FormData → 提取aspects
+                                Object aspectsObj = callNoArgs(f, "getAspects");
+                                if (aspectsObj instanceof java.util.Collection<?>) {
+                                    targetAspects = new java.util.LinkedHashSet<>();
+                                    for (Object a : (java.util.Collection<?>) aspectsObj) {
+                                        if (a instanceof String) targetAspects.add((String) a);
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // 设置forcedAspects（Kotlin var生成setForcedAspects(Set<String>) setter）
+                for (java.lang.reflect.Method m : pokemon.getClass().getMethods()) {
+                    if (m.getName().equals("setForcedAspects") && m.getParameterCount() == 1) {
+                        m.invoke(pokemon, targetAspects);
                         break;
                     }
                 }
-            } catch (Throwable ignored) {}
+                callNoArgs(pokemon, "updateAspects");
+                callNoArgs(pokemon, "updateForm");
+                PokemonEditorDebug.logEditor("form: '{}' aspects={}", pkt.formName().isEmpty() ? "(base)" : pkt.formName(), targetAspects);
+            } catch (Throwable e) {
+                PokemonEditorDebug.warnEditor("form failed: {}", e.getMessage());
+            }
         }
 
         // [线性-X01] 等级修改 → 经验清0：setLevel后直接写0，绕过setExperience$common的满级覆盖
@@ -1711,15 +1755,22 @@ public class CobblemonBridge {
             }
         }
 
-        // 携带物修改
-        if ((modifiedFields.contains("heldItem") || modifiedFields.isEmpty()) && pkt.heldItem() != null && !pkt.heldItem().isEmpty()) {
-            Item item = findItem(pkt.heldItem());
-            if (item != null) {
-                ItemStack stack = new ItemStack(item);
+        // 携带物修改（支持空值→清除携带物）
+        if ((modifiedFields.contains("heldItem") || modifiedFields.isEmpty()) && pkt.heldItem() != null) {
+            if (pkt.heldItem().isEmpty()) {
                 try {
-                    pokemon.setHeldItem$common(stack);
-                    PokemonEditorDebug.logEditor("heldItem: {}", pkt.heldItem());
+                    pokemon.removeHeldItem();
+                    PokemonEditorDebug.logEditor("heldItem: cleared");
                 } catch (Throwable ignored) {}
+            } else {
+                Item item = findItem(pkt.heldItem());
+                if (item != null) {
+                    ItemStack stack = new ItemStack(item);
+                    try {
+                        pokemon.setHeldItem$common(stack);
+                        PokemonEditorDebug.logEditor("heldItem: {}", pkt.heldItem());
+                    } catch (Throwable ignored) {}
+                }
             }
         }
 

@@ -2451,6 +2451,25 @@ public class PokemonNameMap {
     }
 
     // [线性-i18n] 语言感知的形态显示（优先lang翻译，已经语言感知）
+    // [线性-Fzh] 形态后缀→中文映射（常见Cobblemon形态）
+    private static final java.util.Map<String, String> FORM_SUFFIX_ZH = new java.util.LinkedHashMap<>();
+    static {
+        FORM_SUFFIX_ZH.put("alola", "阿罗拉");
+        FORM_SUFFIX_ZH.put("alolan", "阿罗拉");
+        FORM_SUFFIX_ZH.put("galar", "伽勒尔");
+        FORM_SUFFIX_ZH.put("galarian", "伽勒尔");
+        FORM_SUFFIX_ZH.put("hisui", "洗翠");
+        FORM_SUFFIX_ZH.put("hisuian", "洗翠");
+        FORM_SUFFIX_ZH.put("paldea", "帕底亚");
+        FORM_SUFFIX_ZH.put("paldean", "帕底亚");
+        FORM_SUFFIX_ZH.put("megax", "超级X");
+        FORM_SUFFIX_ZH.put("megay", "超级Y");
+        FORM_SUFFIX_ZH.put("mega", "超级");
+        FORM_SUFFIX_ZH.put("gmax", "超极巨");
+        FORM_SUFFIX_ZH.put("gigantamax", "超极巨");
+        FORM_SUFFIX_ZH.put("zenith", "顶极");
+    }
+
     public static String formToDisplay(String speciesName, String formName) {
         return formToChinese(speciesName, formName);
     }
@@ -2472,9 +2491,13 @@ public class PokemonNameMap {
             }
         }
         if (formPart.isEmpty() || formPart.equals("normal")) return normalForm;
-        // lang key: cobblemon.ui.pokedex.info.form.<formPart>（已核对Cobblemon 1.7.3 真实键）
+
+        // 1. Cobblemon lang 翻译优先（cobblemon.ui.pokedex.info.form.<formPart>）
         String fromLang = tryLang("cobblemon.ui.pokedex.info.form." + formPart, null);
         if (fromLang != null) return fromLang;
+        // 2. 回落硬编码中文形态映射
+        String fromMap = FORM_SUFFIX_ZH.get(formPart);
+        if (fromMap != null) return fromMap;
         return formName; // 无翻译时回落原文
     }
 }

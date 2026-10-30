@@ -65,6 +65,8 @@ public class PokemonEditorScreen extends Screen {
     private Button clearNameBtn;
     private Button clearNatureBtn;
     private Button clearAbilityBtn;
+    private Button clearFormBtn;
+    private Button clearHeldItemBtn;
     private Button statusCycleBtn;
     private Button levelDownBtn;
     private Button levelUpBtn;
@@ -478,12 +480,14 @@ public class PokemonEditorScreen extends Screen {
             int n = Math.min(255, cur + step);
             this.sumFriendshipField.setValue(String.valueOf(n));
         }).pos(editX + 50 + 10 + 100 + 4 + 18 + 2, rowY + rowStep * 5).size(18, 18).build();
-        this.sumFormField = new EditBox(this.font, editX + 50 + 10, rowY + rowStep * 6, 160, 16, Component.literal(""));
+        this.sumFormField = new EditBox(this.font, editX + 50 + 10, rowY + rowStep * 6, 100, 16, Component.literal(""));
         this.sumFormField.setMaxLength(40);
         this.sumFormField.setTextShadow(false);
-        this.sumHeldItemField = new EditBox(this.font, editX + 50 + 10, rowY + rowStep * 7, 160, 16, Component.literal(""));
+        this.clearFormBtn = Button.builder(Component.literal("\u00d7"), (btn) -> this.sumFormField.setValue("")).pos(editX + 50 + 10 + 100 + 4, rowY + rowStep * 6 - 4).size(16, 16).build();
+        this.sumHeldItemField = new EditBox(this.font, editX + 50 + 10, rowY + rowStep * 7, 100, 16, Component.literal(""));
         this.sumHeldItemField.setMaxLength(50);
         this.sumHeldItemField.setTextShadow(false);
+        this.clearHeldItemBtn = Button.builder(Component.literal("\u00d7"), (btn) -> this.sumHeldItemField.setValue("")).pos(editX + 50 + 10 + 100 + 4, rowY + rowStep * 7 - 4).size(16, 16).build();
         this.genderField = this.makeIntBox(editX + 50 + 10, rowY + rowStep * 8, 60, 0, 2);
         this.genderCycleBtn = Button.builder(Component.translatable("coblemon_ts.editor.gender_cycle"), (btn) -> {
             int cur = this.parseOrDefault(this.genderField, 2);
@@ -884,6 +888,8 @@ public class PokemonEditorScreen extends Screen {
         this.addRenderableWidget(this.clearNameBtn);
         this.addRenderableWidget(this.clearNatureBtn);
         this.addRenderableWidget(this.clearAbilityBtn);
+        this.addRenderableWidget(this.clearFormBtn);
+        this.addRenderableWidget(this.clearHeldItemBtn);
         this.addRenderableWidget(this.statusCycleBtn);
         this.addRenderableWidget(this.genderCycleBtn);
         this.addRenderableWidget(this.levelDownBtn);
@@ -1424,8 +1430,7 @@ public class PokemonEditorScreen extends Screen {
                 d.ability = PokemonNameMap.abilityToEnglish(this.sumAbilityField.getValue());
                 PokemonEditorDebug.logEditor("[Screen] ability: UI='{}' \u2192 EN='{}' (was '{}', changed={})", new Object[]{this.sumAbilityField.getValue(), d.ability, beforeAbility, !Objects.equals(d.ability, beforeAbility)});
                 String formFieldVal = this.sumFormField.getValue();
-                // 形态字段：纯ASCII=用户手输英文形态ID → 直接使用
-                // 普通/中文=下拉选择 → 逆向查找英文ID；找不到则保留原始值不变
+                // [线性-F05] 形态字段不为空→查英文ID；为空→清空为普通形态
                 if (formFieldVal != null && !formFieldVal.isEmpty() && formFieldVal.chars().allMatch(c -> c < 128)) {
                     d.formName = formFieldVal;
                 } else if (formFieldVal != null && !formFieldVal.isEmpty()) {
@@ -1442,8 +1447,9 @@ public class PokemonEditorScreen extends Screen {
                             }
                         }
                     }
+                } else {
+                    d.formName = ""; // 清除→普通形态
                 }
-                // else: field empty, keep d.formName as-is (original raw value)
                 String beforeHeldItem = d.heldItem;
                 d.heldItem = PokemonNameMap.itemToEnglish(this.sumHeldItemField.getValue());
                 PokemonEditorDebug.logEditor("[Screen] heldItem: UI='{}' \u2192 EN='{}' (was '{}', changed={})", new Object[]{this.sumHeldItemField.getValue(), d.heldItem, beforeHeldItem, !Objects.equals(d.heldItem, beforeHeldItem)});
@@ -2140,7 +2146,7 @@ public class PokemonEditorScreen extends Screen {
                 guiGraphics.drawString(this.font, genderText, editX + 50 + 10 + 65 + 100, rowY + rowStep * 8 + 4, labelColor, false);
             }
 
-            int iconX = editX + 50 + 10 + 160 + 8;
+            int iconX = editX + 50 + 10 + 100 + 4 + 16 + 8;
             int iconY = rowY + rowStep * 7;
 
             try {
@@ -2767,7 +2773,10 @@ public class PokemonEditorScreen extends Screen {
             }
         }
 
+        // [线性-Z01] 推Z轴确保下拉框在最上层，避免下方输入框文字穿透
         if ((this.activeTab == 0 || this.activeTab == 1) && !this.autocompleteItems.isEmpty() && this.autocompleteStartY > 0) {
+            guiGraphics.pose().pushPose();
+            guiGraphics.pose().translate(0, 0, 300);
             int lineH = 16;
             int maxShown = 8;
             int shown = Math.min(this.autocompleteItems.size(), maxShown);
@@ -2812,6 +2821,7 @@ public class PokemonEditorScreen extends Screen {
                     guiGraphics.drawString(this.font, "\u2193", arrowX, sY + listH + 2, -12877066, false);
                 }
             }
+            guiGraphics.pose().popPose();
         }
 
         if (this.showImportDialog && this.pendingImportFiles != null) {
