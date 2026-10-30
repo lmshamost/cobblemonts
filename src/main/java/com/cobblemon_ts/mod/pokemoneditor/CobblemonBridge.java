@@ -1585,6 +1585,17 @@ public class CobblemonBridge {
                 PokemonEditorDebug.warnEditor("setSpecies failed: {}", e.getMessage());
             }
         }
+        // [线性-S03] 物种修改 → 经验清0（与等级修改一致逻辑，绕过setExperience$common满级覆盖）
+        if (speciesChanged && !modifiedFields.contains("experience")) {
+            try {
+                java.lang.reflect.Field expField = pokemon.getClass().getDeclaredField("experience");
+                expField.setAccessible(true);
+                expField.setInt(pokemon, 0);
+                PokemonEditorDebug.logEditor("species changed: experience reset to 0");
+            } catch (Throwable e) {
+                PokemonEditorDebug.warnEditor("species exp reset failed: {}", e.getMessage());
+            }
+        }
         // [线性-F06] 形态修改：原生API forcedAspects → updateAspects() → updateForm()
         //   FormData含aspects(List<String>)，设置Pokemon.forcedAspects再updateAspects/updateForm
         //   空值=清空forcedAspects=恢复标准形态

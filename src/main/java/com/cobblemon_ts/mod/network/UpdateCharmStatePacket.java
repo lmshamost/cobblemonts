@@ -8,7 +8,6 @@ import com.cobblemon_ts.mod.CharmState;
 import com.cobblemon_ts.mod.CharmType;
 import com.cobblemon_ts.mod.SecurityHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
@@ -33,7 +32,7 @@ public record UpdateCharmStatePacket(String charmId, boolean owned) implements C
         return TYPE;
     }
 
-    // [线性-P01a] 服务端处理：更新CharmSlotManager中的护符状态
+    // [线性-P01a] 服务端处理：更新CharmSlotManager中的护符有无（owned=true→ACTIVE, false→DISABLED）
     public static void handleServerSide(UpdateCharmStatePacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer sp) {

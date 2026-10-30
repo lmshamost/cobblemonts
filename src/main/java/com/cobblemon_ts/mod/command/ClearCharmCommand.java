@@ -14,7 +14,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
+
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 import java.util.Collection;
@@ -77,36 +77,13 @@ public class ClearCharmCommand {
                 case "catching_charm" -> manager.setCharmState(CharmType.CATCHING,  stateFor(enable));
                 case "exp_all"        -> manager.setCharmState(CharmType.EXP_ALL,   stateFor(enable));
                 case "pokebag"        -> manager.setPokebagOwned(enable);
-                // [线性-CMD01e] 金色王冠：on=给物品, off=清背包
-                case "gold_crown" -> {
-                    var crown = com.cobblemon_ts.mod.CharmItems.GOLD_CROWN.get();
-                    if (enable) {
-                        sp.getInventory().add(new ItemStack(crown, 1));
-                    } else {
-                        for (int i = 0; i < sp.getInventory().getContainerSize(); i++) {
-                            if (sp.getInventory().getItem(i).is(crown)) {
-                                sp.getInventory().setItem(i, ItemStack.EMPTY);
-                            }
-                        }
-                    }
-                }
-                // [线性-CMD01f] all：全部护符 + 道具袋 + 金冠一次性开关
+                // [线性-CMD01f] all：全部护符状态 + 道具袋（金冠有独立获取途径，不归指令管）
                 case "all" -> {
                     CharmState s = stateFor(enable);
                     for (CharmType type : CharmType.values()) {
                         manager.setCharmState(type, s);
                     }
                     manager.setPokebagOwned(enable);
-                    var crown = com.cobblemon_ts.mod.CharmItems.GOLD_CROWN.get();
-                    if (enable) {
-                        sp.getInventory().add(new ItemStack(crown, 1));
-                    } else {
-                        for (int i = 0; i < sp.getInventory().getContainerSize(); i++) {
-                            if (sp.getInventory().getItem(i).is(crown)) {
-                                sp.getInventory().setItem(i, ItemStack.EMPTY);
-                            }
-                        }
-                    }
                 }
                 default -> {
                     source.sendFailure(Component.literal("Unknown charm: " + charmName));

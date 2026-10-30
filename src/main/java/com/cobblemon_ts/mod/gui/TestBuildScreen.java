@@ -29,7 +29,7 @@ public class TestBuildScreen extends Screen {
     private EditBox expAllPercentField;
     private EditBox bagStackField;
 
-    // [线性-TB-V3b] 护符状态（本地切换，红/绿着色）——key=charmId, value=是否装备
+    // [线性-TB-V3b] 护符状态（本地切换，红/绿着色）——key=charmId, value=是否拥有(有即绿，不管开关)
     private final Map<String, Boolean> charmStates = new LinkedHashMap<>();
     private boolean charmStatesLoaded = false;
 
@@ -225,7 +225,7 @@ public class TestBuildScreen extends Screen {
         // [线性-TB-V3h] 标题
         g.drawCenteredString(this.font, this.title, centerX, this.height / 2 - 100, 0xFFFFFF);
 
-        // [线性-TB-V3i] 护符标签着色渲染（红=未装备 / 绿=已装备）
+        // [线性-TB-V3i] 护符标签着色渲染（绿=拥有 / 红=无）
         renderCharmLabel(g, "shiny_charm",   "coblemon_ts.testbuild.shiny_boost",   col0X, labelY_base);
         renderCharmLabel(g, "catching_charm","coblemon_ts.testbuild.catch_boost",   col1X, labelY_base);
         renderCharmLabel(g, "exp_charm",     "coblemon_ts.testbuild.exp_boost",     col0X, labelY_base + rowStep);

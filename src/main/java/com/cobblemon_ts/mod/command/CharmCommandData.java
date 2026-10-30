@@ -4,6 +4,6 @@ package com.cobblemon_ts.mod.command;
 public class CharmCommandData {
     public static final String[] TOGGLE_CHARM_IDS = {
         "shiny_charm", "oval_charm", "exp_charm", "catching_charm",
-        "exp_all", "pokebag", "gold_crown", "all"
+        "exp_all", "pokebag", "all"
     };
 }

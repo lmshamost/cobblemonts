@@ -30,17 +30,17 @@ public record RequestCharmStatesPacket() implements CustomPacketPayload {
         return TYPE;
     }
 
-    // [线性-P02a] 服务端处理：读取护符状态 → 发回 SyncCharmStatesS2CPacket
+    // [线性-P02a] 服务端处理：读取护符是否拥有（isAvailable=有护符在栏位），不关心开关状态
     public static void handleServerSide(RequestCharmStatesPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer sp) {
                 CharmPlayerData data = CharmPlayerData.get(sp);
                 if (data == null) return;
                 CharmSlotManager manager = data.getCharmSlotManager();
-                // [线性-P02b] 构建状态快照 Map<charmId, owned>
+                // [线性-P02b] isAvailable()=有护符(DISABLED以外) → TestBuild绿/红只读有无
                 Map<String, Boolean> states = new LinkedHashMap<>();
                 for (CharmType type : CharmType.values()) {
-                    states.put(type.getItemId(), manager.getCharmState(type).isActive());
+                    states.put(type.getItemId(), manager.getCharmState(type).isAvailable());
                 }
                 states.put("pokebag", manager.isPokebagOwned());
                 PacketDistributor.sendToPlayer(sp, new SyncCharmStatesS2CPacket(states));

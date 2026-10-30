@@ -55,7 +55,7 @@ public class HudSettingsScreen extends Screen {
         y += 6;
         int cx = this.width / 2;
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.hud.back"),
+                Component.translatable("coblemon_ts.hud.close"),
                 btn -> this.onClose())
                 .pos(cx - BTN_W / 2, y)
                 .size(BTN_W, BTN_H)

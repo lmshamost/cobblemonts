@@ -144,8 +144,12 @@ public class CobblemonTS {
         if (FMLEnvironment.dist == Dist.CLIENT) {
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(CobblemonTS::onClientTick);
         }
-        // [线性-CMD03] 注册 /cts clear 指令
+        // [线性-CMD03] 注册 /cts set 指令（服务端，需权限2）
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(ClearCharmCommand::register);
+        // [线性-CMD-HUD] 注册 /cts hud 客户端指令（RegisterClientCommandsEvent 在 NeoForge EVENT_BUS）
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(com.cobblemon_ts.mod.command.HudCommand::register);
+        }
         LOGGER.info("Cobblemon TS initialized!");
     }
 

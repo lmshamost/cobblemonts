@@ -62,6 +62,7 @@ public class PokemonEditorScreen extends Screen {
     private EditBox genderField;
     private Button sumShinyButton;
     private Button clearSpeciesBtn;
+    private Button clearExpBtn;
     private Button clearNameBtn;
     private Button clearNatureBtn;
     private Button clearAbilityBtn;
@@ -779,7 +780,8 @@ public class PokemonEditorScreen extends Screen {
             }
         }).pos(maxPPFieldX, moveY + 100).size(ppW, 22).build();
         int advY = 85;
-        this.advExpField = this.makeIntBox(editX + 50 + 10, advY, 120, 0, 2147483647);
+        this.advExpField = this.makeIntBox(editX + 50 + 10, advY, 100, 0, 2147483647);
+        this.clearExpBtn = Button.builder(Component.literal("\u00d7"), (btn) -> this.advExpField.setValue("0")).pos(editX + 50 + 10 + 100 + 4, advY - 4).size(16, 16).build();
         this.advUUIDField = new EditBox(this.font, editX + 50 + 10, advY + 35, 280, 16, Component.literal(""));
         this.advUUIDField.setMaxLength(60);
         this.advUUIDField.setEditable(true);
@@ -928,6 +930,7 @@ public class PokemonEditorScreen extends Screen {
         this.addRenderableWidget(this.advImportBtn);
         this.addRenderableWidget(this.advSaveBtn);
         this.addRenderableWidget(this.advResetBtn);
+        this.addRenderableWidget(this.clearExpBtn);
         this.addRenderableWidget(this.maxPPButton);
         // [线性-F01] 添加招式清除按钮到渲染列表
         this.addRenderableWidget(this.clearMove1Btn);
@@ -1025,6 +1028,8 @@ public class PokemonEditorScreen extends Screen {
         this.clearNameBtn.visible = sumVisible;
         this.clearNatureBtn.visible = sumVisible;
         this.clearAbilityBtn.visible = sumVisible;
+        this.clearFormBtn.visible = sumVisible;
+        this.clearHeldItemBtn.visible = sumVisible;
         this.levelDownBtn.visible = sumVisible;
         this.levelUpBtn.visible = sumVisible;
         this.friendshipDownBtn.visible = sumVisible;
@@ -1088,7 +1093,7 @@ public class PokemonEditorScreen extends Screen {
             b.visible = advVisible;
         }
 
-        for(Button b : new Button[]{this.advCopyBtn, this.advPasteBtn, this.advExportBtn, this.advImportBtn, this.advSaveBtn, this.advResetBtn}) {
+        for(Button b : new Button[]{this.advCopyBtn, this.advPasteBtn, this.advExportBtn, this.advImportBtn, this.advSaveBtn, this.advResetBtn, this.clearExpBtn}) {
             b.visible = advVisible;
         }
 
@@ -1413,6 +1418,13 @@ public class PokemonEditorScreen extends Screen {
                 String beforeSpecies = d.speciesName;
                 d.speciesName = PokemonNameMap.toEnglish(this.sumSpeciesField.getValue());
                 PokemonEditorDebug.logEditor("[Screen] species: UI='{}' \u2192 EN='{}' (was '{}')", new Object[]{this.sumSpeciesField.getValue(), d.speciesName, beforeSpecies});
+                if (!Objects.equals(beforeSpecies, d.speciesName)) {
+                    d.experience = 0;
+                    if (this.advExpField != null) {
+                        this.advExpField.setValue("0");
+                    }
+                    PokemonEditorDebug.logEditor("[Screen] species changed: exp cleared");
+                }
                 if (d.speciesName != null && !d.speciesName.isEmpty()) {
                     boolean var48 = false;
                 } else {
