@@ -1,4 +1,5 @@
 # Cobblemon TS
+QQ交流群:1130220334
 
 [English](#english) | [中文](#中文)
 
