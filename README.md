@@ -1,6 +1,6 @@
-# Cobblemon TS
-QQ交流群:1130220334
 
+QQ交流群:1130220334
+# Cobblemon TS
 [English](#english) | [中文](#中文)
 
 ---
