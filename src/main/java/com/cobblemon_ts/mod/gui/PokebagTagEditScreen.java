@@ -84,21 +84,46 @@ public class PokebagTagEditScreen extends Screen {
                 .size(btnW, 20)
                 .build());
 
-        // 返回
+        // 返回 → [线性-S02] 取消时清理空白条目
         this.addRenderableWidget(Button.builder(
                 Component.translatable("coblemon_ts.pokebag_config.cancel_entry"),
-                btn -> Minecraft.getInstance().setScreen(parent))
+                btn -> {
+                    removeIfBlank();
+                    Minecraft.getInstance().setScreen(parent);
+                })
                 .pos(btnStart + (btnW + btnGap) * 2, y)
                 .size(btnW, 20)
                 .build());
     }
 
+    // [线性-S02] 取消/返回时检查当前条目是否空白，是则移除
+    private void removeIfBlank() {
+        if (parent != null && entryIndex >= 0 && entryIndex < parent.entries.size()) {
+            String val = parent.entries.get(entryIndex);
+            if (val == null || val.isBlank()) {
+                parent.entries.remove(entryIndex);
+            }
+        }
+    }
+
     private void saveEntry() {
         String newValue = tagField.getValue().trim();
         if (parent != null && entryIndex >= 0 && entryIndex < parent.entries.size()) {
-            parent.entries.set(entryIndex, newValue);
+            // [线性-S02] 空白内容不保留，直接清理
+            if (newValue.isEmpty()) {
+                parent.entries.remove(entryIndex);
+            } else {
+                parent.entries.set(entryIndex, newValue);
+            }
         }
         Minecraft.getInstance().setScreen(parent);
+    }
+
+    // [线性-S02-ESC] ESC键关闭时也清理空白条目
+    @Override
+    public void onClose() {
+        removeIfBlank();
+        super.onClose();
     }
 
     @Override
