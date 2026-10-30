@@ -26,6 +26,8 @@ public class CobblemonTSConfig {
     public static final ModConfigSpec.BooleanValue HUD_UNIFIED_AIR_BAR;
     public static final ModConfigSpec.BooleanValue HUD_UNIFIED_VEHICLE_BAR;
     public static final ModConfigSpec.BooleanValue HUD_UNIFIED_XP_BAR;
+    // [线性-H03] 数值显示上限：护甲/韧性/血量等无上限属性条的最大显示值，超出时用k/M/G简写
+    public static final ModConfigSpec.IntValue HUD_NUMERIC_DISPLAY_MAX;
 
     // [线性-L06] 护符获取与幸运方块配方开关
     public static final ModConfigSpec.BooleanValue CHARM_LOOT_ENABLED;
@@ -111,6 +113,11 @@ public class CobblemonTSConfig {
                 .comment("是否隐藏背包精灵栏和护符栏的开关按钮(true=开关按钮变透明不可见, false=显示绿红小方块正常显示)\n" +
                          "Hide party/charm toggle buttons in inventory (true=transparent/invisible, false=show green/red squares)")
                 .define("hide_toggle_buttons", false);
+        // [线性-H03] 数值显示上限：超出则用k/M/G简写（默认65536=2^16，最大2147483648=2^31）
+        HUD_NUMERIC_DISPLAY_MAX = BUILDER
+                .comment("数值条显示上限：超出此值的护甲/韧性/血量/吸收等属性在数值条上用k/M/G简写\n" +
+                         "Numeric display max: values above this limit use k/M/G abbreviation on HUD bars")
+                .defineInRange("hud_numeric_max", 65536, 0, 2147483647);
 
         BUILDER.pop();
 

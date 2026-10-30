@@ -1029,11 +1029,17 @@ public class PartyUIState {
             }
 
             net.minecraft.world.entity.player.Player player = Minecraft.getInstance().player;
+            // [线性-H04] 创造模式：光标不消费不缩容，跳过所有客户端cursor操作
+            boolean isCreative = player.isCreative();
 
             if (!cursorHas && heldHas) {
-                player.containerMenu.setCarried(currentHeld.copy());
+                // REMOVE: 取出携带物到光标
+                if (!isCreative) {
+                    player.containerMenu.setCarried(currentHeld.copy());
+                }
                 if (pokemonRemoveHeldItemMethod != null) pokemonRemoveHeldItemMethod.invoke(pokemon);
             } else if (cursorHas && !heldHas) {
+                // PUT: 放1个到携带栏
                 ItemStack one = cursorStack.copy();
                 one.setCount(1);
                 if (pokemonSwapHeldItemMethod != null) {
@@ -1044,32 +1050,45 @@ public class PartyUIState {
                         pokemonSwapHeldItemMethod.invoke(pokemon, one, false, false);
                     }
                 }
-                cursorStack.shrink(1);
-                if (cursorStack.isEmpty()) player.containerMenu.setCarried(ItemStack.EMPTY);
+                // [线性-H04] 生存模式才消费光标物品
+                if (!isCreative) {
+                    cursorStack.shrink(1);
+                    if (cursorStack.isEmpty()) player.containerMenu.setCarried(ItemStack.EMPTY);
+                }
             } else {
-                ItemStack oldHeld = currentHeld.copy();
-                if (pokemonRemoveHeldItemMethod != null) pokemonRemoveHeldItemMethod.invoke(pokemon);
+                // [线性-H05] SWAP: 单次 swapHeldItem 完成交换+返回旧物品，避免 removeHeldItem 双发 HeldItemUpdatePacket
                 ItemStack newHeld = cursorStack.copy();
                 newHeld.setCount(1);
+                ItemStack oldHeld = ItemStack.EMPTY;
                 if (pokemonSwapHeldItemMethod != null) {
                     int paramCount = pokemonSwapHeldItemMethod.getParameterCount();
+                    Object result;
                     if (paramCount == 1) {
-                        pokemonSwapHeldItemMethod.invoke(pokemon, newHeld);
+                        result = pokemonSwapHeldItemMethod.invoke(pokemon, newHeld);
                     } else if (paramCount == 3) {
-                        pokemonSwapHeldItemMethod.invoke(pokemon, newHeld, false, false);
+                        result = pokemonSwapHeldItemMethod.invoke(pokemon, newHeld, false, false);
+                    } else {
+                        result = null;
                     }
+                    if (result instanceof ItemStack) oldHeld = (ItemStack) result;
                 }
-                cursorStack.shrink(1);
-                if (cursorStack.isEmpty()) {
-                    player.containerMenu.setCarried(oldHeld);
-                } else {
-                    if (!player.getInventory().add(oldHeld)) player.drop(oldHeld, false);
+                // [线性-H04] 生存模式才交换光标/物品栏
+                if (!isCreative) {
+                    cursorStack.shrink(1);
+                    if (cursorStack.isEmpty()) {
+                        player.containerMenu.setCarried(oldHeld);
+                    } else {
+                        if (!player.getInventory().add(oldHeld)) player.drop(oldHeld, false);
+                    }
                 }
             }
 
             UUID pokemonUuid = pokemon.getUuid();
+            // [线性-H02d] 操作后读取精灵当前携带物塞进包体，创造/生存统一
+            ItemStack postHeld = getPokemonHeldItem(pokemon);
+            ItemStack sendHeld = (postHeld != null && !postHeld.isEmpty()) ? postHeld.copy() : ItemStack.EMPTY;
             com.cobblemon_ts.mod.network.SetHeldItemPacket packet =
-                    new com.cobblemon_ts.mod.network.SetHeldItemPacket(pokemonUuid, slotIndex);
+                    new com.cobblemon_ts.mod.network.SetHeldItemPacket(pokemonUuid, slotIndex, sendHeld);
             net.neoforged.neoforge.network.PacketDistributor.sendToServer(packet);
             state.ticksTillClick = 10;
         } catch (Exception e) {

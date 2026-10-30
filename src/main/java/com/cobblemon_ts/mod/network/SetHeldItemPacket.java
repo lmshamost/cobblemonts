@@ -12,7 +12,10 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.UUID;
 
-public record SetHeldItemPacket(UUID pokemonUuid, int slotIndex) implements CustomPacketPayload {
+// [线性-H02] 新增 newHeld 字段：创造模式下服务端 getCarried() 返回 EMPTY，
+// 导致手持/携带栏操作被服务端错误逆转。通过把客户端操作的物品直接塞进包体，
+// 服务端不再依赖 cursor，创造/生存模式统一使用包内数据。
+public record SetHeldItemPacket(UUID pokemonUuid, int slotIndex, net.minecraft.world.item.ItemStack newHeld) implements CustomPacketPayload {
 
     public static final Type<SetHeldItemPacket> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath("coblemon_ts", "set_held_item"));
@@ -22,7 +25,8 @@ public record SetHeldItemPacket(UUID pokemonUuid, int slotIndex) implements Cust
         public SetHeldItemPacket decode(RegistryFriendlyByteBuf buf) {
             return new SetHeldItemPacket(
                     buf.readUUID(),
-                    buf.readVarInt()
+                    buf.readVarInt(),
+                    ItemStack.OPTIONAL_STREAM_CODEC.decode(buf)  // [线性-H02b] 包内携带 newHeld
             );
         }
 
@@ -30,6 +34,7 @@ public record SetHeldItemPacket(UUID pokemonUuid, int slotIndex) implements Cust
         public void encode(RegistryFriendlyByteBuf buf, SetHeldItemPacket packet) {
             buf.writeUUID(packet.pokemonUuid());
             buf.writeVarInt(packet.slotIndex());
+            ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, packet.newHeld());  // [线性-H02b]
         }
     };
 
@@ -77,35 +82,47 @@ public record SetHeldItemPacket(UUID pokemonUuid, int slotIndex) implements Cust
                     if (pokemon == null) continue;
                     var uuid = (UUID) getUuidMethod.invoke(pokemon);
                     if (uuid.equals(packet.pokemonUuid())) {
-                        ItemStack serverCursor = serverPlayer.containerMenu.getCarried().copy();
-                        boolean serverHasCursor = !serverCursor.isEmpty();
+                        // [线性-H02c] 创造模式：服务端 cursor 不可信，用包内 newHeld 决定操作
+                        boolean isCreative = serverPlayer.isCreative();
+                        ItemStack pktItem = packet.newHeld();
+                        boolean clientPutting = !pktItem.isEmpty();
+                        boolean serverHasCursor;
 
-                        if (serverHasCursor) {
-                            // 鼠标有物品 → 放1个到携带栏
-                            ItemStack putStack = serverCursor.copy();
-                            putStack.setCount(1);
-
-                            // 先取出旧携带物（如果有）
-                            ItemStack oldHeld = (ItemStack) removeHeldItemMethod.invoke(pokemon);
-
-                            // 放入新物品
-                            swapHeldItemMethod.invoke(pokemon, putStack.copy(), true, false);
-
-                            // 缩小服务端鼠标上的物品数量
-                            serverCursor.shrink(1);
-                            serverPlayer.containerMenu.setCarried(serverCursor.isEmpty() ? ItemStack.EMPTY : serverCursor);
-
-                            // 旧携带物退回玩家物品栏
-                            if (oldHeld != null && !oldHeld.isEmpty()) {
-                                if (!serverPlayer.getInventory().add(oldHeld)) {
-                                    serverPlayer.drop(oldHeld, false);
+                        if (!isCreative) {
+                            // 生存模式：cursor 可信，按旧逻辑消费物品
+                            ItemStack serverCursor = serverPlayer.containerMenu.getCarried().copy();
+                            serverHasCursor = !serverCursor.isEmpty();
+                            if (serverHasCursor) {
+                                ItemStack putStack = serverCursor.copy();
+                                putStack.setCount(1);
+                                // [线性-H05] swapHeldItem 内部触发 HeldItemUpdatePacket+返回旧物品，单次调用避免双发包
+                                ItemStack oldHeld = (ItemStack) swapHeldItemMethod.invoke(pokemon, putStack.copy(), true, false);
+                                serverCursor.shrink(1);
+                                serverPlayer.containerMenu.setCarried(serverCursor.isEmpty() ? ItemStack.EMPTY : serverCursor);
+                                if (oldHeld != null && !oldHeld.isEmpty()) {
+                                    if (!serverPlayer.getInventory().add(oldHeld)) {
+                                        serverPlayer.drop(oldHeld, false);
+                                    }
+                                }
+                            } else {
+                                ItemStack oldHeld = (ItemStack) removeHeldItemMethod.invoke(pokemon);
+                                if (oldHeld != null && !oldHeld.isEmpty()) {
+                                    serverPlayer.containerMenu.setCarried(oldHeld);
                                 }
                             }
                         } else {
-                            // 鼠标空 → 取出携带物到鼠标
-                            ItemStack oldHeld = (ItemStack) removeHeldItemMethod.invoke(pokemon);
-                            if (oldHeld != null && !oldHeld.isEmpty()) {
-                                serverPlayer.containerMenu.setCarried(oldHeld);
+                            // [线性-H02c] 创造模式：不碰 cursor（cursor 是客户端态），直接用包内数据
+                            // [线性-H05] swapHeldItem 单次调用完成替换+返回旧物品，避免 removeHeldItem 双发包
+                            if (clientPutting) {
+                                ItemStack oldHeld = (ItemStack) swapHeldItemMethod.invoke(pokemon, pktItem.copy(), true, false);
+                                if (oldHeld != null && !oldHeld.isEmpty()) {
+                                    if (!serverPlayer.getInventory().add(oldHeld)) {
+                                        serverPlayer.drop(oldHeld, false);
+                                    }
+                                }
+                            } else {
+                                // [线性-H06] 创造模式空光标=直接清空携带槽，物品消失（不进入背包/光标）
+                                removeHeldItemMethod.invoke(pokemon);
                             }
                         }
                         break;

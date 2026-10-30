@@ -26,7 +26,7 @@ public abstract class GuiHealthFoodMixin {
 
     @Shadow @Final private Minecraft minecraft;
 
-    // ---- [线性-L10] 统一彩色条颜色常量 ----
+    // [线性-L10] 统一彩色条颜色常量 ----
     private static final int C_HEALTH     = 0xFFFF3333; // 红 - 生命值
     private static final int C_ABSORPTION = 0xFFFFD700; // 金 - 伤害吸收
     private static final int C_ARMOR      = 0xFFC0C0C0; // 银灰 - 护甲值
@@ -41,6 +41,25 @@ public abstract class GuiHealthFoodMixin {
     private static final int BAR_GAP = 3;
     private static final int STEP = BAR_H + BAR_GAP; // 10
     private static final float PX_PER_UNIT = BAR_W / 20.0f; // 无上限项像素比: 1单位≈4px
+
+    // [线性-H03] 大数值简写：值<配置阈值→原样，≥阈值→k/M/G
+    //   例：threshold=65536时 60000→"60000"  65536→"65k"  9999999→"9M"
+    private static String formatNumeric(float value) {
+        int v = (int) value;
+        int max = CobblemonTSConfig.HUD_NUMERIC_DISPLAY_MAX.get();
+        if (v < max) return String.valueOf(v);
+        if (v < 1000000) return (v / 1000) + "k";
+        if (v < 1000000000) return (v / 1000000) + "M";
+        return (v / 1000000000) + "G";
+    }
+
+    private static String formatNumericInt(int value) {
+        int max = CobblemonTSConfig.HUD_NUMERIC_DISPLAY_MAX.get();
+        if (value < max) return String.valueOf(value);
+        if (value < 1000000) return (value / 1000) + "k";
+        if (value < 1000000000) return (value / 1000000) + "M";
+        return (value / 1000000000) + "G";
+    }
 
     // ================================================================
     // [线性-L10a]: renderHealthLevel → 生命值 + 伤害吸收（左列底部两条）
@@ -174,13 +193,13 @@ public abstract class GuiHealthFoodMixin {
         // 生命值条（红）— 始终显示
         renderUnifiedBar(g, font, leftX, baseY, BAR_W, BAR_H,
                 hp / maxHp, C_HEALTH,
-                String.format("%.0f/%.0f", hp, maxHp));
+                formatNumeric(hp) + "/" + formatNumeric(maxHp));
 
         // [改] 伤害吸收条（金）— 无上限，条长=值×像素比，无空白段
         if (abs > 0.0f) {
             int bw = Math.min((int)(abs * PX_PER_UNIT), BAR_W);
             renderValueBar(g, font, leftX, baseY - STEP, bw, C_ABSORPTION,
-                    String.format("%.0f", abs));
+                    formatNumeric(abs));
         }
     }
 
@@ -210,20 +229,20 @@ public abstract class GuiHealthFoodMixin {
             g.fill(leftX, y, midX, y + BAR_H, C_ARMOR);
             g.fill(midX, y, leftX + BAR_W, y + BAR_H, C_TOUGHNESS);
             // 各自居中于自己那半
-            String at = String.valueOf(armor);
-            String tt = String.valueOf(toughness);
+            String at = formatNumericInt(armor);
+            String tt = formatNumericInt(toughness);
             int atx = leftX + (BAR_W / 2 - font.width(at)) / 2;
             int ttx = midX + (BAR_W / 2 - font.width(tt)) / 2;
             g.drawString(font, at, atx, ty, 0xFFFFFFFF, true);
             g.drawString(font, tt, ttx, ty, 0xFFFFFFFF, true);
         } else if (armor > 0) {
             g.fill(leftX, y, leftX + Math.min((int)(armor * PX_PER_UNIT), BAR_W), y + BAR_H, C_ARMOR);
-            String text = String.valueOf(armor);
+            String text = formatNumericInt(armor);
             int tx = leftX + (BAR_W - font.width(text)) / 2;
             g.drawString(font, text, tx, ty, 0xFFFFFFFF, true);
         } else {
             g.fill(leftX, y, leftX + Math.min((int)(toughness * PX_PER_UNIT), BAR_W), y + BAR_H, C_TOUGHNESS);
-            String text = String.valueOf(toughness);
+            String text = formatNumericInt(toughness);
             int tx = leftX + (BAR_W - font.width(text)) / 2;
             g.drawString(font, text, tx, ty, 0xFFFFFFFF, true);
         }
@@ -294,7 +313,7 @@ public abstract class GuiHealthFoodMixin {
 
         renderUnifiedBar(g, font, rightX, baseY - 3 * STEP, BAR_W, BAR_H,
                 mHp / mMax, C_MOUNT,
-                String.format("%.0f/%.0f", mHp, mMax));
+                formatNumeric(mHp) + "/" + formatNumeric(mMax));
     }
 
     // ================================================================
@@ -356,7 +375,7 @@ public abstract class GuiHealthFoodMixin {
         drawBg(g, xpX, xpY, xpW, xpH);
         drawFill(g, xpX, xpY, xpW, xpH, progress, C_XP);
 
-        String text = String.format("%d | Lv.%d", totalXp, level);
+        String text = formatNumericInt(totalXp) + " | Lv." + level;
         int tx = xpX + (xpW - font.width(text)) / 2;
         int ty = xpY + (xpH - font.lineHeight) / 2;
         g.drawString(font, text, tx, ty, 0xFFFFFFFF, true);
@@ -383,12 +402,12 @@ public abstract class GuiHealthFoodMixin {
 
         renderUnifiedBar(g, font, leftX, baseY, BAR_W, BAR_H,
                 Math.min(1.0f, hp / maxHp), C_HEALTH,
-                String.format("%d/%d", (int) hp, (int) maxHp));
+                formatNumeric(hp) + "/" + formatNumeric(maxHp));
 
         if (CobblemonTSConfig.HUD_ABSORPTION_OVERLAY.get() && abs > 0.0f) {
             int bw = Math.min((int) (abs * PX_PER_UNIT), BAR_W);
             renderValueBar(g, font, leftX, baseY - STEP, bw, C_ABSORPTION,
-                    String.format("%.0f", abs));
+                    formatNumeric(abs));
         }
     }
 

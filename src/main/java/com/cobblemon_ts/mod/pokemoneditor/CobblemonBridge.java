@@ -1598,20 +1598,16 @@ public class CobblemonBridge {
             } catch (Throwable ignored) {}
         }
 
-        // 等级修改 —— 保存旧经验 → setLevel → 恢复旧经验
-        //   setLevel() 内部会调用 setExperience$common 重算经验值
-        //   setExperience$common 在满级时又强制覆盖，所以用直接字段写入绕过
+        // [线性-X01] 等级修改 → 经验清0：setLevel后直接写0，绕过setExperience$common的满级覆盖
         if (modifiedFields.contains("level") || modifiedFields.isEmpty()) {
             try {
                 int oldLevel = pokemon.getLevel();
-                int oldExp = pokemon.getExperience();
                 pokemon.setLevel(pkt.level());
                 if (!modifiedFields.contains("experience")) {
-                    // 直接写 experience 字段，绕过 setExperience$common 的满级覆盖
                     java.lang.reflect.Field f = pokemon.getClass().getDeclaredField("experience");
                     f.setAccessible(true);
-                    f.setInt(pokemon, oldExp);
-                    PokemonEditorDebug.logEditor("level: {} -> {} (exp preserved: {})", oldLevel, pkt.level(), oldExp);
+                    f.setInt(pokemon, 0);
+                    PokemonEditorDebug.logEditor("level: {} -> {} (exp reset to 0)", oldLevel, pkt.level());
                 }
             } catch (Throwable e) {
                 PokemonEditorDebug.warnEditor("setLevel failed: {}", e.getMessage());
