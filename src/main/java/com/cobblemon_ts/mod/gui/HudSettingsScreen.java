@@ -31,22 +31,27 @@ public class HudSettingsScreen extends Screen {
         addToggleBtn(rightX, y, "coblemon_ts.hud.effect_icons_inv",       CobblemonTSConfig.SHOW_INVENTORY_EFFECT_ICONS);
         y += ROW_STEP;
 
-        // ==== 第2行: 统一彩色条总开关 ====
+        // [线性-N1] 第2行(新): 药水缩小 + 精灵信息缩放 ← 插入在药水显示下方、统一彩色条上方
+        addToggleBtn(leftX,  y, "coblemon_ts.hud.potion_shrink",          CobblemonTSConfig.HUD_POTION_SHRINK);
+        addToggleBtn(rightX, y, "coblemon_ts.hud.summary_guiscale",       CobblemonTSConfig.HUD_FORCE_SUMMARY_GUISCALE);
+        y += ROW_STEP;
+
+        // ==== 第3行: 统一彩色条总开关 ====
         addToggleBtn(leftX,  y, "coblemon_ts.hud.colored_bars",           CobblemonTSConfig.HUD_UNIFIED_COLORED_BARS);
         addToggleBtn(rightX, y, "coblemon_ts.hud.hide_toggle_btns",       CobblemonTSConfig.HIDE_TOGGLE_BUTTONS);
         y += ROW_STEP;
 
-        // ==== 第3行: 逐项-血条/饥饿 ====
+        // ==== 第4行: 逐项-血条/饥饿 ====
         addToggleBtn(leftX,  y, "coblemon_ts.hud.custom_health_bar",      CobblemonTSConfig.HUD_CUSTOM_HEALTH_BAR);
         addToggleBtn(rightX, y, "coblemon_ts.hud.custom_food_bar",        CobblemonTSConfig.HUD_CUSTOM_FOOD_BAR);
         y += ROW_STEP;
 
-        // ==== 第4行: 覆盖层 ====
+        // ==== 第5行: 覆盖层 ====
         addToggleBtn(leftX,  y, "coblemon_ts.hud.absorption_overlay",     CobblemonTSConfig.HUD_ABSORPTION_OVERLAY);
         addToggleBtn(rightX, y, "coblemon_ts.hud.saturation_overlay",     CobblemonTSConfig.HUD_SATURATION_OVERLAY);
         y += ROW_STEP;
 
-        // ==== 第5行: 盔甲/经验 ====
+        // ==== 第6行: 盔甲/经验 ====
         addToggleBtn(leftX,  y, "coblemon_ts.hud.custom_armor_bar",       CobblemonTSConfig.HUD_CUSTOM_ARMOR_BAR);
         addToggleBtn(rightX, y, "coblemon_ts.hud.custom_xp_bar",          CobblemonTSConfig.HUD_CUSTOM_XP_BAR);
         y += ROW_STEP;

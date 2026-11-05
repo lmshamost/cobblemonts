@@ -252,6 +252,8 @@
   "coblemon_ts.hud.title": "HUD设置",
   "coblemon_ts.hud.effect_icons_top": "药水buff(右上)",
   "coblemon_ts.hud.effect_icons_inv": "药水buff(背包内)",
+  "coblemon_ts.hud.potion_shrink": "药水buff缩小",
+  "coblemon_ts.hud.summary_guiscale": "精灵信息缩放",
   "coblemon_ts.hud.colored_bars": "统一彩色条总开关",
   "coblemon_ts.hud.hide_toggle_btns": "隐藏背包切换按钮",
   "coblemon_ts.hud.custom_health_bar": "自定义血条",

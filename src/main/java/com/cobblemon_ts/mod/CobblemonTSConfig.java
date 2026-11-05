@@ -29,6 +29,11 @@ public class CobblemonTSConfig {
     // [线性-H03] 数值显示上限：护甲/韧性/血量等无上限属性条的最大显示值，超出时用k/M/G简写
     public static final ModConfigSpec.IntValue HUD_NUMERIC_DISPLAY_MAX;
 
+    // [线性-S01] 精灵信息GUI缩放强制4
+    public static final ModConfigSpec.BooleanValue HUD_FORCE_SUMMARY_GUISCALE;
+    // [线性-S05] 药水图标缩小为1/4+两列
+    public static final ModConfigSpec.BooleanValue HUD_POTION_SHRINK;
+
     // [线性-L06] 护符获取与幸运方块配方开关
     public static final ModConfigSpec.BooleanValue CHARM_LOOT_ENABLED;
     public static final ModConfigSpec.BooleanValue LUCKY_RECIPES_ENABLED_TS;
@@ -56,13 +61,23 @@ public class CobblemonTSConfig {
         SHOW_EFFECT_ICONS = BUILDER
                 .comment("是否在屏幕右上角显示药水buff图标(true=显示, false=隐藏)\n" +
                          "Show potion effect icons at top-right corner (true=show, false=hide)")
-                .define("show_effect_icons", false);
+                .define("show_effect_icons", true);
         SHOW_INVENTORY_EFFECT_ICONS = BUILDER
                 .comment("是否在背包界面显示药水buff图标(true=显示, false=隐藏)\n" +
                          "Show potion effect icons in inventory screen (true=show, false=hide)")
-                .define("show_inventory_effect_icons", false);
+                .define("show_inventory_effect_icons", true);
 
         // ==== [HUD-B] 各状态栏 — 统一模式 ====
+        // [线性-S14] 界面尺寸2缩放 + [线性-S05] 药水图标缩小 ← 放在药水效果下方，彩色条上方
+        HUD_FORCE_SUMMARY_GUISCALE = BUILDER
+                .comment("界面尺寸2时强制精灵信息界面使用GUI缩放4(true=临时切换guiScale=4, false=使用当前缩放, 窗口<1920px不生效)\n---\n" +
+                         "Force GUI scale 4 for Summary when at scale 2 (true=force scale 4, false=use current, requires window>=1920px)")
+                .define("hud_force_summary_guiscale", false);
+        HUD_POTION_SHRINK = BUILDER
+                .comment("是否将药水buff图标缩小为0.6倍+加暗色边框(true=缩小0.6倍+边框, false=原版大图标)\n" +
+                         "Shrink potion effect icons to 0.6x with dark border (true=shrunk 0.6x+border, false=vanilla large icons)")
+                .define("hud_potion_shrink", false);
+
         HUD_UNIFIED_COLORED_BARS = BUILDER
                 .comment("统一彩色数值条总开关(true=全部替换为彩色数值条, false=使用下方逐项开关)\n" +
                          "开启后自动覆盖：生命/伤害吸收/饥饿/饱腹/护甲/韧性/氧气/骑乘生命/经验值\n---\n" +
@@ -109,6 +124,7 @@ public class CobblemonTSConfig {
                 .define("custom_xp_bar", false);
 
         // ==== [HUD-D] 其他 ====
+
         HIDE_TOGGLE_BUTTONS = BUILDER
                 .comment("是否隐藏背包精灵栏和护符栏的开关按钮(true=开关按钮变透明不可见, false=显示绿红小方块正常显示)\n" +
                          "Hide party/charm toggle buttons in inventory (true=transparent/invisible, false=show green/red squares)")
