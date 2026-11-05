@@ -18,6 +18,8 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.resources.ResourceLocation;
@@ -26,6 +28,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -174,11 +177,55 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
     }
 
     // ==================== renderEffects 控制 ====================
+    // [线性-E1] 背包药水效果: 隐藏 / 缩小1/4+两列 / 原版
     @Inject(method = "renderEffects(Lnet/minecraft/client/gui/GuiGraphics;II)V", at = @At("HEAD"), cancellable = true, require = 0)
     private void injectRenderEffects(GuiGraphics guiGraphics, int mouseX, int mouseY, CallbackInfo ci) {
         if (!PartyUIState.isValidScreen(this)) return;
+        if (CobblemonTSConfig.HUD_POTION_SHRINK.get()) {
+            ci.cancel();
+            renderShrunkInventoryEffects(guiGraphics);
+            return;
+        }
         if (Boolean.FALSE.equals(CobblemonTSConfig.SHOW_INVENTORY_EFFECT_ICONS.get())) {
             ci.cancel();
+        }
+    }
+
+    // [线性-E2] 缩小渲染: 0.6倍(14x14)图标, 两列, 贴背包左侧 + 暗色边框醒目
+    private void renderShrunkInventoryEffects(GuiGraphics g) {
+        Player player = Minecraft.getInstance().player;
+        if (player == null) return;
+        Collection<MobEffectInstance> effects = player.getActiveEffects();
+        if (effects.isEmpty()) return;
+
+        int iconSize = 14;
+        int gap = 2;
+        int cols = 2;
+        int rightEdge = this.leftPos - 2;
+        int startY = this.topPos + 2;
+        int col = 0, row = 0;
+
+        Minecraft mc = Minecraft.getInstance();
+
+        for (MobEffectInstance inst : effects) {
+            if (!inst.isVisible() || !inst.showIcon()) continue;
+
+            int x = rightEdge - (col + 1) * iconSize - col * gap;
+            int y = startY + row * (iconSize + gap);
+
+            // 暗色边框
+            g.fill(x - 1, y - 1, x + iconSize + 1, y + iconSize + 1, 0xAA000000);
+
+            TextureAtlasSprite sprite = mc.getMobEffectTextures().get(inst.getEffect());
+            if (sprite != null) {
+                g.blit(x, y, 0, iconSize, iconSize, sprite);
+            } else {
+                int color = inst.getEffect().value().getColor();
+                g.fill(x, y, x + iconSize, y + iconSize, 0xFF000000 | color);
+            }
+
+            col++;
+            if (col >= cols) { col = 0; row++; }
         }
     }
 

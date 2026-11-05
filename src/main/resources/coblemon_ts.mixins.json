@@ -14,9 +14,10 @@
     "cobblemon.BattleOptionTileMixin",
     "cobblemon.BattleGeneralActionSelectionMixin",
     "cobblemon.BattleGUIBackButtonMixin",
-    "cobblemon.SummaryInfoWidgetMixin",
     "GuiEffectIconMixin",
-    "GuiHealthFoodMixin"
+    "GuiHealthFoodMixin",
+    "MinecraftResizeDisplayAccessor",
+    "MinecraftSetScreenScaleMixin"
   ],
   "mixins": [
     "PokemonMixin",

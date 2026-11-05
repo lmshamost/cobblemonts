@@ -9,6 +9,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.food.FoodData;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -36,11 +37,24 @@ public abstract class GuiHealthFoodMixin {
     private static final int C_AIR        = 0xFF3399FF; // 蓝 - 氧气值
     private static final int C_MOUNT      = 0xFF55FF55; // 绿 - 骑乘生命
     private static final int C_XP         = 0xFF80FF20; // 亮绿 - 经验值
+    // [线性-S02] buff生命值颜色: 凋零/冰冻/中毒 ← 优先度递减
+    private static final int C_HEALTH_WITHER  = 0xFF352A3C; // 暗紫黑 - 凋零
+    private static final int C_HEALTH_FREEZE  = 0xFF3BC8FF; // 青蓝   - 冰冻
+    private static final int C_HEALTH_POISON  = 0xFF739C35; // 黄绿   - 中毒
+    private static final int C_HUNGER_OVERLAY = 0x605DA84D; // 半透明绿 - 饥饿覆盖
     private static final int BAR_W = 81;
     private static final int BAR_H = 7;
     private static final int BAR_GAP = 3;
     private static final int STEP = BAR_H + BAR_GAP; // 10
     private static final float PX_PER_UNIT = BAR_W / 20.0f; // 无上限项像素比: 1单位≈4px
+
+    // [线性-S03] 根据玩家当前buff返回生命条颜色: 凋零 > 冰冻 > 中毒 > 正常红色
+    private static int getHealthColor(Player player) {
+        if (player.hasEffect(MobEffects.WITHER))         return C_HEALTH_WITHER;
+        if (player.getTicksFrozen() > 0)                 return C_HEALTH_FREEZE;
+        if (player.hasEffect(MobEffects.POISON))         return C_HEALTH_POISON;
+        return C_HEALTH;
+    }
 
     // [线性-H03] 大数值简写：值<配置阈值→原样，≥阈值→k/M/G
     //   例：threshold=65536时 60000→"60000"  65536→"65k"  9999999→"9M"
@@ -190,9 +204,9 @@ public abstract class GuiHealthFoodMixin {
         float maxHp = player.getMaxHealth();
         float abs = player.getAbsorptionAmount();
 
-        // 生命值条（红）— 始终显示
+        // 生命值条（红/buff色）— 始终显示
         renderUnifiedBar(g, font, leftX, baseY, BAR_W, BAR_H,
-                hp / maxHp, C_HEALTH,
+                hp / maxHp, getHealthColor(player),
                 formatNumeric(hp) + "/" + formatNumeric(maxHp));
 
         // [改] 伤害吸收条（金）— 无上限，条长=值×像素比，无空白段
@@ -273,6 +287,10 @@ public abstract class GuiHealthFoodMixin {
             renderUnifiedBar(g, font, rightX, baseY - STEP, BAR_W, BAR_H,
                     Math.min(1.0f, sat / (float) food), C_SATURATION,
                     String.format("%.0f/%d", sat, food));
+        }
+        // [线性-S04] 饥饿buff绿色覆盖 ← 覆盖在饥饿条上
+        if (player.hasEffect(MobEffects.HUNGER)) {
+            g.fill(rightX, baseY, rightX + BAR_W, baseY + BAR_H, C_HUNGER_OVERLAY);
         }
     }
 
@@ -401,7 +419,7 @@ public abstract class GuiHealthFoodMixin {
         float abs = player.getAbsorptionAmount();
 
         renderUnifiedBar(g, font, leftX, baseY, BAR_W, BAR_H,
-                Math.min(1.0f, hp / maxHp), C_HEALTH,
+                Math.min(1.0f, hp / maxHp), getHealthColor(player),
                 formatNumeric(hp) + "/" + formatNumeric(maxHp));
 
         if (CobblemonTSConfig.HUD_ABSORPTION_OVERLAY.get() && abs > 0.0f) {
@@ -434,6 +452,10 @@ public abstract class GuiHealthFoodMixin {
             renderUnifiedBar(g, font, rightX, baseY - STEP, BAR_W, BAR_H,
                     Math.min(1.0f, sat / (float) food), C_SATURATION,
                     String.format("%.0f/%d", sat, food));
+        }
+        // [线性-S04] 饥饿buff绿色覆盖 ← 覆盖在饥饿条上
+        if (player.hasEffect(MobEffects.HUNGER)) {
+            g.fill(rightX, baseY, rightX + BAR_W, baseY + BAR_H, C_HUNGER_OVERLAY);
         }
     }
 }

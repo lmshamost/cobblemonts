@@ -1,0 +1,158 @@
+package com.cobblemon_ts.mod.mixin.cobblemon;
+
+// [线性-S05] Summary精灵信息：阻止适配guiScale=2，强制scale=4坐标布局
+//   原理：把 Screen.width/height 临时改为 scale=4 值(480/254)
+//         让 Summary 内部所有布局/渲染坐标计算按 scale=4
+//         render 时 PoseStack 2x 缩放填满 scale=2 屏幕
+//   深度计数 cts$scaleDepth → init→displayMainScreen→displaySideScreen→render 嵌套不重复
+//   鼠标坐标 /2：mouseDragged/mouseScrolled 由 @ModifyArg 拦截子widget分发处理
+//   ModelWidget scissor ×2 由 ModelWidgetMixin 处理
+import com.cobblemon.mod.common.api.moves.Move;
+import com.cobblemon.mod.common.client.gui.summary.Summary;
+import com.cobblemon_ts.mod.CobblemonTSConfig;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+@Mixin(Summary.class)
+public class SummaryScaleMixin {
+
+    @Unique
+    private int cts$origW, cts$origH;
+    @Unique
+    private int cts$scaleDepth = 0;
+    @Unique
+    private boolean cts$active = false;
+
+    // [S05-辅助] 进入scale=4坐标：depth==0时保存并缩放宽高
+    @Unique
+    private void cts$enterScale4() {
+        if (cts$scaleDepth == 0) {
+            cts$origW = ((Summary)(Object)this).width;
+            cts$origH = ((Summary)(Object)this).height;
+            ((Summary)(Object)this).width = cts$origW / 2;
+            ((Summary)(Object)this).height = cts$origH / 2;
+        }
+        cts$scaleDepth++;
+    }
+
+    // [S05-辅助] 退出scale=4坐标：depth归零时恢复
+    @Unique
+    private void cts$exitScale4() {
+        cts$scaleDepth--;
+        if (cts$scaleDepth == 0) {
+            ((Summary)(Object)this).width = cts$origW;
+            ((Summary)(Object)this).height = cts$origH;
+        }
+        if (cts$scaleDepth < 0) cts$scaleDepth = 0;
+    }
+
+    // [S05-1] init HEAD: 进入scale=4，设共享标记
+    @Inject(method = "init", at = @At("HEAD"))
+    private void cts$initHead(CallbackInfo ci) {
+        if (!CobblemonTSConfig.HUD_FORCE_SUMMARY_GUISCALE.get()) return;
+        if (Minecraft.getInstance().options.guiScale().get() != 2) return;
+        SummaryScaleHelper.ACTIVE = true;
+        SummaryScaleHelper.SCREEN_W = ((Summary)(Object)this).width;
+        SummaryScaleHelper.SCREEN_H = ((Summary)(Object)this).height;
+        cts$active = true;
+        cts$enterScale4();
+    }
+
+    // [S05-2] init RETURN: 退出scale=4
+    @Inject(method = "init", at = @At("RETURN"))
+    private void cts$initReturn(CallbackInfo ci) {
+        if (!cts$active) return;
+        cts$exitScale4();
+    }
+
+    // [S05-3] displayMainScreen HEAD: 进去scale=4
+    @Inject(method = "displayMainScreen", at = @At("HEAD"))
+    private void cts$dmsHead(int index, CallbackInfo ci) {
+        if (!cts$active) return;
+        cts$enterScale4();
+    }
+
+    // [S05-4] displayMainScreen RETURN: 退出scale=4
+    @Inject(method = "displayMainScreen", at = @At("RETURN"))
+    private void cts$dmsReturn(int index, CallbackInfo ci) {
+        if (!cts$active) return;
+        cts$exitScale4();
+    }
+
+    // [S05-5] displaySideScreen HEAD: 进去scale=4
+    @Inject(method = "displaySideScreen", at = @At("HEAD"))
+    private void cts$dssHead(int index, Move move, CallbackInfo ci) {
+        if (!cts$active) return;
+        cts$enterScale4();
+    }
+
+    // [S05-6] displaySideScreen RETURN: 退出scale=4
+    @Inject(method = "displaySideScreen", at = @At("RETURN"))
+    private void cts$dssReturn(int index, Move move, CallbackInfo ci) {
+        if (!cts$active) return;
+        cts$exitScale4();
+    }
+
+    // [S05-7] render HEAD: 宽高减半 + PoseStack 2x缩放
+    @Inject(method = "render", at = @At("HEAD"))
+    private void cts$renderHead(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        if (!cts$active) return;
+        cts$enterScale4();
+        PoseStack pose = guiGraphics.pose();
+        pose.pushPose();
+        pose.scale(2.0f, 2.0f, 1.0f);
+    }
+
+    // [S05-8] render RETURN: 还原PoseStack + 还原宽高
+    @Inject(method = "render", at = @At("RETURN"))
+    private void cts$renderReturn(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        if (!cts$active) return;
+        guiGraphics.pose().popPose();
+        cts$exitScale4();
+    }
+
+    // [S05-9] mouseDragged: 拦截子widget分发 → 坐标/2
+    @ModifyArg(method = "mouseDragged",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/events/GuiEventListener;mouseDragged(DDIDD)Z"),
+            index = 0)
+    private double cts$mouseDraggedChildX(double mouseX) {
+        return cts$active ? mouseX / 2.0 : mouseX;
+    }
+
+    @ModifyArg(method = "mouseDragged",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/events/GuiEventListener;mouseDragged(DDIDD)Z"),
+            index = 1)
+    private double cts$mouseDraggedChildY(double mouseY) {
+        return cts$active ? mouseY / 2.0 : mouseY;
+    }
+
+    // [S05-10] mouseScrolled: 拦截子widget分发 → 坐标/2
+    @ModifyArg(method = "mouseScrolled",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/events/GuiEventListener;mouseScrolled(DDDD)Z"),
+            index = 0)
+    private double cts$mouseScrolledChildX(double mouseX) {
+        return cts$active ? mouseX / 2.0 : mouseX;
+    }
+
+    @ModifyArg(method = "mouseScrolled",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/events/GuiEventListener;mouseScrolled(DDDD)Z"),
+            index = 1)
+    private double cts$mouseScrolledChildY(double mouseY) {
+        return cts$active ? mouseY / 2.0 : mouseY;
+    }
+
+    // [S05-11] onClose: 清理标记
+    @Inject(method = "onClose", at = @At("HEAD"))
+    private void cts$onClose(CallbackInfo ci) {
+        SummaryScaleHelper.ACTIVE = false;
+        cts$active = false;
+        cts$scaleDepth = 0;
+    }
+}

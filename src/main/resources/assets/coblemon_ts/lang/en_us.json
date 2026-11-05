@@ -237,6 +237,8 @@
   "coblemon_ts.hud.title": "HUD Settings",
   "coblemon_ts.hud.effect_icons_top": "Potion Buffs (Top-Right)",
   "coblemon_ts.hud.effect_icons_inv": "Potion Buffs (Inventory)",
+  "coblemon_ts.hud.potion_shrink": "Shrink Potion Buffs",
+  "coblemon_ts.hud.summary_guiscale": "Summary GUI Scale",
   "coblemon_ts.hud.colored_bars": "Unified Colored Bars",
   "coblemon_ts.hud.hide_toggle_btns": "Hide Toggle Buttons",
   "coblemon_ts.hud.custom_health_bar": "Custom Health Bar",
