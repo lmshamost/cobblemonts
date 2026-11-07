@@ -31,8 +31,13 @@ public class CobblemonTSConfig {
 
     // [线性-S01] 精灵信息GUI缩放强制4
     public static final ModConfigSpec.BooleanValue HUD_FORCE_SUMMARY_GUISCALE;
-    // [线性-S05] 药水图标缩小为1/4+两列
+    // [线性-S01] 精灵信息字体缩放补偿：低界面尺寸时自动放大cobblemon Summary文字
+    public static final ModConfigSpec.BooleanValue HUD_SUMMARY_TEXT_SCALE;
+    // [线性-S05] 药水图标缩小
     public static final ModConfigSpec.BooleanValue HUD_POTION_SHRINK;
+    public static final ModConfigSpec.DoubleValue HUD_POTION_SHRINK_SCALE;
+    // [线性-P01] 药水闪烁开关：关闭后药水剩少时间时不再闪烁
+    public static final ModConfigSpec.BooleanValue HUD_POTION_HIDE_FLASH;
 
     // [线性-L06] 护符获取与幸运方块配方开关
     public static final ModConfigSpec.BooleanValue CHARM_LOOT_ENABLED;
@@ -44,6 +49,9 @@ public class CobblemonTSConfig {
 
     // [线性-B05] 另一种捕捉模式：点击捕捉按钮弹出三选一菜单（捕获/恢复/战斗道具）
     public static final ModConfigSpec.BooleanValue ALTERNATIVE_CAPTURE_MODE;
+
+    // [线性-R01] 精灵雷达总开关：服务端配置，开启后才允许使用精灵雷达功能
+    public static final ModConfigSpec.BooleanValue POKEMON_RADAR_ENABLED;
 
     static {
         BUILDER.comment("努力值设置 | EV Settings").push("ev");
@@ -73,10 +81,24 @@ public class CobblemonTSConfig {
                 .comment("界面尺寸2时强制精灵信息界面使用GUI缩放4(true=临时切换guiScale=4, false=使用当前缩放, 窗口<1920px不生效)\n---\n" +
                          "Force GUI scale 4 for Summary when at scale 2 (true=force scale 4, false=use current, requires window>=1920px)")
                 .define("hud_force_summary_guiscale", false);
+        HUD_SUMMARY_TEXT_SCALE = BUILDER
+                .comment("精灵信息界面字体缩放补偿(true=界面尺寸≤2时自动放大文字, false=不补偿)\n" +
+                         "不改变整体guiScale，仅放大cobblemon Summary内的uniform字体文字\n---\n" +
+                         "Summary text scale compensation (true=auto-enlarge text when guiScale≤2, false=no compensation)\n" +
+                         "Only enlarges cobblemon Summary text without changing global guiScale")
+                .define("hud_summary_text_scale", true);
         HUD_POTION_SHRINK = BUILDER
-                .comment("是否将药水buff图标缩小为0.6倍+加暗色边框(true=缩小0.6倍+边框, false=原版大图标)\n" +
-                         "Shrink potion effect icons to 0.6x with dark border (true=shrunk 0.6x+border, false=vanilla large icons)")
+                .comment("是否将药水buff图标缩小(true=缩小, false=原版大图标, 缩放比例见hud_potion_shrink_scale)\n" +
+                         "Shrink potion effect icons (true=shrunk, false=vanilla large icons, scale: hud_potion_shrink_scale)")
                 .define("hud_potion_shrink", false);
+        HUD_POTION_SHRINK_SCALE = BUILDER
+                .comment("药水buff图标缩放比例(0.25~1.0, 默认0.6, 仅在hud_potion_shrink=true时生效)\n" +
+                         "Potion icon shrink scale (0.25~1.0, default 0.6, only when hud_potion_shrink=true)")
+                .defineInRange("hud_potion_shrink_scale", 0.6, 0.25, 1.0);
+        HUD_POTION_HIDE_FLASH = BUILDER
+                .comment("是否隐藏药水buff闪烁(true=始终显示不闪烁, false=快结束时闪烁提示)\n" +
+                         "Hide potion effect flashing when about to expire (true=always show, false=flash when expiring)")
+                .define("hud_potion_hide_flash", false);
 
         HUD_UNIFIED_COLORED_BARS = BUILDER
                 .comment("统一彩色数值条总开关(true=全部替换为彩色数值条, false=使用下方逐项开关)\n" +
@@ -163,6 +185,14 @@ public class CobblemonTSConfig {
                 .comment("启用另一种捕捉模式：点击捕捉按钮弹出三选一菜单（捕获/恢复/战斗道具），而非直接打开精灵球背包\n" +
                          "Enable alternative capture mode: clicking capture button shows a 3-option menu (Capture/Heal/Battle Items) instead of directly opening the Poké Ball bag")
                 .define("alternative_capture_mode", true);
+        BUILDER.pop();
+
+        // [线性-R01] 精灵雷达总开关
+        BUILDER.comment("精灵雷达设置 | Pokemon Radar Settings").push("pokemon_radar");
+        POKEMON_RADAR_ENABLED = BUILDER
+                .comment("是否开启精灵雷达功能(true=开启, false=关闭, 服务端配置，开启后才允许客户端使用精灵雷达)\n---\n" +
+                         "Enable Pokemon Radar feature (true=enabled, false=disabled, server-side config, radar only works when enabled)")
+                .define("pokemon_radar_enabled", true);
         BUILDER.pop();
     }
 
