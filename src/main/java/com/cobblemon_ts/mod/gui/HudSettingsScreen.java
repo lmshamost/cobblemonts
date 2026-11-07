@@ -1,13 +1,15 @@
 package com.cobblemon_ts.mod.gui;
 
 import com.cobblemon_ts.mod.CobblemonTSConfig;
+import com.cobblemon_ts.mod.pokemonradar.PokemonRadarScreen;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
-// [线性-H1] HUD设置面板：两列布局，所有开关按钮
+// [线性-H1] HUD设置面板：两列布局，按用户指定顺序：药水→闪烁|缩小→雷达|精灵缩放→彩色条→逐项
 public class HudSettingsScreen extends Screen {
 
     private static final int BTN_W = 155;
@@ -26,32 +28,37 @@ public class HudSettingsScreen extends Screen {
         int rightX = this.width / 2 + COL_GAP / 2;
         int y = 28;
 
-        // ==== 第1行: 药水效果 ====
-        addToggleBtn(leftX,  y, "coblemon_ts.hud.effect_icons_top",      CobblemonTSConfig.SHOW_EFFECT_ICONS);
-        addToggleBtn(rightX, y, "coblemon_ts.hud.effect_icons_inv",       CobblemonTSConfig.SHOW_INVENTORY_EFFECT_ICONS);
+        // [线性-P01-reorder] ==== 第1行: 药水buff背包 + 左上角 ====
+        addToggleBtn(leftX,  y, "coblemon_ts.hud.effect_icons_inv",       CobblemonTSConfig.SHOW_INVENTORY_EFFECT_ICONS);
+        addToggleBtn(rightX, y, "coblemon_ts.hud.effect_icons_top",      CobblemonTSConfig.SHOW_EFFECT_ICONS);
         y += ROW_STEP;
 
-        // [线性-N1] 第2行(新): 药水缩小 + 精灵信息缩放 ← 插入在药水显示下方、统一彩色条上方
-        addToggleBtn(leftX,  y, "coblemon_ts.hud.potion_shrink",          CobblemonTSConfig.HUD_POTION_SHRINK);
+        // [线性-P01-reorder] ==== 第2行: 药水隐藏闪烁 + 药水缩小 ====
+        addToggleBtn(leftX,  y, "coblemon_ts.hud.potion_hide_flash",     CobblemonTSConfig.HUD_POTION_HIDE_FLASH);
+        addToggleBtn(rightX, y, "coblemon_ts.hud.potion_shrink",          CobblemonTSConfig.HUD_POTION_SHRINK);
+        y += ROW_STEP;
+
+        // [线性-P01-reorder] ==== 第3行: 雷达编辑器 + 精灵信息缩放 ====
+        addRadarEditorBtn(leftX, y);
         addToggleBtn(rightX, y, "coblemon_ts.hud.summary_guiscale",       CobblemonTSConfig.HUD_FORCE_SUMMARY_GUISCALE);
         y += ROW_STEP;
 
-        // ==== 第3行: 统一彩色条总开关 ====
+        // ==== 第4行: 统一彩色条总开关 ====
         addToggleBtn(leftX,  y, "coblemon_ts.hud.colored_bars",           CobblemonTSConfig.HUD_UNIFIED_COLORED_BARS);
         addToggleBtn(rightX, y, "coblemon_ts.hud.hide_toggle_btns",       CobblemonTSConfig.HIDE_TOGGLE_BUTTONS);
         y += ROW_STEP;
 
-        // ==== 第4行: 逐项-血条/饥饿 ====
+        // ==== 第5行: 逐项-血条/饥饿 ====
         addToggleBtn(leftX,  y, "coblemon_ts.hud.custom_health_bar",      CobblemonTSConfig.HUD_CUSTOM_HEALTH_BAR);
         addToggleBtn(rightX, y, "coblemon_ts.hud.custom_food_bar",        CobblemonTSConfig.HUD_CUSTOM_FOOD_BAR);
         y += ROW_STEP;
 
-        // ==== 第5行: 覆盖层 ====
+        // ==== 第6行: 覆盖层 ====
         addToggleBtn(leftX,  y, "coblemon_ts.hud.absorption_overlay",     CobblemonTSConfig.HUD_ABSORPTION_OVERLAY);
         addToggleBtn(rightX, y, "coblemon_ts.hud.saturation_overlay",     CobblemonTSConfig.HUD_SATURATION_OVERLAY);
         y += ROW_STEP;
 
-        // ==== 第6行: 盔甲/经验 ====
+        // ==== 第7行: 盔甲/经验 ====
         addToggleBtn(leftX,  y, "coblemon_ts.hud.custom_armor_bar",       CobblemonTSConfig.HUD_CUSTOM_ARMOR_BAR);
         addToggleBtn(rightX, y, "coblemon_ts.hud.custom_xp_bar",          CobblemonTSConfig.HUD_CUSTOM_XP_BAR);
         y += ROW_STEP;
@@ -80,6 +87,14 @@ public class HudSettingsScreen extends Screen {
                 .size(BTN_W, BTN_H)
                 .build();
         this.addRenderableWidget(btn);
+    }
+
+    // [线性-P01] 雷达编辑器按钮：打开精灵雷达编辑界面
+    private void addRadarEditorBtn(int x, int y) {
+        Component label = Component.translatable("coblemon_ts.hud.radar_editor");
+        this.addRenderableWidget(Button.builder(label, btn -> {
+            Minecraft.getInstance().setScreen(new PokemonRadarScreen());
+        }).pos(x, y).size(BTN_W, BTN_H).build());
     }
 
     // [线性-H3] 格式化: "标签: §aON" / "标签: §cOFF"

@@ -49,7 +49,12 @@ import com.cobblemon_ts.mod.gui.PokebagScreen;
 import com.cobblemon_ts.mod.pokemoneditor.PokemonEditorItems;
 import com.cobblemon_ts.mod.pokemoneditor.PokemonEditorNetwork;
 import com.cobblemon_ts.mod.pokemoneditor.PokemonEditorClientHandler;
+import com.cobblemon_ts.mod.pokemonradar.PokemonRadarScreen;
+import com.cobblemon_ts.mod.pokemonradar.PokemonRadarState;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -74,6 +79,18 @@ import net.minecraft.client.Minecraft;
 public class CobblemonTS {
     public static final String MODID = "coblemon_ts";
     public static final Logger LOGGER = LogUtils.getLogger();
+
+    // [线性-R06] 精灵雷达双按键：NUMPAD7=编辑器, NUMPAD8=开关追踪
+    public static final KeyMapping RADAR_EDITOR_KEY = new KeyMapping(
+            "key.coblemon_ts.radar.editor",
+            InputConstants.KEY_NUMPAD7,
+            "key.categories.coblemon_ts"
+    );
+    public static final KeyMapping RADAR_TOGGLE_KEY = new KeyMapping(
+            "key.coblemon_ts.radar.toggle",
+            InputConstants.KEY_NUMPAD8,
+            "key.categories.coblemon_ts"
+    );
     
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
@@ -132,6 +149,7 @@ public class CobblemonTS {
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
             modEventBus.addListener(this::registerScreens);
+            modEventBus.addListener(this::registerKeyMappings);
         }
         modEventBus.addListener(this::registerPayloads);
     }
@@ -248,6 +266,24 @@ public class CobblemonTS {
 
     @net.neoforged.api.distmarker.OnlyIn(Dist.CLIENT)
     public static void onClientTick(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
+        // [线性-R07a] 精灵雷达按键：NUMPAD7打开编辑器, NUMPAD8开关追踪（需配置总开关开启）
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null && CobblemonTSConfig.POKEMON_RADAR_ENABLED.get()) {
+            if (RADAR_EDITOR_KEY.consumeClick()) {
+                mc.setScreen(new PokemonRadarScreen());
+            }
+            if (RADAR_TOGGLE_KEY.consumeClick()) {
+                PokemonRadarState state = PokemonRadarState.getInstance();
+                state.setRadarTrackingEnabled(!state.isRadarTrackingEnabled());
+                state.saveToFile(); // [线性-R08c] 开关切换后持久化
+                if (mc.player != null) {
+                    mc.player.displayClientMessage(
+                        net.minecraft.network.chat.Component.translatable(
+                            state.isRadarTrackingEnabled() ? "coblemon_ts.radar.tracking_on" : "coblemon_ts.radar.tracking_off"), true);
+                }
+            }
+        }
+
         if (Minecraft.getInstance().player == null) return;
         initTickCache(); // [线性-L07] 首次调用初始化缓存，后续直接复用
         if (cachedStorageInstance == null || cachedPartyStoresField == null || cachedPartyField == null) return;
@@ -270,6 +306,12 @@ public class CobblemonTS {
     private void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ModContainers.PARTY_HELD_ITEM.get(), PartyHeldItemScreen::new);
         event.register(ModContainers.POKEBAG.get(), PokebagScreen::new);
+    }
+
+    @net.neoforged.api.distmarker.OnlyIn(Dist.CLIENT)
+    private void registerKeyMappings(RegisterKeyMappingsEvent event) {
+        event.register(RADAR_EDITOR_KEY);
+        event.register(RADAR_TOGGLE_KEY);
     }
 
     private void registerPayloads(RegisterPayloadHandlersEvent event) {
