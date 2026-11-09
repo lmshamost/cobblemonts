@@ -808,6 +808,21 @@ public class CobblemonTS {
             if (!(level instanceof net.minecraft.server.level.ServerLevel sl)) return;
             var spawnType = event.getSpawnType();
             if (spawnType == null) return;
+
+            long cx = (long) event.getX() >> 4;
+            long cz = (long) event.getZ() >> 4;
+            long chunkKey = ((long) cx << 32) | (cz & 0xFFFFFFFFL);
+
+            var levelMap = BARRIER_INDEX.get(sl);
+            int flags = (levelMap != null) ? levelMap.getOrDefault(chunkKey, 0) : 0;
+
+            var entity = event.getEntity();
+            String entityId = entity != null ? net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString() : "null";
+
+            if (entityId.equals("cobblemon:pokemon")) {
+                LOGGER.info("[ChunkBarrier] DEBUG pokemon spawn at chunk [{},{}] spawnType={} flags={} levelMapNull={}", cx, cz, spawnType, flags, levelMap == null);
+            }
+
             if (spawnType == net.minecraft.world.entity.MobSpawnType.SPAWN_EGG
                     || spawnType == net.minecraft.world.entity.MobSpawnType.BREEDING
                     || spawnType == net.minecraft.world.entity.MobSpawnType.DISPENSER
@@ -818,15 +833,8 @@ public class CobblemonTS {
                     || spawnType == net.minecraft.world.entity.MobSpawnType.CONVERSION
                     || spawnType == net.minecraft.world.entity.MobSpawnType.TRIGGERED) return;
 
-            long cx = (long) event.getX() >> 4;
-            long cz = (long) event.getZ() >> 4;
-            long chunkKey = ((long) cx << 32) | (cz & 0xFFFFFFFFL);
-
-            var levelMap = BARRIER_INDEX.get(sl);
             if (levelMap == null || levelMap.isEmpty()) return;
-            int flags = levelMap.getOrDefault(chunkKey, 0);
 
-            var entity = event.getEntity();
             if (entity == null) return;
             var entityType = entity.getType();
 
