@@ -113,6 +113,7 @@ public class ChunkBarrierScreen extends AbstractContainerScreen<ChunkBarrierCont
 
     private int cts_origW, cts_origH;
     private float cts_scale = 1.0f;
+    private float cts_offsetX = 0, cts_offsetY = 0;
     private boolean cts_needScale = false;
 
     private Map<String, Boolean> currentNameMap() {
@@ -216,6 +217,20 @@ public class ChunkBarrierScreen extends AbstractContainerScreen<ChunkBarrierCont
 
     @Override
     protected void init() {
+        // [线性-SCALE] 在super.init()之前拦截：保存真实屏幕尺寸，改虚拟尺寸让leftPos/topPos和widget一起在虚拟坐标里创建
+        int realW = this.width;
+        int realH = this.height;
+        if (imageWidth > realW || imageHeight > realH) {
+            cts_origW = realW;
+            cts_origH = realH;
+            cts_scale = Math.min((float) realW / imageWidth, (float) realH / imageHeight);
+            cts_offsetX = (realW - imageWidth * cts_scale) / 2.0f;
+            cts_offsetY = (realH - imageHeight * cts_scale) / 2.0f;
+            cts_needScale = true;
+            this.width = imageWidth;
+            this.height = imageHeight;
+        }
+
         super.init();
         this.activeBits.add(BIT_POKEMON);
         this.activeBits.add(BIT_NPC);
@@ -310,19 +325,8 @@ public class ChunkBarrierScreen extends AbstractContainerScreen<ChunkBarrierCont
                 }
         ).bounds(inputX + 105, inputY - 1, 39, 18).build());
 
-        // [线性-SCALE] GUI缩放适配：当image尺寸超出屏幕时整体PoseStack缩小
+        // [线性-全局计数] 打开 GUI 时立即请求一次全服计数
         requestGlobalCounts();
-        if (imageWidth > this.width || imageHeight > this.height) {
-            cts_origW = this.width;
-            cts_origH = this.height;
-            cts_scale = Math.min((float) cts_origW / imageWidth, (float) cts_origH / imageHeight);
-            cts_needScale = true;
-            this.width = imageWidth;
-            this.height = imageHeight;
-            this.leftPos = 0;
-            this.topPos = 0;
-            layoutMap();
-        }
     }
 
     // [线性-全局计数] 向服务端发一次请求，服务端返回后自动更新全局数
@@ -368,13 +372,14 @@ public class ChunkBarrierScreen extends AbstractContainerScreen<ChunkBarrierCont
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // [线性-SCALE] 用真实屏幕尺寸画背景
+        // [线性-SCALE] renderBackground需要真实屏幕尺寸画全屏
         if (cts_needScale) {
             this.width = cts_origW;
             this.height = cts_origH;
         }
         this.renderBackground(graphics, mouseX, mouseY, partialTick);
         if (cts_needScale) {
+            // 切回虚拟尺寸 + 整体PoseStack缩小居中
             this.width = imageWidth;
             this.height = imageHeight;
             graphics.pose().pushPose();
@@ -382,10 +387,10 @@ public class ChunkBarrierScreen extends AbstractContainerScreen<ChunkBarrierCont
             float scaledH = imageHeight * cts_scale;
             float offsetX = (cts_origW - scaledW) / 2.0f;
             float offsetY = (cts_origH - scaledH) / 2.0f;
-            graphics.pose().translate(offsetX / cts_scale, offsetY / cts_scale, 0);
+            graphics.pose().translate(offsetX, offsetY, 0);
             graphics.pose().scale(cts_scale, cts_scale, 1.0f);
-            mouseX /= cts_scale;
-            mouseY /= cts_scale;
+            mouseX = (int) ((mouseX - offsetX) / cts_scale);
+            mouseY = (int) ((mouseY - offsetY) / cts_scale);
         }
 
         graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, 0xFF1a1a1a);
@@ -666,7 +671,7 @@ public class ChunkBarrierScreen extends AbstractContainerScreen<ChunkBarrierCont
                     .render(graphics, mouseX, mouseY, partialTick);
         }
 
-        // [线性-SCALE] 还原 PoseStack
+        // [线性-SCALE] 还原PoseStack
         if (cts_needScale) {
             graphics.pose().popPose();
         }
@@ -763,7 +768,7 @@ public class ChunkBarrierScreen extends AbstractContainerScreen<ChunkBarrierCont
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (cts_needScale) { mouseX /= cts_scale; mouseY /= cts_scale; }
+        if (cts_needScale) { mouseX = (mouseX - cts_offsetX) / cts_scale; mouseY = (mouseY - cts_offsetY) / cts_scale; }
         if (handlePlayerListClick((int) mouseX, (int) mouseY, button)) return true;
 
         if (button == 1) {
@@ -869,7 +874,7 @@ public class ChunkBarrierScreen extends AbstractContainerScreen<ChunkBarrierCont
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (cts_needScale) { mouseX /= cts_scale; mouseY /= cts_scale; dragX /= cts_scale; dragY /= cts_scale; }
+        if (cts_needScale) { mouseX = (mouseX - cts_offsetX) / cts_scale; mouseY = (mouseY - cts_offsetY) / cts_scale; dragX /= cts_scale; dragY /= cts_scale; }
         // [线性-R10] 只读模式禁用拖拽
         if (isReadOnly()) return false;
         if (dragging) {
@@ -987,7 +992,7 @@ public class ChunkBarrierScreen extends AbstractContainerScreen<ChunkBarrierCont
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
-        if (cts_needScale) { mouseX /= cts_scale; mouseY /= cts_scale; }
+        if (cts_needScale) { mouseX = (mouseX - cts_offsetX) / cts_scale; mouseY = (mouseY - cts_offsetY) / cts_scale; }
         // [线性-R10] 只读模式禁用滚轮缩放
         if (isReadOnly()) return false;
         int newSize = gridSize + (vertical > 0 ? 2 : -2);
