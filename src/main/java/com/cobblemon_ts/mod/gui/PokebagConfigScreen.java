@@ -28,7 +28,7 @@ public class PokebagConfigScreen extends Screen {
     private static final int BTN_H = 20;
 
     public PokebagConfigScreen() {
-        super(Component.translatable("coblemon_ts.pokebag_config.title"));
+        super(Component.translatable("cobblemon_ts.pokebag_config.title"));
     }
 
     @Override
@@ -70,7 +70,7 @@ public class PokebagConfigScreen extends Screen {
         int listBtnX = centerX - listBtnW / 2;
         int whitelistCount = CharmConfig.POKEBAG_WHITELIST_TAGS.get().size();
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.pokebag_config.edit_whitelist")
+                Component.translatable("cobblemon_ts.pokebag_config.edit_whitelist")
                         .append(" §a[" + whitelistCount + "]"),
                 btn -> Minecraft.getInstance().setScreen(
                         new PokebagTagListScreen(true, this)))
@@ -80,7 +80,7 @@ public class PokebagConfigScreen extends Screen {
         // ── Row3: 黑名单按钮 ──
         int blacklistCount = CharmConfig.POKEBAG_BLACKLIST_TAGS.get().size();
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.pokebag_config.edit_blacklist")
+                Component.translatable("cobblemon_ts.pokebag_config.edit_blacklist")
                         .append(" §7[" + blacklistCount + "]"),
                 btn -> Minecraft.getInstance().setScreen(
                         new PokebagTagListScreen(false, this)))
@@ -90,13 +90,13 @@ public class PokebagConfigScreen extends Screen {
         // ── Row4: 保存 | 返回 ──
         int saveBtnW = 100;
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.pokebag_config.save"),
+                Component.translatable("cobblemon_ts.pokebag_config.save"),
                 btn -> saveConfig())
                 .pos(centerX - saveBtnW - 4, startY + rowStep * 5 + 5)
                 .size(saveBtnW, BTN_H).build());
 
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.pokebag_config.back"),
+                Component.translatable("cobblemon_ts.pokebag_config.back"),
                 btn -> Minecraft.getInstance().setScreen(null))
                 .pos(centerX + 4, startY + rowStep * 5 + 5)
                 .size(saveBtnW, BTN_H).build());
@@ -112,8 +112,8 @@ public class PokebagConfigScreen extends Screen {
 
     private String getExtractToggleKey() {
         return extractLimitEnabled
-                ? "coblemon_ts.pokebag_config.extract_on"
-                : "coblemon_ts.pokebag_config.extract_off";
+                ? "cobblemon_ts.pokebag_config.extract_on"
+                : "cobblemon_ts.pokebag_config.extract_off";
     }
 
     private void saveConfig() {
@@ -138,11 +138,11 @@ public class PokebagConfigScreen extends Screen {
 
             if (Minecraft.getInstance().player != null)
                 Minecraft.getInstance().player.displayClientMessage(
-                        Component.translatable("coblemon_ts.pokebag_config.saved"), false);
+                        Component.translatable("cobblemon_ts.pokebag_config.saved"), false);
         } catch (NumberFormatException e) {
             if (Minecraft.getInstance().player != null)
                 Minecraft.getInstance().player.displayClientMessage(
-                        Component.translatable("coblemon_ts.testbuild.input_error"), false);
+                        Component.translatable("cobblemon_ts.testbuild.input_error"), false);
         }
     }
 
@@ -162,18 +162,18 @@ public class PokebagConfigScreen extends Screen {
 
         // ── Row0标签：容量 / 堆叠上限 ──
         g.drawString(this.font,
-                Component.translatable("coblemon_ts.pokebag_config.bag_slots").getString(),
+                Component.translatable("cobblemon_ts.pokebag_config.bag_slots").getString(),
                 leftLabelX, labelY1, 0xCCCCCC, false);
         g.drawString(this.font,
-                Component.translatable("coblemon_ts.pokebag_config.max_stack").getString(),
+                Component.translatable("cobblemon_ts.pokebag_config.max_stack").getString(),
                 rightLabelX, labelY1, 0xCCCCCC, false);
 
         // ── Row1标签：取出限制 / 每次取出 ──
         g.drawString(this.font,
-                Component.translatable("coblemon_ts.pokebag_config.extract_toggle").getString(),
+                Component.translatable("cobblemon_ts.pokebag_config.extract_toggle").getString(),
                 leftLabelX, labelY2, 0xCCCCCC, false);
         g.drawString(this.font,
-                Component.translatable("coblemon_ts.pokebag_config.extract_limit").getString(),
+                Component.translatable("cobblemon_ts.pokebag_config.extract_limit").getString(),
                 rightLabelX, labelY2, 0xCCCCCC, false);
     }
 

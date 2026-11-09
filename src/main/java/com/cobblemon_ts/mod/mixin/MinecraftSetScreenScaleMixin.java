@@ -22,7 +22,11 @@ public class MinecraftSetScreenScaleMixin {
 
     @Inject(method = "setScreen", at = @At("HEAD"))
     private void cts$setScreenHead(Screen newScreen, CallbackInfo ci) {
-        if (!CobblemonTSConfig.HUD_FORCE_SUMMARY_GUISCALE.get()) return;
+        try {
+            if (!CobblemonTSConfig.HUD_FORCE_SUMMARY_GUISCALE.get()) return;
+        } catch (IllegalStateException e) {
+            return;
+        }
         Minecraft self = (Minecraft) (Object) this;
 
         boolean oldIsSummary = self.screen instanceof Summary;

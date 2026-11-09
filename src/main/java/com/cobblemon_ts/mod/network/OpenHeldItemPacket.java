@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public record OpenHeldItemPacket() implements CustomPacketPayload {
     public static final Type<OpenHeldItemPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath("coblemon_ts", "open_held_item"));
+            ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "open_held_item"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, OpenHeldItemPacket> STREAM_CODEC =
             StreamCodec.unit(new OpenHeldItemPacket());

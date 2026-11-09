@@ -27,7 +27,7 @@ public class LuckyWeightManager {
 
     // [线性-W01b] 全精灵池方块ID（所有宝可梦默认权重100参与随机）
     private static final Set<String> ALL_POKEMON_BLOCK_IDS = Set.of(
-            "coblemon_ts:lucky_block", "coblemon_ts:shiny_lucky_block");
+            "cobblemon_ts:lucky_block", "cobblemon_ts:shiny_lucky_block");
 
     public static class WeightEntry<T> {
         public final List<T> entries;

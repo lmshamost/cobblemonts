@@ -1,0 +1,22 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "cobblemon_ts:lucky_recipes_enabled"
+    }
+  ],
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "AAA",
+    "ABA",
+    "AAA"
+  ],
+  "key": {
+    "A": { "item": "minecraft:emerald_block" },
+    "B": { "item": "minecraft:nether_star" }
+  },
+  "result": {
+    "id": "cobblemon_ts:lucky_block",
+    "count": 1
+  }
+}

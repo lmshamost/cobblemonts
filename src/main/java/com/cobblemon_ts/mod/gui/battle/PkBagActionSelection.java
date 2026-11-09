@@ -36,9 +36,9 @@ import java.util.List;
 // 点击使用：球类→缩小战斗界面+切精灵球到手中投掷，恢复/战斗道具→HealItemActionResponse发送使用指令
 public class PkBagActionSelection extends BattleActionSelection {
 
-    private static final ResourceLocation BATTLE_NEXT = ResourceLocation.parse("coblemon_ts:textures/gui/battle_next.png");
-    private static final ResourceLocation PKBAG = ResourceLocation.parse("coblemon_ts:textures/gui/pkbag.png");
-    private static final ResourceLocation PKBAG_HOVER = ResourceLocation.parse("coblemon_ts:textures/gui/pkbag1.png");
+    private static final ResourceLocation BATTLE_NEXT = ResourceLocation.parse("cobblemon_ts:textures/gui/battle_next.png");
+    private static final ResourceLocation PKBAG = ResourceLocation.parse("cobblemon_ts:textures/gui/pkbag.png");
+    private static final ResourceLocation PKBAG_HOVER = ResourceLocation.parse("cobblemon_ts:textures/gui/pkbag1.png");
 
     private static final int SLOT_W = 92;
     private static final int SLOT_H = 23;

@@ -21,15 +21,15 @@ public class LuckyWeightEditorScreen extends Screen {
     // 所有幸运方块ID → 显示名称
     private static final LinkedHashMap<ResourceLocation, String> ALL_BLOCKS = new LinkedHashMap<>();
     static {
-        ALL_BLOCKS.put(ResourceLocation.parse("coblemon_ts:lucky_block"), "coblemon_ts.lucky.block.random_pokemon");
-        ALL_BLOCKS.put(ResourceLocation.parse("coblemon_ts:legendary_lucky_block"), "coblemon_ts.lucky.block.legendary");
-        ALL_BLOCKS.put(ResourceLocation.parse("coblemon_ts:ultra_beast_lucky_block"), "coblemon_ts.lucky.block.ultra_beast");
-        ALL_BLOCKS.put(ResourceLocation.parse("coblemon_ts:shiny_lucky_block"), "coblemon_ts.lucky.block.shiny");
-        ALL_BLOCKS.put(ResourceLocation.parse("coblemon_ts:item_lucky_block"), "coblemon_ts.lucky.block.items");
+        ALL_BLOCKS.put(ResourceLocation.parse("cobblemon_ts:lucky_block"), "cobblemon_ts.lucky.block.random_pokemon");
+        ALL_BLOCKS.put(ResourceLocation.parse("cobblemon_ts:legendary_lucky_block"), "cobblemon_ts.lucky.block.legendary");
+        ALL_BLOCKS.put(ResourceLocation.parse("cobblemon_ts:ultra_beast_lucky_block"), "cobblemon_ts.lucky.block.ultra_beast");
+        ALL_BLOCKS.put(ResourceLocation.parse("cobblemon_ts:shiny_lucky_block"), "cobblemon_ts.lucky.block.shiny");
+        ALL_BLOCKS.put(ResourceLocation.parse("cobblemon_ts:item_lucky_block"), "cobblemon_ts.lucky.block.items");
     }
 
     public LuckyWeightEditorScreen() {
-        super(Component.translatable("coblemon_ts.lucky.title"));
+        super(Component.translatable("cobblemon_ts.lucky.title"));
     }
 
     @Override
@@ -49,8 +49,8 @@ public class LuckyWeightEditorScreen extends Screen {
             LuckyWeightManager.LuckyWeightConfig config = LuckyWeightManager.getConfig(blockId);
             int entryCount = (config != null) ? config.allEntries.size() : 0;
             String suffix = entryCount > 0
-                    ? " §a[" + entryCount + " " + Component.translatable("coblemon_ts.lucky.entries_count").getString() + "]"
-                    : " §7[" + Component.translatable("coblemon_ts.lucky.no_config").getString() + "]";
+                    ? " §a[" + entryCount + " " + Component.translatable("cobblemon_ts.lucky.entries_count").getString() + "]"
+                    : " §7[" + Component.translatable("cobblemon_ts.lucky.no_config").getString() + "]";
 
             this.addRenderableWidget(Button.builder(
                     Component.literal(displayName + suffix),
@@ -64,7 +64,7 @@ public class LuckyWeightEditorScreen extends Screen {
 
         // 返回按钮
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.lucky.back"),
+                Component.translatable("cobblemon_ts.lucky.back"),
                 btn -> this.onClose())
                 .pos(centerX - 50, startY + index * 26 + 10)
                 .size(100, 20)
@@ -78,7 +78,7 @@ public class LuckyWeightEditorScreen extends Screen {
         graphics.drawCenteredString(this.font, this.title,
                 this.width / 2, 20, 0xFFFFFF);
         graphics.drawCenteredString(this.font,
-                Component.translatable("coblemon_ts.lucky.hint"),
+                Component.translatable("cobblemon_ts.lucky.hint"),
                 this.width / 2, 35, 0xAAAAAA);
     }
 

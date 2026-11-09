@@ -23,9 +23,9 @@ public enum CharmType {
         return displayName;
     }
 
-    // [线性-L10] 玩家可见的本地化护符名（复用物品翻译键 item.coblemon_ts.<itemId>）
+    // [线性-L10] 玩家可见的本地化护符名（复用物品翻译键 item.cobblemon_ts.<itemId>）
     public net.minecraft.network.chat.Component getDisplayComponent() {
-        return net.minecraft.network.chat.Component.translatable("item.coblemon_ts." + itemId);
+        return net.minecraft.network.chat.Component.translatable("item.cobblemon_ts." + itemId);
     }
     
     public net.minecraft.world.item.Item getItem() {

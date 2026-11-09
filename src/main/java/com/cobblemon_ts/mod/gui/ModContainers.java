@@ -20,4 +20,9 @@ public class ModContainers {
             MENU_TYPES.register("pokebag",
                     () -> IMenuTypeExtension.create(
                             (id, inv, buf) -> new PokebagContainer(id, inv)));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<ChunkBarrierContainer>> CHUNK_BARRIER =
+            MENU_TYPES.register("chunk_barrier",
+                    () -> IMenuTypeExtension.create(
+                            (id, inv, buf) -> new ChunkBarrierContainer(id, inv, buf)));
 }

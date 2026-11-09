@@ -17,7 +17,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 // [线性-L1] 测试物品GUI→服务端：请求打开初始宝可梦选择界面
 public record TestBuildOpenStarterPacket() implements CustomPacketPayload {
     public static final Type<TestBuildOpenStarterPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath("coblemon_ts", "test_build_open_starter"));
+            ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "test_build_open_starter"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, TestBuildOpenStarterPacket> STREAM_CODEC =
             StreamCodec.unit(new TestBuildOpenStarterPacket());

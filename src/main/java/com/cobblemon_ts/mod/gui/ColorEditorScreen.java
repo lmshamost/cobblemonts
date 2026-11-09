@@ -24,12 +24,12 @@ public class ColorEditorScreen extends Screen {
     private int activeTab = 0;
     // [线性-L10] tab翻译键 | tab translation keys: party/charm/editor × light/dark
     private static final String[] TAB_KEYS = {
-        "coblemon_ts.coloreditor.tab.party_light",
-        "coblemon_ts.coloreditor.tab.party_dark",
-        "coblemon_ts.coloreditor.tab.charm_light",
-        "coblemon_ts.coloreditor.tab.charm_dark",
-        "coblemon_ts.coloreditor.tab.editor_light",
-        "coblemon_ts.coloreditor.tab.editor_dark"
+        "cobblemon_ts.coloreditor.tab.party_light",
+        "cobblemon_ts.coloreditor.tab.party_dark",
+        "cobblemon_ts.coloreditor.tab.charm_light",
+        "cobblemon_ts.coloreditor.tab.charm_dark",
+        "cobblemon_ts.coloreditor.tab.editor_light",
+        "cobblemon_ts.coloreditor.tab.editor_dark"
     };
 
     // 当前组内选中的颜色项索引
@@ -42,29 +42,29 @@ public class ColorEditorScreen extends Screen {
     // 每组颜色项翻译键 | color item translation keys per group
     private static final String[][] COLOR_ITEM_KEYS = {
         // 0: 精灵栏亮色
-        {"coblemon_ts.coloreditor.item.panel_bg","coblemon_ts.coloreditor.item.panel_border","coblemon_ts.coloreditor.item.panel_text",
-         "coblemon_ts.coloreditor.item.slot_bg","coblemon_ts.coloreditor.item.slot_hover_bg","coblemon_ts.coloreditor.item.slot_border",
-         "coblemon_ts.coloreditor.item.slot_selected_border","coblemon_ts.coloreditor.item.slot_hover_border"},
+        {"cobblemon_ts.coloreditor.item.panel_bg","cobblemon_ts.coloreditor.item.panel_border","cobblemon_ts.coloreditor.item.panel_text",
+         "cobblemon_ts.coloreditor.item.slot_bg","cobblemon_ts.coloreditor.item.slot_hover_bg","cobblemon_ts.coloreditor.item.slot_border",
+         "cobblemon_ts.coloreditor.item.slot_selected_border","cobblemon_ts.coloreditor.item.slot_hover_border"},
         // 1: 精灵栏暗色
-        {"coblemon_ts.coloreditor.item.panel_outer","coblemon_ts.coloreditor.item.panel_inner","coblemon_ts.coloreditor.item.panel_text"},
+        {"cobblemon_ts.coloreditor.item.panel_outer","cobblemon_ts.coloreditor.item.panel_inner","cobblemon_ts.coloreditor.item.panel_text"},
         // 2: 护符栏亮色
-        {"coblemon_ts.coloreditor.item.panel_bg","coblemon_ts.coloreditor.item.panel_border","coblemon_ts.coloreditor.item.panel_text",
-         "coblemon_ts.coloreditor.item.slot_bg","coblemon_ts.coloreditor.item.slot_hover_bg","coblemon_ts.coloreditor.item.slot_border",
-         "coblemon_ts.coloreditor.item.slot_selected_border","coblemon_ts.coloreditor.item.slot_hover_border"},
+        {"cobblemon_ts.coloreditor.item.panel_bg","cobblemon_ts.coloreditor.item.panel_border","cobblemon_ts.coloreditor.item.panel_text",
+         "cobblemon_ts.coloreditor.item.slot_bg","cobblemon_ts.coloreditor.item.slot_hover_bg","cobblemon_ts.coloreditor.item.slot_border",
+         "cobblemon_ts.coloreditor.item.slot_selected_border","cobblemon_ts.coloreditor.item.slot_hover_border"},
         // 3: 护符栏暗色
-        {"coblemon_ts.coloreditor.item.panel_outer","coblemon_ts.coloreditor.item.panel_inner","coblemon_ts.coloreditor.item.panel_text"},
+        {"cobblemon_ts.coloreditor.item.panel_outer","cobblemon_ts.coloreditor.item.panel_inner","cobblemon_ts.coloreditor.item.panel_text"},
         // 4: 编辑器亮色
-        {"coblemon_ts.coloreditor.item.container_bg","coblemon_ts.coloreditor.item.container_border","coblemon_ts.coloreditor.item.label_text",
-         "coblemon_ts.coloreditor.item.input_bg","coblemon_ts.coloreditor.item.input_border","coblemon_ts.coloreditor.item.input_text",
-         "coblemon_ts.coloreditor.item.tab_active"},
+        {"cobblemon_ts.coloreditor.item.container_bg","cobblemon_ts.coloreditor.item.container_border","cobblemon_ts.coloreditor.item.label_text",
+         "cobblemon_ts.coloreditor.item.input_bg","cobblemon_ts.coloreditor.item.input_border","cobblemon_ts.coloreditor.item.input_text",
+         "cobblemon_ts.coloreditor.item.tab_active"},
         // 5: 编辑器暗色
-        {"coblemon_ts.coloreditor.item.container_bg","coblemon_ts.coloreditor.item.container_border","coblemon_ts.coloreditor.item.label_text",
-         "coblemon_ts.coloreditor.item.input_bg","coblemon_ts.coloreditor.item.input_border","coblemon_ts.coloreditor.item.input_text",
-         "coblemon_ts.coloreditor.item.tab_active"},
+        {"cobblemon_ts.coloreditor.item.container_bg","cobblemon_ts.coloreditor.item.container_border","cobblemon_ts.coloreditor.item.label_text",
+         "cobblemon_ts.coloreditor.item.input_bg","cobblemon_ts.coloreditor.item.input_border","cobblemon_ts.coloreditor.item.input_text",
+         "cobblemon_ts.coloreditor.item.tab_active"},
     };
 
     public ColorEditorScreen() {
-        super(Component.translatable("coblemon_ts.coloreditor.title"));
+        super(Component.translatable("cobblemon_ts.coloreditor.title"));
     }
 
     @Override
@@ -151,14 +151,14 @@ public class ColorEditorScreen extends Screen {
 
         // 应用按钮（放在十六进制输入框下面）
         int btnY = hexY + rowSpacing + 2;
-        applyBtn = Button.builder(Component.translatable("coblemon_ts.coloreditor.apply"), btn -> applyColor())
+        applyBtn = Button.builder(Component.translatable("cobblemon_ts.coloreditor.apply"), btn -> applyColor())
                 .pos(fieldX + labelGap, btnY)
                 .size(66, 18)
                 .build();
         this.addRenderableWidget(applyBtn);
 
         // 返回按钮
-        this.addRenderableWidget(Button.builder(Component.translatable("coblemon_ts.coloreditor.back"),
+        this.addRenderableWidget(Button.builder(Component.translatable("cobblemon_ts.coloreditor.back"),
                 btn -> this.onClose())
                 .pos(panelX + PANEL_W - 55, panelY + PANEL_H - 25)
                 .size(45, 20)
@@ -460,7 +460,7 @@ public class ColorEditorScreen extends Screen {
 
         // 标题 | Title
         graphics.drawCenteredString(this.font,
-                Component.translatable(isCharm ? "coblemon_ts.ui.charms" : "coblemon_ts.ui.party").getString(),
+                Component.translatable(isCharm ? "cobblemon_ts.ui.charms" : "cobblemon_ts.ui.party").getString(),
                 x + 30, y + 4, textColor);
 
         // 槽位预览

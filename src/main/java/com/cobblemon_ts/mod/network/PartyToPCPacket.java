@@ -16,7 +16,7 @@ import java.util.UUID;
 public record PartyToPCPacket(UUID pokemonUuid) implements CustomPacketPayload {
 
     public static final Type<PartyToPCPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath("coblemon_ts", "party_to_pc"));
+            ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "party_to_pc"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, PartyToPCPacket> STREAM_CODEC = new StreamCodec<>() {
         @Override

@@ -31,7 +31,7 @@ import java.lang.reflect.Method;
 public record ThrowPokeBallPacket(String itemId) implements CustomPacketPayload {
 
     public static final Type<ThrowPokeBallPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath("coblemon_ts", "throw_poke_ball"));
+            ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "throw_poke_ball"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, ThrowPokeBallPacket> STREAM_CODEC = new StreamCodec<>() {
         @Override

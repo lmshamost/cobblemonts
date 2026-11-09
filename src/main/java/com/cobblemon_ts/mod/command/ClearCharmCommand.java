@@ -91,11 +91,11 @@ public class ClearCharmCommand {
                 }
             }
             // [线性-CMD01g] 反馈给目标玩家
-            String statusKey = enable ? "command.coblemon_ts.cts.set.on" : "command.coblemon_ts.cts.set.off";
+            String statusKey = enable ? "command.cobblemon_ts.cts.set.on" : "command.cobblemon_ts.cts.set.off";
             sp.sendSystemMessage(Component.translatable(statusKey, charmName));
         }
         // [线性-CMD01h] 反馈给执行者
-        String summaryKey = enable ? "command.coblemon_ts.cts.set.success_on" : "command.coblemon_ts.cts.set.success_off";
+        String summaryKey = enable ? "command.cobblemon_ts.cts.set.success_on" : "command.cobblemon_ts.cts.set.success_off";
         source.sendSuccess(() -> Component.translatable(summaryKey, players.size(), charmName), true);
     }
 

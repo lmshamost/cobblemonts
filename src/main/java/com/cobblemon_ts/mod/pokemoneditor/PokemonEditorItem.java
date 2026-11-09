@@ -87,7 +87,7 @@ public class PokemonEditorItem extends Item {
     public void appendHoverText(ItemStack stack, Item.TooltipContext world, List<Component> tooltip, TooltipFlag flagIn) {
         super.appendHoverText(stack, world, tooltip, flagIn);
         tooltip.add(Component.literal(" "));
-        tooltip.add(Component.translatable("item.coblemon_ts.pokemon_editor.tooltip.one"));
-        tooltip.add(Component.translatable("item.coblemon_ts.pokemon_editor.tooltip.two"));
+        tooltip.add(Component.translatable("item.cobblemon_ts.pokemon_editor.tooltip.one"));
+        tooltip.add(Component.translatable("item.cobblemon_ts.pokemon_editor.tooltip.two"));
     }
 }

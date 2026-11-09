@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(targets = "com.cobblemon.mod.common.client.gui.battle.widgets.BattleOptionTile", remap = false)
 public abstract class BattleOptionTileMixin {
 
-    private static final ResourceLocation AUTO_BOTTON = ResourceLocation.parse("coblemon_ts:textures/gui/auto_botton.png");
+    private static final ResourceLocation AUTO_BOTTON = ResourceLocation.parse("cobblemon_ts:textures/gui/auto_botton.png");
     private static final int AUTO_TEX_W = 18;
     private static final int AUTO_TEX_H = 42;
     private static final int AUTO_ON_H = 18;    // ON状态纹理高(0~17)

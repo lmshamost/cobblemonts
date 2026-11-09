@@ -35,14 +35,14 @@ public class LuckyWeightEditEntryScreen extends Screen {
 
     public LuckyWeightEditEntryScreen(ResourceLocation blockId, String blockDisplayName,
                                       int entryIndex, LuckyWeightManager.WeightEntry<?> entry, Screen parent) {
-        super(Component.translatable("coblemon_ts.lucky.edit.title", entryIndex + 1));
+        super(Component.translatable("cobblemon_ts.lucky.edit.title", entryIndex + 1));
         this.blockId = blockId;
         this.blockDisplayName = blockDisplayName;
         this.entryIndex = entryIndex;
         this.entry = entry;
         this.parent = parent;
         // 只有item_lucky_block是物品类，其他都是精灵类
-        this.isPokemonBlock = !"coblemon_ts:item_lucky_block".equals(blockId.toString());
+        this.isPokemonBlock = !"cobblemon_ts:item_lucky_block".equals(blockId.toString());
     }
 
     @Override
@@ -55,7 +55,7 @@ public class LuckyWeightEditEntryScreen extends Screen {
 
         // 方块名称
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.lucky.edit.block_label", blockDisplayName),
+                Component.translatable("cobblemon_ts.lucky.edit.block_label", blockDisplayName),
                 btn -> {})
                 .pos(centerX - 100, 10)
                 .size(200, 18)
@@ -76,8 +76,8 @@ public class LuckyWeightEditEntryScreen extends Screen {
 
         this.addRenderableWidget(Button.builder(
                 Component.translatable(isPokemonBlock
-                        ? "coblemon_ts.lucky.edit.pokemon_name"
-                        : "coblemon_ts.lucky.edit.item_id"),
+                        ? "cobblemon_ts.lucky.edit.pokemon_name"
+                        : "cobblemon_ts.lucky.edit.item_id"),
                 btn -> {})
                 .pos(labelX, y)
                 .size(60, fieldH)
@@ -94,8 +94,8 @@ public class LuckyWeightEditEntryScreen extends Screen {
         // 提示文字
         this.addRenderableWidget(Button.builder(
                 Component.translatable(isPokemonBlock
-                        ? "coblemon_ts.lucky.edit.hint_pokemon"
-                        : "coblemon_ts.lucky.edit.hint_item"),
+                        ? "cobblemon_ts.lucky.edit.hint_pokemon"
+                        : "cobblemon_ts.lucky.edit.hint_item"),
                 btn -> {})
                 .pos(labelX, y)
                 .size(fieldW, 14)
@@ -104,7 +104,7 @@ public class LuckyWeightEditEntryScreen extends Screen {
 
         // 权重输入框
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.lucky.edit.weight"),
+                Component.translatable("cobblemon_ts.lucky.edit.weight"),
                 btn -> {})
                 .pos(labelX, y)
                 .size(60, fieldH)
@@ -120,7 +120,7 @@ public class LuckyWeightEditEntryScreen extends Screen {
 
         // 保底输入框
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.lucky.edit.guarantee"),
+                Component.translatable("cobblemon_ts.lucky.edit.guarantee"),
                 btn -> {})
                 .pos(labelX, y)
                 .size(60, fieldH)
@@ -144,9 +144,9 @@ public class LuckyWeightEditEntryScreen extends Screen {
         }
         int thisWeight = entry.weight;
         String preview = totalWeight > 0
-                ? Component.translatable("coblemon_ts.lucky.edit.probability",
+                ? Component.translatable("cobblemon_ts.lucky.edit.probability",
                         thisWeight, totalWeight, String.format("%.1f", 100.0 * thisWeight / totalWeight)).getString()
-                : Component.translatable("coblemon_ts.lucky.edit.probability_zero").getString();
+                : Component.translatable("cobblemon_ts.lucky.edit.probability_zero").getString();
         this.addRenderableWidget(Button.builder(
                 Component.literal(preview),
                 btn -> {})
@@ -157,7 +157,7 @@ public class LuckyWeightEditEntryScreen extends Screen {
 
         // 保存按钮
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.lucky.edit.save"),
+                Component.translatable("cobblemon_ts.lucky.edit.save"),
                 btn -> saveEntry())
                 .pos(centerX - 100, y + 5)
                 .size(80, 20)
@@ -165,7 +165,7 @@ public class LuckyWeightEditEntryScreen extends Screen {
 
         // 删除按钮
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.lucky.edit.delete"),
+                Component.translatable("cobblemon_ts.lucky.edit.delete"),
                 btn -> {
                     LuckyWeightManager.LuckyWeightConfig cfg = LuckyWeightManager.getConfig(blockId);
                     if (cfg != null && entryIndex < cfg.allEntries.size()) {
@@ -183,7 +183,7 @@ public class LuckyWeightEditEntryScreen extends Screen {
 
         // 返回按钮
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.lucky.edit.back"),
+                Component.translatable("cobblemon_ts.lucky.edit.back"),
                 btn -> {
                     // 直接返回，不保存修改
                     Minecraft.getInstance().setScreen(parent);
@@ -245,7 +245,7 @@ public class LuckyWeightEditEntryScreen extends Screen {
                 List<String> zhNames = new ArrayList<>();
                 for (String en : items) {
                     if (en.isEmpty()) {
-                        zhNames.add(Component.translatable("coblemon_ts.lucky.empty_entry").getString());
+                        zhNames.add(Component.translatable("cobblemon_ts.lucky.empty_entry").getString());
                         continue;
                     }
                     String zh = PokemonNameMap.toChinese(en);
@@ -254,10 +254,10 @@ public class LuckyWeightEditEntryScreen extends Screen {
                 display = String.join(",", zhNames);
             }
             String typeLabel = Component.translatable(isPokemonBlock
-                    ? "coblemon_ts.lucky.edit.type_pokemon"
-                    : "coblemon_ts.lucky.edit.type_item").getString();
+                    ? "cobblemon_ts.lucky.edit.type_pokemon"
+                    : "cobblemon_ts.lucky.edit.type_item").getString();
             Minecraft.getInstance().player.displayClientMessage(
-                    Component.translatable("coblemon_ts.lucky.edit.updated",
+                    Component.translatable("cobblemon_ts.lucky.edit.updated",
                             typeLabel, display, weight, guarantee),
                     false);
         }

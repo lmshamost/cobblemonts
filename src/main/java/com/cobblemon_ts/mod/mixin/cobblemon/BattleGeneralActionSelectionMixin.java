@@ -13,8 +13,8 @@ public abstract class BattleGeneralActionSelectionMixin {
     @ModifyConstant(method = "<init>", constant = @Constant(stringValue = "ui.capture"), remap = false)
     private String cobblemon_ts$changeCaptureText(String original) {
         if (CobblemonTSConfig.ALTERNATIVE_CAPTURE_MODE.get()) {
-            // battleLang 会拼接成 "cobblemon.coblemon_ts.capture"，我们在lang文件中添加翻译为"道具"
-            return "coblemon_ts.capture";
+            // battleLang 会拼接成 "cobblemon.cobblemon_ts.capture"，我们在lang文件中添加翻译为"道具"
+            return "cobblemon_ts.capture";
         }
         return original;
     }

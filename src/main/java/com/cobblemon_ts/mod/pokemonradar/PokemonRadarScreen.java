@@ -66,7 +66,7 @@ public class PokemonRadarScreen extends Screen {
     private int editorLightBg, editorLightBorder, editorLightLabel;
 
     public PokemonRadarScreen() {
-        super(Component.translatable("coblemon_ts.radar.title"));
+        super(Component.translatable("cobblemon_ts.radar.title"));
         this.state = PokemonRadarState.getInstance();
     }
 
@@ -213,7 +213,7 @@ public class PokemonRadarScreen extends Screen {
         // 关闭按钮
         int closeBtnW = 60;
         int closeBtnH = 20;
-        this.closeButton = Button.builder(Component.translatable("coblemon_ts.radar.close"), (btn) -> {
+        this.closeButton = Button.builder(Component.translatable("cobblemon_ts.radar.close"), (btn) -> {
             saveState();
             this.onClose();
         }).pos(panelX + panelW / 2 - closeBtnW / 2, panelY + panelH - 30).size(closeBtnW, closeBtnH).build();
@@ -261,12 +261,12 @@ public class PokemonRadarScreen extends Screen {
             default -> false;
         };
         String key = switch (mode) {
-            case "legendary" -> on ? "coblemon_ts.radar.legendary_on" : "coblemon_ts.radar.legendary_off";
-            case "shiny" -> on ? "coblemon_ts.radar.shiny_on" : "coblemon_ts.radar.shiny_off";
-            case "pokemon" -> on ? "coblemon_ts.radar.pokemon_on" : "coblemon_ts.radar.pokemon_off";
+            case "legendary" -> on ? "cobblemon_ts.radar.legendary_on" : "cobblemon_ts.radar.legendary_off";
+            case "shiny" -> on ? "cobblemon_ts.radar.shiny_on" : "cobblemon_ts.radar.shiny_off";
+            case "pokemon" -> on ? "cobblemon_ts.radar.pokemon_on" : "cobblemon_ts.radar.pokemon_off";
             case "npc" -> {  // [线性-R06g] 三态: OFF(红) / RTC(蓝) / NPC(紫)
-                if (!state.isNpcMode()) yield "coblemon_ts.radar.npc_off";
-                yield "rtc".equals(state.getNpcSubMode()) ? "coblemon_ts.radar.npc_rtc_on" : "coblemon_ts.radar.npc_on";
+                if (!state.isNpcMode()) yield "cobblemon_ts.radar.npc_off";
+                yield "rtc".equals(state.getNpcSubMode()) ? "cobblemon_ts.radar.npc_rtc_on" : "cobblemon_ts.radar.npc_on";
             }
             default -> "";
         };
@@ -339,26 +339,26 @@ public class PokemonRadarScreen extends Screen {
         guiGraphics.fill(cr - 1, ct, cr, cb, editorLightBorder);
 
         // 标题
-        String title = Component.translatable("coblemon_ts.radar.title").getString();
+        String title = Component.translatable("cobblemon_ts.radar.title").getString();
         guiGraphics.drawCenteredString(this.font, title, panelX + panelW / 2, panelY - 5, editorLightLabel);
 
         // 标签
         String[] labels = {
-            Component.translatable("coblemon_ts.radar.label.batch_species", new Object[0]).getString(),
-            Component.translatable("coblemon_ts.radar.label.single_species", new Object[0]).getString(),
-            Component.translatable("coblemon_ts.radar.label.gender", new Object[0]).getString(),
-            Component.translatable("coblemon_ts.radar.label.ability", new Object[0]).getString(),
-            Component.translatable("coblemon_ts.radar.label.nature", new Object[0]).getString(),
-            Component.translatable("coblemon_ts.radar.label.level", new Object[0]).getString(),
-            Component.translatable("coblemon_ts.radar.label.iv_atk_def", new Object[0]).getString(),
-            Component.translatable("coblemon_ts.radar.label.iv_spa_spd_spe", new Object[0]).getString()
+            Component.translatable("cobblemon_ts.radar.label.batch_species", new Object[0]).getString(),
+            Component.translatable("cobblemon_ts.radar.label.single_species", new Object[0]).getString(),
+            Component.translatable("cobblemon_ts.radar.label.gender", new Object[0]).getString(),
+            Component.translatable("cobblemon_ts.radar.label.ability", new Object[0]).getString(),
+            Component.translatable("cobblemon_ts.radar.label.nature", new Object[0]).getString(),
+            Component.translatable("cobblemon_ts.radar.label.level", new Object[0]).getString(),
+            Component.translatable("cobblemon_ts.radar.label.iv_atk_def", new Object[0]).getString(),
+            Component.translatable("cobblemon_ts.radar.label.iv_spa_spd_spe", new Object[0]).getString()
         };
         for (int i = 0; i < labels.length; i++) {
             guiGraphics.drawString(this.font, labels[i] + ":", panelX + 12, inputStartY + rowStep * i + 4, editorLightLabel, false);
         }
         // [线性-R06e] NPC名字标签（第8行,不在labels数组中）
         guiGraphics.drawString(this.font,
-                Component.translatable("coblemon_ts.radar.label.npc_name").getString() + ":",
+                Component.translatable("cobblemon_ts.radar.label.npc_name").getString() + ":",
                 panelX + 12, npcNameY + 4, editorLightLabel, false);
 
         // [线性-R04j] 个体值子标签：HP-ATK-DEF 和 SPE-SpA-SpD
@@ -372,7 +372,7 @@ public class PokemonRadarScreen extends Screen {
         }
 
         // 提示文字
-        String hintText = Component.translatable("coblemon_ts.radar.hint", new Object[0]).getString();
+        String hintText = Component.translatable("cobblemon_ts.radar.hint", new Object[0]).getString();
         guiGraphics.drawCenteredString(this.font, hintText, panelX + panelW / 2, panelY + panelH + 5, 0xFFAAAAAA);
 
         // [线性-R04i] 构建+渲染下拉栏

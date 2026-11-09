@@ -37,8 +37,8 @@ public class PokebagTagListScreen extends Screen {
 
     public PokebagTagListScreen(boolean isWhitelist, Screen parent) {
         super(Component.translatable(isWhitelist
-                ? "coblemon_ts.pokebag_config.whitelist_title"
-                : "coblemon_ts.pokebag_config.blacklist_title"));
+                ? "cobblemon_ts.pokebag_config.whitelist_title"
+                : "cobblemon_ts.pokebag_config.blacklist_title"));
         this.isWhitelist = isWhitelist;
         this.parent = parent;
         this.entries = new ArrayList<>(getList());
@@ -105,7 +105,7 @@ public class PokebagTagListScreen extends Screen {
 
             // 删除按钮
             this.addRenderableWidget(Button.builder(
-                    Component.translatable("coblemon_ts.pokebag_config.delete"),
+                    Component.translatable("cobblemon_ts.pokebag_config.delete"),
                     btn -> {
                         entries.remove(idx);
                         if (page > 0 && page * rowsPerPage >= entries.size()) page--;
@@ -121,7 +121,7 @@ public class PokebagTagListScreen extends Screen {
 
         // 上一页
         Button prevBtn = Button.builder(
-                Component.translatable("coblemon_ts.lucky.list.prev_page"),
+                Component.translatable("cobblemon_ts.lucky.list.prev_page"),
                 btn -> { page--; rebuildWidgets(); })
                 .size(btnW, BTN_H).build();
         prevBtn.active = page > 0;
@@ -129,7 +129,7 @@ public class PokebagTagListScreen extends Screen {
 
         // 下一页
         Button nextBtn = Button.builder(
-                Component.translatable("coblemon_ts.lucky.list.next_page"),
+                Component.translatable("cobblemon_ts.lucky.list.next_page"),
                 btn -> { page++; rebuildWidgets(); })
                 .size(btnW, BTN_H).build();
         nextBtn.active = (page + 1) * rowsPerPage < entries.size();
@@ -137,7 +137,7 @@ public class PokebagTagListScreen extends Screen {
 
         // 添加
         bottomBtns.add(Button.builder(
-                Component.translatable("coblemon_ts.pokebag_config.add_entry"),
+                Component.translatable("cobblemon_ts.pokebag_config.add_entry"),
                 btn -> {
                     int newIdx = entries.size();
                     entries.add("");
@@ -150,20 +150,20 @@ public class PokebagTagListScreen extends Screen {
 
         // 物品栏选择
         bottomBtns.add(Button.builder(
-                Component.translatable("coblemon_ts.pokebag_config.pick_from_inv"),
+                Component.translatable("cobblemon_ts.pokebag_config.pick_from_inv"),
                 btn -> Minecraft.getInstance().setScreen(
                         new PokebagInventoryPickScreen(isWhitelist, this)))
                 .size(btnW, BTN_H).build());
 
         // 保存
         bottomBtns.add(Button.builder(
-                Component.translatable("coblemon_ts.pokebag_config.save_list"),
+                Component.translatable("cobblemon_ts.pokebag_config.save_list"),
                 btn -> saveList())
                 .size(btnW, BTN_H).build());
 
         // 返回
         bottomBtns.add(Button.builder(
-                Component.translatable("coblemon_ts.pokebag_config.back_list"),
+                Component.translatable("cobblemon_ts.pokebag_config.back_list"),
                 btn -> Minecraft.getInstance().setScreen(parent))
                 .size(btnW, BTN_H).build());
 
@@ -181,7 +181,7 @@ public class PokebagTagListScreen extends Screen {
 
     private String formatEntry(String entry) {
         if (entry == null || entry.isEmpty())
-            return "§7" + Component.translatable("coblemon_ts.lucky.empty_entry").getString();
+            return "§7" + Component.translatable("cobblemon_ts.lucky.empty_entry").getString();
         if (entry.startsWith("#")) return "§d" + entry;
         return "§f" + entry;
     }
@@ -200,7 +200,7 @@ public class PokebagTagListScreen extends Screen {
 
         if (Minecraft.getInstance().player != null)
             Minecraft.getInstance().player.displayClientMessage(
-                    Component.translatable("coblemon_ts.pokebag_config.saved"), false);
+                    Component.translatable("cobblemon_ts.pokebag_config.saved"), false);
     }
 
     @Override
@@ -211,14 +211,14 @@ public class PokebagTagListScreen extends Screen {
         int centerX = this.width / 2;
         g.drawCenteredString(this.font, this.title, centerX, 8, 0xFFFFFF);
         g.drawCenteredString(this.font,
-                Component.translatable("coblemon_ts.pokebag_config.tag_hint"),
+                Component.translatable("cobblemon_ts.pokebag_config.tag_hint"),
                 centerX, 21, 0xAAAAAA);
 
         // [线性-RESP-05] 页码信息纯文本绘制
         int totalPages = Math.max(1, (entries.size() + rowsPerPage - 1) / rowsPerPage);
         String pageInfo = (page + 1) + " / " + totalPages
                 + "  (" + entries.size() + " "
-                + Component.translatable("coblemon_ts.pokebag_config.entries_count").getString() + ")";
+                + Component.translatable("cobblemon_ts.pokebag_config.entries_count").getString() + ")";
         g.drawCenteredString(this.font, Component.literal("§7" + pageInfo), centerX, pageInfoY, 0xAAAAAA);
     }
 

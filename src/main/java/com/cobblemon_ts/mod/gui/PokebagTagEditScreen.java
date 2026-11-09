@@ -22,8 +22,8 @@ public class PokebagTagEditScreen extends Screen {
 
     public PokebagTagEditScreen(boolean isWhitelist, int entryIndex, String value, PokebagTagListScreen parent) {
         super(Component.translatable(isWhitelist
-                ? "coblemon_ts.pokebag_config.edit_wl_title"
-                : "coblemon_ts.pokebag_config.edit_bl_title"));
+                ? "cobblemon_ts.pokebag_config.edit_wl_title"
+                : "cobblemon_ts.pokebag_config.edit_bl_title"));
         this.isWhitelist = isWhitelist;
         this.entryIndex = entryIndex;
         this.originalValue = value;
@@ -42,7 +42,7 @@ public class PokebagTagEditScreen extends Screen {
 
         // 提示文字
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.pokebag_config.edit_hint"),
+                Component.translatable("cobblemon_ts.pokebag_config.edit_hint"),
                 btn -> {})
                 .pos(fieldX, 30)
                 .size(contentWidth, 14)
@@ -65,7 +65,7 @@ public class PokebagTagEditScreen extends Screen {
 
         // 保存
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.pokebag_config.save_entry"),
+                Component.translatable("cobblemon_ts.pokebag_config.save_entry"),
                 btn -> saveEntry())
                 .pos(btnStart, y)
                 .size(btnW, 20)
@@ -73,7 +73,7 @@ public class PokebagTagEditScreen extends Screen {
 
         // 删除
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.pokebag_config.delete_entry"),
+                Component.translatable("cobblemon_ts.pokebag_config.delete_entry"),
                 btn -> {
                     if (parent != null) {
                         parent.entries.remove(entryIndex);
@@ -86,7 +86,7 @@ public class PokebagTagEditScreen extends Screen {
 
         // 返回 → [线性-S02] 取消时清理空白条目
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.pokebag_config.cancel_entry"),
+                Component.translatable("cobblemon_ts.pokebag_config.cancel_entry"),
                 btn -> {
                     removeIfBlank();
                     Minecraft.getInstance().setScreen(parent);

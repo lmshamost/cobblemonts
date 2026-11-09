@@ -13,6 +13,6 @@ public class GoldCrownItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, java.util.List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, context, tooltip, flag);
-        tooltip.add(Component.translatable("tooltip.coblemon_ts.gold_crown"));
+        tooltip.add(Component.translatable("tooltip.cobblemon_ts.gold_crown"));
     }
 }

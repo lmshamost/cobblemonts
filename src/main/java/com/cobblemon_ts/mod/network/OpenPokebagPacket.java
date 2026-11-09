@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public record OpenPokebagPacket() implements CustomPacketPayload {
     public static final Type<OpenPokebagPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath("coblemon_ts", "open_pokebag"));
+            ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "open_pokebag"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, OpenPokebagPacket> STREAM_CODEC =
             StreamCodec.unit(new OpenPokebagPacket());

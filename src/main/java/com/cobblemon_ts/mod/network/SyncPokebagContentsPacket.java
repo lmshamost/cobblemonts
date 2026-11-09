@@ -40,7 +40,7 @@ public record SyncPokebagContentsPacket(List<ItemEntry> items) implements Custom
     }
 
     public static final Type<SyncPokebagContentsPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath("coblemon_ts", "sync_pokebag_contents"));
+            ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "sync_pokebag_contents"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, SyncPokebagContentsPacket> STREAM_CODEC = new StreamCodec<>() {
         @Override

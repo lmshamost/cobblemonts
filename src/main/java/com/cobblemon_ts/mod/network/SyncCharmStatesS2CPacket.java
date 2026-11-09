@@ -14,7 +14,7 @@ import java.util.Map;
 
 public record SyncCharmStatesS2CPacket(Map<String, Boolean> states) implements CustomPacketPayload {
     public static final Type<SyncCharmStatesS2CPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath("coblemon_ts", "sync_charm_states"));
+            ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "sync_charm_states"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, SyncCharmStatesS2CPacket> STREAM_CODEC =
             StreamCodec.composite(

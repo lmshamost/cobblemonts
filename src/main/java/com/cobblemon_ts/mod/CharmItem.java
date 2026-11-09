@@ -30,19 +30,19 @@ public class CharmItem extends Item {
                 stack.shrink(1);
                 
                 if (CharmConfig.SHOW_CHARM_MESSAGES.get()) {
-                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.coblemon_ts.charm_obtained", charmType.getDisplayComponent()));
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.cobblemon_ts.charm_obtained", charmType.getDisplayComponent()));
                 }
                 CobblemonTS.LOGGER.info("护符 " + charmType.getDisplayName() + " 已获得并激活");
                 
                 return InteractionResultHolder.consume(stack);
             } else if (currentState == CharmState.AVAILABLE) {
                 if (CharmConfig.SHOW_CHARM_MESSAGES.get()) {
-                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.coblemon_ts.charm_already_owned", charmType.getDisplayComponent()));
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.cobblemon_ts.charm_already_owned", charmType.getDisplayComponent()));
                 }
                 CobblemonTS.LOGGER.info("护符 " + charmType.getDisplayName() + " 已拥有，点击GUI中的护符槽激活");
             } else {
                 if (CharmConfig.SHOW_CHARM_MESSAGES.get()) {
-                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.coblemon_ts.charm_already_active", charmType.getDisplayComponent()));
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.cobblemon_ts.charm_already_active", charmType.getDisplayComponent()));
                 }
                 CobblemonTS.LOGGER.info("护符 " + charmType.getDisplayName() + " 已激活");
             }
@@ -58,7 +58,7 @@ public class CharmItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, java.util.List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, context, tooltip, flag);
-        String key = "tooltip.coblemon_ts." + charmType.getItemId();
+        String key = "tooltip.cobblemon_ts." + charmType.getItemId();
         tooltip.add(Component.translatable(key));
     }
 }

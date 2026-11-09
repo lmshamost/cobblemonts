@@ -14,7 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import java.lang.reflect.Method;
 
 public class PartyHeldItemContainer extends AbstractContainerMenu {
-    public static final Component TITLE = Component.translatable("gui.coblemon_ts.held_items");
+    public static final Component TITLE = Component.translatable("gui.cobblemon_ts.held_items");
 
     private final Player player;
     private final SimpleContainer heldItems;

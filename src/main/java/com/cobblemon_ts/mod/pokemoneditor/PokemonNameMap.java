@@ -1183,12 +1183,12 @@ public class PokemonNameMap {
         double[] eff = NATURE_EFFECTS.get(en.toLowerCase().trim());
         if (eff == null) return "";
         String[] statKeys = {
-            "coblemon_ts.editor.stat.hp",
-            "coblemon_ts.editor.stat.attack",
-            "coblemon_ts.editor.stat.defense",
-            "coblemon_ts.editor.stat.sp_atk",
-            "coblemon_ts.editor.stat.sp_def",
-            "coblemon_ts.editor.stat.speed"
+            "cobblemon_ts.editor.stat.hp",
+            "cobblemon_ts.editor.stat.attack",
+            "cobblemon_ts.editor.stat.defense",
+            "cobblemon_ts.editor.stat.sp_atk",
+            "cobblemon_ts.editor.stat.sp_def",
+            "cobblemon_ts.editor.stat.speed"
         };
         StringBuilder sb = new StringBuilder();
         boolean hasAny = false;
@@ -1201,7 +1201,7 @@ public class PokemonNameMap {
                 hasAny = true;
             }
         }
-        if (!hasAny) return " " + Component.translatable("coblemon_ts.editor.nature_no_change").getString();
+        if (!hasAny) return " " + Component.translatable("cobblemon_ts.editor.nature_no_change").getString();
         return sb.toString();
     }
 
@@ -2476,7 +2476,7 @@ public class PokemonNameMap {
 
     // [线性-Lform] 形态名→本地化（优先Cobblemon的cobblemon.aspect.<id>翻译，回落本模组翻译）
     public static String formToChinese(String speciesName, String formName) {
-        String normalForm = Component.translatable("coblemon_ts.editor.form_normal").getString();
+        String normalForm = Component.translatable("cobblemon_ts.editor.form_normal").getString();
         if (formName == null || formName.isEmpty()) return normalForm;
         String lower = formName.toLowerCase().trim();
         // 提取纯形态部分：去掉物种名前缀（如bulbasaurnormal→normal，raticate-alola→alola）

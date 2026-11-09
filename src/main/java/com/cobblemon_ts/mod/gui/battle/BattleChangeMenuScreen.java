@@ -18,8 +18,8 @@ import java.lang.reflect.Method;
 @OnlyIn(Dist.CLIENT)
 public class BattleChangeMenuScreen extends Screen {
 
-    private static final ResourceLocation MENU1 = ResourceLocation.parse("coblemon_ts:textures/gui/battle_change_menu1.png");
-    private static final ResourceLocation MENU2 = ResourceLocation.parse("coblemon_ts:textures/gui/battle_change_menu2.png");
+    private static final ResourceLocation MENU1 = ResourceLocation.parse("cobblemon_ts:textures/gui/battle_change_menu1.png");
+    private static final ResourceLocation MENU2 = ResourceLocation.parse("cobblemon_ts:textures/gui/battle_change_menu2.png");
 
     // 精灵图纹理尺寸 92x80（3个按钮各92x25，底部5px留白）
     private static final int MENU_W = 92;

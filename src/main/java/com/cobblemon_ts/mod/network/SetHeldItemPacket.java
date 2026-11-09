@@ -18,7 +18,7 @@ import java.util.UUID;
 public record SetHeldItemPacket(UUID pokemonUuid, int slotIndex, net.minecraft.world.item.ItemStack newHeld) implements CustomPacketPayload {
 
     public static final Type<SetHeldItemPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath("coblemon_ts", "set_held_item"));
+            ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "set_held_item"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, SetHeldItemPacket> STREAM_CODEC = new StreamCodec<>() {
         @Override

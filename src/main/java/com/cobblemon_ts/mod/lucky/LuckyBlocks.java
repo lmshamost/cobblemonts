@@ -1,6 +1,7 @@
 package com.cobblemon_ts.mod.lucky;
 
 import com.cobblemon_ts.mod.CobblemonTS;
+import com.cobblemon_ts.mod.block.ChunkBarrierBlock;
 import com.cobblemon_ts.mod.lucky.block.*;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -47,9 +48,16 @@ public class LuckyBlocks {
 
     public static final DeferredBlock<Block> ITEM_LUCKY_BLOCK = registerBlock("item_lucky_block",
             () -> new ItemLuckyBlock(BlockBehaviour.Properties.of()
-                    .strength(0.5F, 6.0F) // 泥土硬度，手挖也快
+                    .strength(0.5F, 6.0F)
                     .sound(SoundType.STONE)
                     .requiresCorrectToolForDrops()));
+
+    public static final DeferredBlock<Block> CHUNK_BARRIER = registerBlock("chunk_barrier",
+            () -> new ChunkBarrierBlock(BlockBehaviour.Properties.of()
+                    .strength(4.0F, 12.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()
+                    .noOcclusion()));
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> blockSupplier) {
         DeferredBlock<T> block = BLOCKS.register(name, blockSupplier);

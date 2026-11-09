@@ -505,8 +505,8 @@ public class PokemonRadarState {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     private static Path getSavePath() {
-        // [线性-R08b] 保存路径：.minecraft/config/coblemon_ts/radar_settings.json
-        return Paths.get("config", "coblemon_ts", "radar_settings.json");
+        // [线性-R08b] 保存路径：.minecraft/config/cobblemon_ts/radar_settings.json
+        return Paths.get("config", "cobblemon_ts", "radar_settings.json");
     }
 
     /** [线性-R08a] 从文件加载设置 */
