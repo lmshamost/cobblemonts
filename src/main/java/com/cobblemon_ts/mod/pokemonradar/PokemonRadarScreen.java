@@ -151,13 +151,13 @@ public class PokemonRadarScreen extends Screen {
         this.rangeY = inputStartY + rowStep * r9;     // [线性-R07] 行9：雷达范围
 
         // 精灵名批量（无下拉栏）
-        this.batchSpeciesField = makeField(inputStartX, inputStartY + rowStep * r0, 200);
+        this.batchSpeciesField = makeField(inputStartX, inputStartY + rowStep * r0, inputW);
         this.batchSpeciesField.setValue(state.getBatchSpeciesInput());
         this.clearBatchSpeciesBtn = makeClearBtn(inputStartX + inputW + 4, inputStartY + rowStep * r0,
                 () -> this.batchSpeciesField.setValue(""));
 
         // 精灵名单个（有下拉栏）
-        this.singleSpeciesField = makeField(inputStartX, speciesY, 200);
+        this.singleSpeciesField = makeField(inputStartX, speciesY, inputW);
         this.singleSpeciesField.setValue(state.getSingleSpeciesInput());
         this.clearSingleSpeciesBtn = makeClearBtn(inputStartX + inputW + 4, speciesY,
                 () -> {
@@ -166,19 +166,19 @@ public class PokemonRadarScreen extends Screen {
                 });
 
         // 性别
-        this.genderField = makeField(inputStartX, genderY, 200);
+        this.genderField = makeField(inputStartX, genderY, inputW);
         this.genderField.setValue(state.getGenderInput());
         this.clearGenderBtn = makeClearBtn(inputStartX + inputW + 4, genderY,
                 () -> this.genderField.setValue(""));
 
         // 特性（有下拉栏）
-        this.abilityField = makeField(inputStartX, abilityY, 200);
+        this.abilityField = makeField(inputStartX, abilityY, inputW);
         this.abilityField.setValue(state.getAbilityInput());
         this.clearAbilityBtn = makeClearBtn(inputStartX + inputW + 4, abilityY,
                 () -> this.abilityField.setValue(""));
 
         // 性格（有下拉栏）
-        this.natureField = makeField(inputStartX, natureY, 200);
+        this.natureField = makeField(inputStartX, natureY, inputW);
         this.natureField.setValue(state.getNatureInput());
         this.clearNatureBtn = makeClearBtn(inputStartX + inputW + 4, natureY,
                 () -> this.natureField.setValue(""));
@@ -186,7 +186,7 @@ public class PokemonRadarScreen extends Screen {
         // [线性-R04f2] 等级
         this.levelField = makeField(inputStartX, levelY, 90);
         this.levelField.setValue(state.getLevelInput());
-        this.clearLevelBtn = makeClearBtn(inputStartX + 200 + 4, levelY,
+        this.clearLevelBtn = makeClearBtn(inputStartX + 90 + 4, levelY,
                 () -> this.levelField.setValue(""));
 
         // [线性-R04f3] 个体值 行1: HP/Atk/Def
@@ -210,7 +210,7 @@ public class PokemonRadarScreen extends Screen {
                         spaField.setValue(""); spdField.setValue(""); speField.setValue(""); });
 
         // [线性-R06e] NPC名字输入（有下拉栏自动补全）
-        this.npcNameField = makeField(inputStartX, npcNameY, 200);
+        this.npcNameField = makeField(inputStartX, npcNameY, inputW);
         this.npcNameField.setValue(state.getNpcNameInput());
         this.clearNpcNameBtn = makeClearBtn(inputStartX + inputW + 4, npcNameY,
                 () -> { this.npcNameField.setValue(""); state.setNpcNameInput(""); });
@@ -281,7 +281,7 @@ public class PokemonRadarScreen extends Screen {
 
     private Button makeClearBtn(int x, int y, Runnable action) {
         return Button.builder(Component.literal("\u00d7"), (btn) -> action.run())
-                .pos(x, y - 4).size(16, 16).build();
+                .pos(x, y).size(16, 16).build();
     }
 
     // ==== 模式按钮文字 ====

@@ -2084,6 +2084,7 @@ public class PokemonNameMap {
     public static String abilityToDisplay(String en) {
         if (en == null || en.isEmpty()) return en;
         String id = en.toLowerCase().trim();
+        if ("noability".equals(id)) return isChineseLocale() ? "无" : "None";
         String fromLang = tryLang("cobblemon.ability." + id, null);
         if (fromLang != null) return fromLang;
         return isChineseLocale() ? ABILITY_EN_TO_ZH.getOrDefault(id, en) : en;

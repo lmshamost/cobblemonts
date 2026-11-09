@@ -395,12 +395,30 @@ public class PokemonRadarState {
     private static String extractStringId(Object obj) {
         if (obj == null) return "";
         try {
-            Object nameRL = obj.getClass().getMethod("getName").invoke(obj);
-            if (nameRL instanceof net.minecraft.resources.ResourceLocation rl) {
+            Object nameObj = obj.getClass().getMethod("getName").invoke(obj);
+            if (nameObj instanceof net.minecraft.resources.ResourceLocation rl) {
                 return rl.getPath();
+            }
+            if (nameObj instanceof String s && !s.isEmpty()) {
+                return s;
+            }
+        } catch (Throwable ignored) {}
+        try {
+            Object nameObj = obj.getClass().getMethod("name").invoke(obj);
+            if (nameObj instanceof String s && !s.isEmpty()) {
+                return s;
             }
         } catch (Throwable ignored) {}
         String s = obj.toString();
+        int at = s.lastIndexOf('@');
+        if (at > 0) {
+            String afterAt = s.substring(at + 1);
+            if (afterAt.matches("[0-9a-fA-F]+")) {
+                int dot = s.lastIndexOf('.', at);
+                if (dot > 0) return s.substring(dot + 1, at);
+                return s.substring(0, at);
+            }
+        }
         int colon = s.lastIndexOf(':');
         if (colon > 0 && colon < s.length() - 1) {
             return s.substring(colon + 1);
