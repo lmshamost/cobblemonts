@@ -49,7 +49,10 @@ public abstract class BaseLuckyBlock extends Block {
                 return state;
             }
 
-            if (!player.isCreative()) {
+            // [线性-BASE-LUCK] 创造模式只有拿镐子才触发；其他模式正常触发
+            boolean isCreative = player.isCreative();
+            boolean hasPickaxe = tool.getItem() instanceof net.minecraft.world.item.PickaxeItem;
+            if (!isCreative || hasPickaxe) {
                 triggerEffect((ServerLevel) level, pos, player);
             }
         }

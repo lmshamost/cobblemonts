@@ -4,7 +4,6 @@ import com.cobblemon_ts.mod.CharmConfig;
 import com.cobblemon_ts.mod.CharmPlayerData;
 import com.cobblemon_ts.mod.CharmType;
 import com.cobblemon_ts.mod.CobblemonTS;
-import com.cobblemon_ts.mod.DebugConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -46,12 +45,12 @@ public class HudDrawingMixin {
 
             guiGraphics.drawString(mc.font, Component.literal(cachedText), textX, textY, 0xFF55FF55);
 
-            if (DebugConfig.DEBUG_CHARM.get()) {
+            if (false) {
                 CobblemonTS.LOGGER.info("[HudDrawing] draw charm '{}' at ({}, {}), panel=({},{})({}x{})",
                         cachedText, textX, textY, x, y, w, h);
             }
         } catch (Exception e) {
-            if (DebugConfig.DEBUG_CHARM.get()) {
+            if (false) {
                 CobblemonTS.LOGGER.warn("[HudDrawing] error: {}", e.toString());
             }
         }

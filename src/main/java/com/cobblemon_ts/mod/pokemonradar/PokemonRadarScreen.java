@@ -46,6 +46,8 @@ public class PokemonRadarScreen extends Screen {
     private Button clearIvBtn;
     // [线性-R06e] NPC名字输入
     private EditBox npcNameField;        private Button clearNpcNameBtn;
+    // [线性-R07] 雷达范围输入
+    private EditBox rangeField;          private Button rangeMinusBtn; private Button rangePlusBtn;
 
     // [线性-R04c] 下拉栏状态（与编辑器同模式）
     private List<String> autocompleteItems = new ArrayList<>();
@@ -63,6 +65,7 @@ public class PokemonRadarScreen extends Screen {
     private int inputStartX, inputStartY, inputW, rowStep;
     private int speciesY, genderY, abilityY, natureY, levelY, ivRow1Y, ivRow2Y;
     private int npcNameY;                  // [线性-R06e]
+    private int rangeY;                    // [线性-R07]
     private int editorLightBg, editorLightBorder, editorLightLabel;
 
     public PokemonRadarScreen() {
@@ -77,14 +80,14 @@ public class PokemonRadarScreen extends Screen {
         int screenH = this.height;
 
         float layoutW = 440f;
-        float layoutH = 450f;  // [线性-R06-layout] 9行=240+title+close (原420,加NPC行→450)
+        float layoutH = 480f;  // [线性-R07] 加范围行→480
         this.uiScaleFactor = Math.min(screenW / layoutW, screenH / layoutH);
         if (this.uiScaleFactor > 1.0f) this.uiScaleFactor = 1.0f;
         if (this.uiScaleFactor < 0.4f) this.uiScaleFactor = 0.4f;
 
         this.panelX = screenW / 2 - 210;
         this.panelW = 420;
-        this.panelH = 380;  // [线性-R06-layout] 9行×30 + title/close区域 (原350)
+        this.panelH = 410;  // [线性-R07] 加范围行+提示文字内移→410
         this.panelY = (screenH - panelH) / 2;  // [线性-R04-layout] 面板垂直居中
 
         boolean light = CobblemonTSConfig.LIGHT_EDITOR_THEME.get();
@@ -144,6 +147,8 @@ public class PokemonRadarScreen extends Screen {
         this.ivRow2Y = inputStartY + rowStep * r7;   // 行7：SpA-SpD-Spe
         int r8 = 8;
         this.npcNameY = inputStartY + rowStep * r8;   // [线性-R06e] 行8：NPC名字
+        int r9 = 9;
+        this.rangeY = inputStartY + rowStep * r9;     // [线性-R07] 行9：雷达范围
 
         // 精灵名批量（无下拉栏）
         this.batchSpeciesField = makeField(inputStartX, inputStartY + rowStep * r0, 200);
@@ -210,6 +215,27 @@ public class PokemonRadarScreen extends Screen {
         this.clearNpcNameBtn = makeClearBtn(inputStartX + inputW + 4, npcNameY,
                 () -> { this.npcNameField.setValue(""); state.setNpcNameInput(""); });
 
+        // [线性-R07] 雷达范围
+        this.rangeField = makeField(inputStartX, rangeY, 60);
+        this.rangeField.setFilter(s -> {
+            try {
+                if (s.isEmpty()) return true;
+                int v = Integer.parseInt(s);
+                return v >= 1 && v <= 64;
+            } catch (NumberFormatException e) { return false; }
+        });
+        this.rangeField.setValue(String.valueOf(state.getRadarRange()));
+        this.rangeMinusBtn = Button.builder(Component.literal("-"), (btn) -> {
+            int cur = parseInt(this.rangeField.getValue(), 16);
+            state.setRadarRange(cur - 1);
+            this.rangeField.setValue(String.valueOf(state.getRadarRange()));
+        }).pos(inputStartX + 64, rangeY - 4).size(18, 18).build();
+        this.rangePlusBtn = Button.builder(Component.literal("+"), (btn) -> {
+            int cur = parseInt(this.rangeField.getValue(), 16);
+            state.setRadarRange(cur + 1);
+            this.rangeField.setValue(String.valueOf(state.getRadarRange()));
+        }).pos(inputStartX + 84, rangeY - 4).size(18, 18).build();
+
         // 关闭按钮
         int closeBtnW = 60;
         int closeBtnH = 20;
@@ -236,6 +262,14 @@ public class PokemonRadarScreen extends Screen {
         this.addRenderableWidget(this.clearIvBtn);
         this.addRenderableWidget(this.npcNameField);       // [线性-R06e]
         this.addRenderableWidget(this.clearNpcNameBtn);    // [线性-R06e]
+        this.addRenderableWidget(this.rangeField);         // [线性-R07]
+        this.addRenderableWidget(this.rangeMinusBtn);
+        this.addRenderableWidget(this.rangePlusBtn);
+    }
+
+    // [线性-R07] 辅助：安全解析int
+    private static int parseInt(String s, int def) {
+        try { return Integer.parseInt(s.trim()); } catch (Throwable t) { return def; }
     }
 
     private EditBox makeField(int x, int y, int w) {
@@ -306,6 +340,7 @@ public class PokemonRadarScreen extends Screen {
         state.setSpdIvInput(this.spdField.getValue());
         state.setSpeIvInput(this.speField.getValue());
         state.setNpcNameInput(this.npcNameField != null ? this.npcNameField.getValue() : "");  // [线性-R06e]
+        state.setRadarRange(parseInt(this.rangeField != null ? this.rangeField.getValue() : "16", 16));  // [线性-R07]
     }
 
     // ==== 渲染 ====
@@ -361,6 +396,14 @@ public class PokemonRadarScreen extends Screen {
                 Component.translatable("cobblemon_ts.radar.label.npc_name").getString() + ":",
                 panelX + 12, npcNameY + 4, editorLightLabel, false);
 
+        // [线性-R07] 雷达范围标签
+        guiGraphics.drawString(this.font,
+                Component.translatable("cobblemon_ts.radar.label.range").getString() + ":",
+                panelX + 12, rangeY + 4, editorLightLabel, false);
+        guiGraphics.drawString(this.font,
+                Component.literal("(1-64)"),
+                inputStartX + 110, rangeY + 4, 0xFF888888, false);
+
         // [线性-R04j] 个体值子标签：HP-ATK-DEF 和 SPE-SpA-SpD
         int ivBoxW = 70; int ivGap = 6;
         String[] ivLabels1 = {"HP", "ATK", "DEF"};
@@ -371,9 +414,9 @@ public class PokemonRadarScreen extends Screen {
             guiGraphics.drawString(this.font, ivLabels2[j], bx, ivRow2Y - 8, editorLightLabel, false);
         }
 
-        // 提示文字
+        // [线性-R07hint] 提示文字移到面板内关闭按钮上方
         String hintText = Component.translatable("cobblemon_ts.radar.hint", new Object[0]).getString();
-        guiGraphics.drawCenteredString(this.font, hintText, panelX + panelW / 2, panelY + panelH + 5, 0xFFAAAAAA);
+        guiGraphics.drawCenteredString(this.font, hintText, panelX + panelW / 2, panelY + panelH - 46, 0xFFAAAAAA);
 
         // [线性-R04i] 构建+渲染下拉栏
         buildAutocomplete(guiGraphics, mouseX, mouseY);

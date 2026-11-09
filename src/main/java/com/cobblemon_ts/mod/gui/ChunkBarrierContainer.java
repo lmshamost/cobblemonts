@@ -10,11 +10,17 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
+import java.util.UUID;
+
 public class ChunkBarrierContainer extends AbstractContainerMenu {
 
     private final ChunkBarrierConfig config;
     private final BlockPos blockPos;
     private final Level level;
+    // [线性-R10] 客户端拿到 ownerId 用于只读模式判断
+    private UUID ownerId = null;
+    // [线性-hover] owner 名字（服务器同步，用于 tooltip 显示）
+    private String ownerName = "";
 
     public ChunkBarrierContainer(int id, ChunkBarrierConfig config, BlockPos pos) {
         super(ModContainers.CHUNK_BARRIER.get(), id);
@@ -40,6 +46,24 @@ public class ChunkBarrierContainer extends AbstractContainerMenu {
                 int cz = (int) key;
                 config.chunkRules.put(key, flags);
             }
+            // [线性-R10] 客户端解 owner UUID + owner名字 + lucky_bans + players
+            UUID uid = buf.readUUID();
+            if (uid.getMostSignificantBits() != 0 || uid.getLeastSignificantBits() != 0) {
+                this.ownerId = uid;
+            }
+            this.ownerName = buf.readUtf();
+            config.banLuckyBlock = buf.readBoolean();
+            config.banShinyBlock = buf.readBoolean();
+            config.banLegendaryBlock = buf.readBoolean();
+            config.banUltraBlock = buf.readBoolean();
+            int ps = buf.readVarInt();
+            for (int i = 0; i < ps; i++) {
+                config.playerWhitelist.put(buf.readUtf(), buf.readBoolean());
+            }
+            int lps = buf.readVarInt();
+            for (int i = 0; i < lps; i++) {
+                config.luckyPlayerWhitelist.put(buf.readUtf(), buf.readBoolean());
+            }
         }
     }
 
@@ -50,6 +74,11 @@ public class ChunkBarrierContainer extends AbstractContainerMenu {
     public BlockPos getBlockPos() {
         return blockPos;
     }
+
+    // [线性-R10] Screen 用来判断只读模式
+    public UUID getOwnerId() { return ownerId; }
+    // [线性-hover] Screen tooltip 显示 owner 名字
+    public String getOwnerName() { return ownerName; }
 
     public void save() {
         if (level != null && !level.isClientSide && level.getBlockEntity(blockPos) instanceof ChunkBarrierBlockEntity be) {

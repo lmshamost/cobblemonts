@@ -24,6 +24,10 @@ public class LegendaryPokemonBlock extends BaseLuckyBlock {
 
     @Override
     protected void triggerEffect(ServerLevel level, BlockPos pos, Player player) {
+        // [线性-R10] 区块禁止器：传说幸运方块禁止
+        long ck = CobblemonTS.chunkKeyOf(pos.getX(), pos.getZ());
+        if (CobblemonTS.isLuckyBlockBlocked(level, ck, CobblemonTS.LuckyType.LEGENDARY, player != null ? player.getName().getString().toLowerCase() : null)) return;
+
         ResourceLocation blockId = BuiltInRegistries.BLOCK.getKey(this);
         LuckyWeightManager.LuckyWeightConfig config = LuckyWeightManager.getConfig(blockId);
 

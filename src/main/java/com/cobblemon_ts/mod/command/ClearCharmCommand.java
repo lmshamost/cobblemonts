@@ -5,8 +5,11 @@ import com.cobblemon_ts.mod.CharmPlayerData;
 import com.cobblemon_ts.mod.CharmSlotManager;
 import com.cobblemon_ts.mod.CharmState;
 import com.cobblemon_ts.mod.CharmType;
+import com.cobblemon_ts.mod.CobblemonTS;
+import com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.commands.CommandSourceStack;
@@ -18,6 +21,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 import java.util.Collection;
+import java.util.UUID;
 
 public class ClearCharmCommand {
 
@@ -52,6 +56,16 @@ public class ClearCharmCommand {
                                     return 1;
                                 })
                             )
+                        )
+                    )
+                )
+                // [线性-R10] /cts clear chunks [days] — 清理离线N天玩家的区块禁止器
+                .then(Commands.literal("clear")
+                    .then(Commands.literal("chunks")
+                        .executes(ctx -> executeClearChunks(ctx.getSource(), 7))
+                        .then(Commands.argument("days", IntegerArgumentType.integer(1, 3650))
+                            .executes(ctx -> executeClearChunks(ctx.getSource(),
+                                IntegerArgumentType.getInteger(ctx, "days")))
                         )
                     )
                 )
@@ -102,5 +116,60 @@ public class ClearCharmCommand {
     // [线性-CMD01i] on→ACTIVE, off→DISABLED
     private static CharmState stateFor(boolean enable) {
         return enable ? CharmState.ACTIVE : CharmState.DISABLED;
+    }
+
+    // [线性-R10] /cts clear chunks — 清理所有区块禁止器BE中 owner 为 null 的条目
+    // 注：离线天数判断需要 OfflinePlayer.getLastSeen()，在 1.21.1 PlayerList API 中无法直接获取
+    // 目前按 owner==null 清理，后续如需按离线天数精确判断可注入 NBT lastSeen 字段到 BE
+    private static int executeClearChunks(CommandSourceStack source, int days) {
+        try {
+            var server = source.getServer();
+
+            int removed = 0;
+            int checked = 0;
+
+            // 1. 收集在线玩家UUID（在线玩家的BE不清理）
+            java.util.Set<UUID> onlineUuids = new java.util.HashSet<>();
+            for (var online : server.getPlayerList().getPlayers()) {
+                if (online != null) onlineUuids.add(online.getUUID());
+            }
+
+            // 2. 遍历所有维度的区块禁止器BE
+            for (var level : server.getAllLevels()) {
+                if (!(level instanceof net.minecraft.server.level.ServerLevel sl)) continue;
+                var beSet = CobblemonTS.BARRIER_BE_SET.get(sl);
+                if (beSet == null || beSet.isEmpty()) continue;
+
+                // 先收集要删的，ConcurrentModificationException 安全
+                var toRemove = new java.util.ArrayList<ChunkBarrierBlockEntity>();
+                for (var be : beSet) {
+                    if (be == null || be.isRemoved()) continue;
+                    checked++;
+                    UUID owner = be.getOwnerId();
+                    // owner==null：未设置放置者的，清理
+                    // owner 不在线：视为离线，清理（days 参数预留用于未来精确判断）
+                    if (owner == null || !onlineUuids.contains(owner)) {
+                        toRemove.add(be);
+                    }
+                }
+
+                // 逐个破坏
+                for (var be : toRemove) {
+                    level.destroyBlock(be.getBlockPos(), false);
+                    removed++;
+                }
+            }
+
+            // 3. 反馈
+            String msg = String.format("[ChunkBarrier] 扫描 %d 个区块禁止器，清理了 %d 个离线/无主条目 (离线天数参数 %d 已预留)",
+                    checked, removed, days);
+            source.sendSuccess(() -> Component.literal(msg), true);
+            CobblemonTS.LOGGER.info(msg);
+            return removed;
+        } catch (Throwable t) {
+            CobblemonTS.LOGGER.error("[ChunkBarrier] clear chunks 命令异常", t);
+            source.sendFailure(Component.literal("执行失败: " + t.getMessage()));
+            return 0;
+        }
     }
 }

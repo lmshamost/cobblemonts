@@ -5,7 +5,6 @@ import com.cobblemon_ts.mod.CharmConfig;
 import com.cobblemon_ts.mod.CharmPlayerData;
 import com.cobblemon_ts.mod.CharmType;
 import com.cobblemon_ts.mod.CobblemonTS;
-import com.cobblemon_ts.mod.DebugConfig;
 import net.minecraft.server.level.ServerPlayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -41,7 +40,7 @@ public class ShinyChanceCalculationEventMixin {
                 // 允许达到100%闪光（rate趋近0时1/rate→∞，nextFloat必定<∞）
                 if (boosted <= 0.0f) boosted = 0.99f;
 
-                if (DebugConfig.DEBUG_CHARM.get()) {
+                if (false) {
                     CobblemonTS.LOGGER.info("[Shiny] 闪耀护符加成: rate={} -> {} (÷{}) player={}",
                             original, boosted, boost, player.getName().getString());
                 }

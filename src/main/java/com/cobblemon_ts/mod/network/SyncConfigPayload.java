@@ -13,7 +13,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import java.util.HashMap;
 import java.util.Map;
 
-public record SyncConfigPayload(BlockPos pos, Map<Long, Byte> rules) implements CustomPacketPayload {
+public record SyncConfigPayload(BlockPos pos, Map<Long, Byte> rules, Map<String, Boolean> playerList, Map<String, Boolean> luckyPlayerList, boolean banLuckyBlock) implements CustomPacketPayload {
 
     public static final Type<SyncConfigPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "chunk_barrier_sync"));
@@ -22,12 +22,23 @@ public record SyncConfigPayload(BlockPos pos, Map<Long, Byte> rules) implements 
         @Override
         public SyncConfigPayload decode(RegistryFriendlyByteBuf buf) {
             BlockPos pos = buf.readBlockPos();
-            int size = buf.readVarInt();
+            int ruleSize = buf.readVarInt();
             Map<Long, Byte> rules = new HashMap<>();
-            for (int i = 0; i < size; i++) {
+            for (int i = 0; i < ruleSize; i++) {
                 rules.put(buf.readLong(), buf.readByte());
             }
-            return new SyncConfigPayload(pos, rules);
+            int playerSize = buf.readVarInt();
+            Map<String, Boolean> playerList = new HashMap<>();
+            for (int i = 0; i < playerSize; i++) {
+                playerList.put(buf.readUtf(), buf.readBoolean());
+            }
+            int luckySize = buf.readVarInt();
+            Map<String, Boolean> luckyPlayerList = new HashMap<>();
+            for (int i = 0; i < luckySize; i++) {
+                luckyPlayerList.put(buf.readUtf(), buf.readBoolean());
+            }
+            boolean banLuckyBlock = buf.readBoolean();
+            return new SyncConfigPayload(pos, rules, playerList, luckyPlayerList, banLuckyBlock);
         }
 
         @Override
@@ -38,6 +49,17 @@ public record SyncConfigPayload(BlockPos pos, Map<Long, Byte> rules) implements 
                 buf.writeLong(e.getKey());
                 buf.writeByte(e.getValue());
             }
+            buf.writeVarInt(p.playerList().size());
+            for (var e : p.playerList().entrySet()) {
+                buf.writeUtf(e.getKey());
+                buf.writeBoolean(e.getValue());
+            }
+            buf.writeVarInt(p.luckyPlayerList().size());
+            for (var e : p.luckyPlayerList().entrySet()) {
+                buf.writeUtf(e.getKey());
+                buf.writeBoolean(e.getValue());
+            }
+            buf.writeBoolean(p.banLuckyBlock());
         }
     };
 
@@ -50,8 +72,17 @@ public record SyncConfigPayload(BlockPos pos, Map<Long, Byte> rules) implements 
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer sp)) return;
             if (sp.level().getBlockEntity(packet.pos()) instanceof ChunkBarrierBlockEntity be) {
+                // [线性-权限] 只有 owner 能改 BE 配置，服务端强校验
+                if (be.getOwnerId() != null
+                        && !sp.getUUID().equals(be.getOwnerId())
+                        && !sp.getServer().getPlayerList().isOp(sp.getGameProfile())) {
+                    return;
+                }
                 ChunkBarrierConfig newConfig = new ChunkBarrierConfig();
                 newConfig.chunkRules.putAll(packet.rules());
+                newConfig.playerWhitelist.putAll(packet.playerList());
+                newConfig.luckyPlayerWhitelist.putAll(packet.luckyPlayerList());
+                newConfig.banLuckyBlock = packet.banLuckyBlock();
                 be.setConfig(newConfig);
             }
         });

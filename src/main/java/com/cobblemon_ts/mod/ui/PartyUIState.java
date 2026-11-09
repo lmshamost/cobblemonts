@@ -10,7 +10,6 @@ import com.cobblemon_ts.mod.CharmState;
 import com.cobblemon_ts.mod.CharmType;
 import com.cobblemon_ts.mod.CobblemonTS;
 import com.cobblemon_ts.mod.CobblemonTSConfig;
-import com.cobblemon_ts.mod.DebugConfig;
 import com.cobblemon_ts.mod.gui.ColorEditorConfig;
 import com.cobblemon_ts.mod.network.PartyToPCPacket;
 import com.cobblemon_ts.mod.network.ReleasePokemonPacket;
@@ -104,11 +103,11 @@ public class PartyUIState {
     }
 
     // ===== debug 开关（从独立的 debug 配置文件读取） =====
-    public static boolean debugParty() { return Boolean.TRUE.equals(DebugConfig.DEBUG_PARTY.get()); }
-    public static boolean debugClick() { return Boolean.TRUE.equals(DebugConfig.DEBUG_CLICK.get()); }
-    public static boolean debugCharm() { return Boolean.TRUE.equals(DebugConfig.DEBUG_CHARM.get()); }
-    public static boolean debugSlot()  { return Boolean.TRUE.equals(DebugConfig.DEBUG_SLOT.get()); }
-    public static boolean debugConfig(){ return Boolean.TRUE.equals(DebugConfig.DEBUG_CONFIG.get()); }
+    public static boolean debugParty() { return Boolean.TRUE.equals(false); }
+    public static boolean debugClick() { return Boolean.TRUE.equals(false); }
+    public static boolean debugCharm() { return Boolean.TRUE.equals(false); }
+    public static boolean debugSlot()  { return Boolean.TRUE.equals(false); }
+    public static boolean debugConfig(){ return Boolean.TRUE.equals(false); }
 
     // 兼容方法名（避免 mixin 调用不存在的 initPartyReflection）
     public static boolean initPartyReflection() { return initBasicReflection(); }

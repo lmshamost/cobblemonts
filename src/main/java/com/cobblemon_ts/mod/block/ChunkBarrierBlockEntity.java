@@ -9,6 +9,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.UUID;
+
 public class ChunkBarrierBlockEntity extends BlockEntity {
 
     public static final int BIT_POKEMON   = 1 << 0;
@@ -16,13 +18,25 @@ public class ChunkBarrierBlockEntity extends BlockEntity {
     public static final int BIT_HOSTILE   = 1 << 2;
     public static final int BIT_PASSIVE   = 1 << 3;
     public static final int BIT_FORCELOAD = 1 << 4;
+    public static final int BIT_LUCKY     = 1 << 5;
+    public static final int BIT_PLAYER    = 1 << 6;
 
     private ChunkBarrierConfig config = new ChunkBarrierConfig();
     private boolean registered = false;
+    // [线性-R09] 放置者玩家UUID（用于区块上限统计）
+    private UUID ownerId = null;
+    // [线性-R10] owner名字（小写），用于isPlayerBanned排除判定
+    private String ownerNameLower = "";
 
     public ChunkBarrierBlockEntity(BlockPos pos, BlockState state) {
         super(CobblemonTS.CHUNK_BARRIER_BE.get(), pos, state);
     }
+
+    // [线性-R09] owner getter/setter
+    public UUID getOwnerId() { return ownerId; }
+    public void setOwnerId(UUID id) { this.ownerId = id; this.setChanged(); }
+    public String getOwnerNameLower() { return ownerNameLower; }
+    public void setOwnerNameLower(String n) { this.ownerNameLower = n; this.setChanged(); }
 
     @Override
     public void setLevel(Level level) {
@@ -79,6 +93,11 @@ public class ChunkBarrierBlockEntity extends BlockEntity {
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         config = ChunkBarrierConfig.load(tag.getCompound("config"));
+        // [线性-R09] 读 owner UUID
+        if (tag.hasUUID("owner")) {
+            ownerId = tag.getUUID("owner");
+        }
+        ownerNameLower = tag.getString("ownerNameLower");
         if (level instanceof ServerLevel sl) {
             if (!registered) {
                 registered = true;
@@ -93,5 +112,12 @@ public class ChunkBarrierBlockEntity extends BlockEntity {
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.put("config", config.save());
+        // [线性-R09] 写 owner UUID
+        if (ownerId != null) {
+            tag.putUUID("owner", ownerId);
+        }
+        if (ownerNameLower != null && !ownerNameLower.isEmpty()) {
+            tag.putString("ownerNameLower", ownerNameLower);
+        }
     }
 }
