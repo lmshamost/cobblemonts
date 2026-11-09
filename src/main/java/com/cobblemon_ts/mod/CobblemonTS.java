@@ -739,11 +739,7 @@ public class CobblemonTS {
         String path = typeKey.getPath();
 
         if ((flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_POKEMON) != 0
-                && ns.equals("cobblemon") && path.equals("pokemon")) {
-            String ownerName = getPokemonOwnerName(entity);
-            if (ownerName == null) return false;
-            return isPlayerBlockedInChunk(sl, chunkKey, ownerName);
-        }
+                && ns.equals("cobblemon") && path.equals("pokemon")) return true;
         if ((flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_NPC) != 0
                 && ns.equals("cobblemon") && path.equals("npc")) return true;
 
