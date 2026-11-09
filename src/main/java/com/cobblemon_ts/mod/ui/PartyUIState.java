@@ -30,7 +30,7 @@ public class PartyUIState {
     public static final int SLOT_SIZE = 28;
     public static final int SLOT_SPACING = 3;
     /** [线性-L07] 道具袋纹理，用于护符栏第一格 blit 放大居中 */
-    public static final ResourceLocation POKEBAG_TEXTURE = ResourceLocation.fromNamespaceAndPath("coblemon_ts", "textures/item/pokebag.png");
+    public static final ResourceLocation POKEBAG_TEXTURE = ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "textures/item/pokebag.png");
     public static final int HEADER_HEIGHT = 16;
     public static final int SLOT_CONTENT_WIDTH = PARTY_WIDTH - 6;     // 54
     public static final int SLOT_MODEL_WIDTH = SLOT_CONTENT_WIDTH - 20; // 34
@@ -114,7 +114,7 @@ public class PartyUIState {
     public static boolean initPartyReflection() { return initBasicReflection(); }
     public static boolean isPartyReflectionReady() { return basicReflectionReady; }
 
-    // ===== 反射：与 coblemon_ts-1.0.1.jar 一致 =====
+    // ===== 反射：与 cobblemon_ts-1.0.1.jar 一致 =====
     private static Method speciesGetTranslatedNameMethod; // Species.getTranslatedName() → Component
     private static Method componentGetStringMethod;       // Component.getString() → String
     private static Method speciesGetNameMethod;           // 兜底: Species.getName() → String
@@ -318,10 +318,10 @@ public class PartyUIState {
                 bagManager.toggleAutoCollect();
                 if (bagManager.isAutoCollect()) {
                     Minecraft.getInstance().player.displayClientMessage(
-                            net.minecraft.network.chat.Component.translatable("message.coblemon_ts.pokebag_autocollect_on"), true);
+                            net.minecraft.network.chat.Component.translatable("message.cobblemon_ts.pokebag_autocollect_on"), true);
                 } else {
                     Minecraft.getInstance().player.displayClientMessage(
-                            net.minecraft.network.chat.Component.translatable("message.coblemon_ts.pokebag_autocollect_off"), true);
+                            net.minecraft.network.chat.Component.translatable("message.cobblemon_ts.pokebag_autocollect_off"), true);
                 }
             } else if (button == 1) {
                 // 右键：打开道具袋
@@ -656,10 +656,10 @@ public class PartyUIState {
         return list;
     }
 
-    // ===== Pokemon 信息获取：与 coblemon_ts-1.0.1.jar 反射调用一致 =====
+    // ===== Pokemon 信息获取：与 cobblemon_ts-1.0.1.jar 反射调用一致 =====
 
     /**
-     * 获取精灵翻译名 - 与 coblemon_ts-1.0.1.jar 字节码完全一致
+     * 获取精灵翻译名 - 与 cobblemon_ts-1.0.1.jar 字节码完全一致
      * 流程: pokemon.getSpecies() → species.getTranslatedName() → Component.getString()
      * 失败兜底: PokemonNameMap.toChinese(species.getResourceIdentifier())
      */

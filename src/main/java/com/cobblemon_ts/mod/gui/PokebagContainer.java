@@ -15,7 +15,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 public class PokebagContainer extends AbstractContainerMenu {
-    public static final Component TITLE = Component.translatable("container.coblemon_ts.pokebag");
+    public static final Component TITLE = Component.translatable("container.cobblemon_ts.pokebag");
     private final SimpleContainer bagInventory;
     private final Player player;
 

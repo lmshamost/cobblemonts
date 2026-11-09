@@ -161,26 +161,26 @@ public class PokemonEditorScreen extends Screen {
     private Button hiddenPowerBtn;
     private String hiddenPowerType = "";
     private static final String[][] STATUS_DISPLAY = new String[][]{
-        {"", "coblemon_ts.editor.status_none"},
-        {"poison", "coblemon_ts.editor.status_poison"},
-        {"paralysis", "coblemon_ts.editor.status_paralysis"},
-        {"burn", "coblemon_ts.editor.status_burn"},
-        {"freeze", "coblemon_ts.editor.status_freeze"},
-        {"sleep", "coblemon_ts.editor.status_sleep"},
-        {"bad_poison", "coblemon_ts.editor.status_bad_poison"}
+        {"", "cobblemon_ts.editor.status_none"},
+        {"poison", "cobblemon_ts.editor.status_poison"},
+        {"paralysis", "cobblemon_ts.editor.status_paralysis"},
+        {"burn", "cobblemon_ts.editor.status_burn"},
+        {"freeze", "cobblemon_ts.editor.status_freeze"},
+        {"sleep", "cobblemon_ts.editor.status_sleep"},
+        {"bad_poison", "cobblemon_ts.editor.status_bad_poison"}
     };
     private static final String[] HIDDEN_POWER_TYPE_TABLE = new String[]{"fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon", "dark"};
     private static final String[] HIDDEN_POWER_TYPE_ZH = new String[]{
-        "coblemon_ts.editor.hidden_power.fighting", "coblemon_ts.editor.hidden_power.flying", "coblemon_ts.editor.hidden_power.poison",
-        "coblemon_ts.editor.hidden_power.ground", "coblemon_ts.editor.hidden_power.rock", "coblemon_ts.editor.hidden_power.bug",
-        "coblemon_ts.editor.hidden_power.ghost", "coblemon_ts.editor.hidden_power.steel", "coblemon_ts.editor.hidden_power.fire",
-        "coblemon_ts.editor.hidden_power.water", "coblemon_ts.editor.hidden_power.grass", "coblemon_ts.editor.hidden_power.electric",
-        "coblemon_ts.editor.hidden_power.psychic", "coblemon_ts.editor.hidden_power.ice", "coblemon_ts.editor.hidden_power.dragon",
-        "coblemon_ts.editor.hidden_power.dark"
+        "cobblemon_ts.editor.hidden_power.fighting", "cobblemon_ts.editor.hidden_power.flying", "cobblemon_ts.editor.hidden_power.poison",
+        "cobblemon_ts.editor.hidden_power.ground", "cobblemon_ts.editor.hidden_power.rock", "cobblemon_ts.editor.hidden_power.bug",
+        "cobblemon_ts.editor.hidden_power.ghost", "cobblemon_ts.editor.hidden_power.steel", "cobblemon_ts.editor.hidden_power.fire",
+        "cobblemon_ts.editor.hidden_power.water", "cobblemon_ts.editor.hidden_power.grass", "cobblemon_ts.editor.hidden_power.electric",
+        "cobblemon_ts.editor.hidden_power.psychic", "cobblemon_ts.editor.hidden_power.ice", "cobblemon_ts.editor.hidden_power.dragon",
+        "cobblemon_ts.editor.hidden_power.dark"
     };
 
     public PokemonEditorScreen(UUID targetPlayerUUID, String targetPlayerName, int partySize) {
-        super(Component.translatable("coblemon_ts.editor.title"));
+        super(Component.translatable("cobblemon_ts.editor.title"));
         this.targetPlayerUUID = targetPlayerUUID;
         this.targetPlayerName = targetPlayerName;
         this.partySize = partySize;
@@ -352,10 +352,10 @@ public class PokemonEditorScreen extends Screen {
         int tabBarY = 30;
         int tabBarH = 22;
         int tabW = 140;
-        this.tab0Btn = Button.builder(Component.translatable("coblemon_ts.editor.tab.summary"), (btn) -> this.switchTab(0)).pos(panelX, 30).size(140, 22).build();
-        this.tab1Btn = Button.builder(Component.translatable("coblemon_ts.editor.tab.battle"), (btn) -> this.switchTab(1)).pos(panelX + 140, 30).size(140, 22).build();
-        this.tab2Btn = Button.builder(Component.translatable("coblemon_ts.editor.tab.stats"), (btn) -> this.switchTab(2)).pos(panelX + 280, 30).size(140, 22).build();
-        this.tab3Btn = Button.builder(Component.translatable("coblemon_ts.editor.tab.advanced"), (btn) -> this.switchTab(3)).pos(panelX + 420, 30).size(140, 22).build();
+        this.tab0Btn = Button.builder(Component.translatable("cobblemon_ts.editor.tab.summary"), (btn) -> this.switchTab(0)).pos(panelX, 30).size(140, 22).build();
+        this.tab1Btn = Button.builder(Component.translatable("cobblemon_ts.editor.tab.battle"), (btn) -> this.switchTab(1)).pos(panelX + 140, 30).size(140, 22).build();
+        this.tab2Btn = Button.builder(Component.translatable("cobblemon_ts.editor.tab.stats"), (btn) -> this.switchTab(2)).pos(panelX + 280, 30).size(140, 22).build();
+        this.tab3Btn = Button.builder(Component.translatable("cobblemon_ts.editor.tab.advanced"), (btn) -> this.switchTab(3)).pos(panelX + 420, 30).size(140, 22).build();
         this.addRenderableWidget(this.tab0Btn);
         this.addRenderableWidget(this.tab1Btn);
         this.addRenderableWidget(this.tab2Btn);
@@ -368,12 +368,12 @@ public class PokemonEditorScreen extends Screen {
 
         for(int i = 0; i < Math.min(6, this.partySize); ++i) {
             int slotIdx = i;
-            this.slotButtons[i] = Button.builder(Component.translatable("coblemon_ts.editor.slot_empty", i + 1), (btn) -> this.selectSlot(slotIdx)).pos(partyX, 70 + i * 22).size(140, 20).build();
+            this.slotButtons[i] = Button.builder(Component.translatable("cobblemon_ts.editor.slot_empty", i + 1), (btn) -> this.selectSlot(slotIdx)).pos(partyX, 70 + i * 22).size(140, 20).build();
             this.addRenderableWidget(this.slotButtons[i]);
         }
 
         int lastSlotY = 70 + Math.min(6, this.partySize) * 22;
-        this.teamAllBtn = Button.builder(Component.translatable("coblemon_ts.editor.team_all"), (btn) -> {
+        this.teamAllBtn = Button.builder(Component.translatable("cobblemon_ts.editor.team_all"), (btn) -> {
             this.viewingAllTeam = true;
             StringBuilder sb = new StringBuilder();
 
@@ -490,19 +490,19 @@ public class PokemonEditorScreen extends Screen {
         this.sumHeldItemField.setTextShadow(false);
         this.clearHeldItemBtn = Button.builder(Component.literal("\u00d7"), (btn) -> this.sumHeldItemField.setValue("")).pos(editX + 50 + 10 + 100 + 4, rowY + rowStep * 7 - 4).size(16, 16).build();
         this.genderField = this.makeIntBox(editX + 50 + 10, rowY + rowStep * 8, 60, 0, 2);
-        this.genderCycleBtn = Button.builder(Component.translatable("coblemon_ts.editor.gender_cycle"), (btn) -> {
+        this.genderCycleBtn = Button.builder(Component.translatable("cobblemon_ts.editor.gender_cycle"), (btn) -> {
             int cur = this.parseOrDefault(this.genderField, 2);
             int next = (cur + 1) % 3;
             this.genderField.setValue(String.valueOf(next));
         }).pos(editX + 50 + 10 + 65, rowY + rowStep * 8).size(90, 18).build();
-        this.sumShinyButton = Button.builder(Component.translatable("coblemon_ts.editor.shiny_off"), (btn) -> {
+        this.sumShinyButton = Button.builder(Component.translatable("cobblemon_ts.editor.shiny_off"), (btn) -> {
             if (this.selectedSlot >= 0) {
                 ((PokemonData)this.partyData.get(this.selectedSlot)).shiny = !((PokemonData)this.partyData.get(this.selectedSlot)).shiny;
                 this.updateShinyButton();
             }
 
         }).pos(editX + 50 + 10, rowY + rowStep * 9).size(110, 18).build();
-        this.statusCycleBtn = Button.builder(Component.translatable("coblemon_ts.editor.status_none"), (btn) -> {
+        this.statusCycleBtn = Button.builder(Component.translatable("cobblemon_ts.editor.status_none"), (btn) -> {
             if (this.selectedSlot >= 0) {
                 this.cycleToNextStatus();
             }
@@ -567,7 +567,7 @@ public class PokemonEditorScreen extends Screen {
             }).pos(arrowBaseX + arrowW + 2, arrowBaseY).size(arrowW, arrowH).build();
         }
 
-        this.maxIvButton = Button.builder(Component.translatable("coblemon_ts.editor.max_iv"), (btn) -> {
+        this.maxIvButton = Button.builder(Component.translatable("cobblemon_ts.editor.max_iv"), (btn) -> {
             for(EditBox b : ivBoxes) {
                 b.setValue("31");
             }
@@ -579,7 +579,7 @@ public class PokemonEditorScreen extends Screen {
         this.crownToggleX = this.crownIconX + 20 + 4;
         this.crownToggleY = this.crownIconY;
         int hpCalcY = ivStartY + statRowH * 6 + 16 + 28;
-        this.hiddenPowerBtn = Button.builder(Component.translatable("coblemon_ts.editor.hidden_power"), (btn) -> {
+        this.hiddenPowerBtn = Button.builder(Component.translatable("cobblemon_ts.editor.hidden_power"), (btn) -> {
             if (this.selectedSlot >= 0) {
                 int hp = this.parseOrDefault(this.ivHp, 0);
                 int atk = this.parseOrDefault(this.ivAtk, 0);
@@ -672,7 +672,7 @@ public class PokemonEditorScreen extends Screen {
             }).pos(arrowBaseX + arrowW + 2, arrowBaseY).size(arrowW, arrowH).build();
         }
 
-        this.clearEvButton = Button.builder(Component.translatable("coblemon_ts.editor.clear_ev"), (btn) -> {
+        this.clearEvButton = Button.builder(Component.translatable("cobblemon_ts.editor.clear_ev"), (btn) -> {
             for(EditBox b : evBoxes) {
                 b.setValue("0");
             }
@@ -680,7 +680,7 @@ public class PokemonEditorScreen extends Screen {
         }).pos(evColX + 5, ivStartY + statRowH * 6 + 16).size(140, 22).build();
         boolean ev252Enabled = Boolean.TRUE.equals(CobblemonTSConfig.EV_EFFORT_CAP_252X6.get());
         if (ev252Enabled) {
-            this.fullEvButton = Button.builder(Component.translatable("coblemon_ts.editor.full_ev"), (btn) -> {
+            this.fullEvButton = Button.builder(Component.translatable("cobblemon_ts.editor.full_ev"), (btn) -> {
                 for(EditBox b : evBoxes) {
                     b.setValue("252");
                 }
@@ -728,7 +728,7 @@ public class PokemonEditorScreen extends Screen {
         this.move2MaxPPField.setEditable(true);
         this.move3MaxPPField.setEditable(true);
         this.move4MaxPPField.setEditable(true);
-        this.maxPPButton = Button.builder(Component.translatable("coblemon_ts.editor.max_pp"), (btn) -> {
+        this.maxPPButton = Button.builder(Component.translatable("cobblemon_ts.editor.max_pp"), (btn) -> {
             if (this.selectedSlot >= 0 && this.selectedSlot < this.partyData.size()) {
                 PokemonData d = (PokemonData)this.partyData.get(this.selectedSlot);
                 String[] names = new String[]{d.move1, d.move2, d.move3, d.move4};
@@ -801,14 +801,14 @@ public class PokemonEditorScreen extends Screen {
         int rightBtnW = 80;
         int rightBtnH = 22;
         int rightBtnGap = 8;
-        this.advCopyBtn = Button.builder(Component.translatable("coblemon_ts.editor.copy"), (btn) -> {
+        this.advCopyBtn = Button.builder(Component.translatable("cobblemon_ts.editor.copy"), (btn) -> {
             if (this.selectedSlot >= 0 && this.selectedSlot < this.partyData.size()) {
                 String data = this.buildDataString((PokemonData)this.partyData.get(this.selectedSlot));
                 this.minecraft.keyboardHandler.setClipboard(data);
             }
 
         }).pos(rightBtnX, rightBtnY + (rightBtnH + rightBtnGap) * 0).size(rightBtnW, rightBtnH).build();
-        this.advPasteBtn = Button.builder(Component.translatable("coblemon_ts.editor.paste"), (btn) -> {
+        this.advPasteBtn = Button.builder(Component.translatable("cobblemon_ts.editor.paste"), (btn) -> {
             if (this.selectedSlot >= 0 && this.selectedSlot < this.partyData.size()) {
                 String text = this.minecraft.keyboardHandler.getClipboard();
                 this.applyDataString((PokemonData)this.partyData.get(this.selectedSlot), text);
@@ -822,7 +822,7 @@ public class PokemonEditorScreen extends Screen {
             }
 
         }).pos(rightBtnX, rightBtnY + (rightBtnH + rightBtnGap) * 1).size(rightBtnW, rightBtnH).build();
-        this.advExportBtn = Button.builder(Component.translatable("coblemon_ts.editor.export"), (btn) -> {
+        this.advExportBtn = Button.builder(Component.translatable("cobblemon_ts.editor.export"), (btn) -> {
             String content = this.advRawField.getValue();
             if (content != null && !content.trim().isEmpty()) {
                 try {
@@ -835,17 +835,17 @@ public class PokemonEditorScreen extends Screen {
                     File file = new File(folder, fileName);
                     Files.writeString(file.toPath(), content, StandardCharsets.UTF_8);
                     if (this.minecraft.player != null) {
-                        this.minecraft.player.sendSystemMessage(Component.translatable("coblemon_ts.editor.msg.exported", file.getAbsolutePath()));
+                        this.minecraft.player.sendSystemMessage(Component.translatable("cobblemon_ts.editor.msg.exported", file.getAbsolutePath()));
                     }
                 } catch (Exception e) {
                     if (this.minecraft.player != null) {
-                        this.minecraft.player.sendSystemMessage(Component.translatable("coblemon_ts.editor.msg.export_failed", e.getMessage()));
+                        this.minecraft.player.sendSystemMessage(Component.translatable("cobblemon_ts.editor.msg.export_failed", e.getMessage()));
                     }
                 }
 
             }
         }).pos(rightBtnX, rightBtnY + (rightBtnH + rightBtnGap) * 2).size(rightBtnW, rightBtnH).build();
-        this.advImportBtn = Button.builder(Component.translatable("coblemon_ts.editor.import"), (btn) -> {
+        this.advImportBtn = Button.builder(Component.translatable("cobblemon_ts.editor.import"), (btn) -> {
             File folder = new File(this.minecraft.gameDirectory, "pokemon_exports");
             if (!folder.exists()) {
                 folder.mkdirs();
@@ -858,12 +858,12 @@ public class PokemonEditorScreen extends Screen {
                 this.showImportDialog = true;
             } else {
                 if (this.minecraft.player != null) {
-                    this.minecraft.player.sendSystemMessage(Component.translatable("coblemon_ts.editor.msg.no_exports"));
+                    this.minecraft.player.sendSystemMessage(Component.translatable("cobblemon_ts.editor.msg.no_exports"));
                 }
 
             }
         }).pos(rightBtnX, rightBtnY + (rightBtnH + rightBtnGap) * 3).size(rightBtnW, rightBtnH).build();
-        this.advSaveBtn = Button.builder(Component.translatable("coblemon_ts.editor.save"), (btn) -> {
+        this.advSaveBtn = Button.builder(Component.translatable("cobblemon_ts.editor.save"), (btn) -> {
             if (this.selectedSlot >= 0 && this.selectedSlot < this.partyData.size()) {
                 PokemonData d = (PokemonData)this.partyData.get(this.selectedSlot);
                 this.applyDataString(d, this.advRawField.getValue());
@@ -871,7 +871,7 @@ public class PokemonEditorScreen extends Screen {
             }
 
         }).pos(rightBtnX, rightBtnY + (rightBtnH + rightBtnGap) * 4).size(rightBtnW, rightBtnH).build();
-        this.advResetBtn = Button.builder(Component.translatable("coblemon_ts.editor.reset"), (btn) -> {
+        this.advResetBtn = Button.builder(Component.translatable("cobblemon_ts.editor.reset"), (btn) -> {
             if (this.selectedSlot >= 0 && this.selectedSlot < this.partyData.size()) {
                 this.advRawField.setValue(this.buildDataString((PokemonData)this.partyData.get(this.selectedSlot)));
                 this.advRawField.setCursorPosition(0);
@@ -944,21 +944,21 @@ public class PokemonEditorScreen extends Screen {
         int totalBtnW = btnW * 4 + btnGap * 3;
         int btnStartX = panelX + 280 - totalBtnW / 2;
         boolean autoClose = (Boolean)CharmConfig.EDITOR_AUTO_CLOSE.get();
-        this.editorAutoCloseBtn = Button.builder(autoClose ? Component.translatable("coblemon_ts.editor.auto_close_on").withStyle(autoClose ? ChatFormatting.GREEN : ChatFormatting.RED) : Component.translatable("coblemon_ts.editor.auto_close_off").withStyle(autoClose ? ChatFormatting.GREEN : ChatFormatting.RED), (btn) -> {
+        this.editorAutoCloseBtn = Button.builder(autoClose ? Component.translatable("cobblemon_ts.editor.auto_close_on").withStyle(autoClose ? ChatFormatting.GREEN : ChatFormatting.RED) : Component.translatable("cobblemon_ts.editor.auto_close_off").withStyle(autoClose ? ChatFormatting.GREEN : ChatFormatting.RED), (btn) -> {
             boolean newVal = !(Boolean)CharmConfig.EDITOR_AUTO_CLOSE.get();
             CharmConfig.EDITOR_AUTO_CLOSE.set(newVal);
             CharmConfig.EDITOR_AUTO_CLOSE.save();
-            btn.setMessage(newVal ? Component.translatable("coblemon_ts.editor.auto_close_on").withStyle(ChatFormatting.GREEN) : Component.translatable("coblemon_ts.editor.auto_close_off").withStyle(ChatFormatting.RED));
+            btn.setMessage(newVal ? Component.translatable("cobblemon_ts.editor.auto_close_on").withStyle(ChatFormatting.GREEN) : Component.translatable("cobblemon_ts.editor.auto_close_off").withStyle(ChatFormatting.RED));
         }).pos(btnStartX + btnW - 26, btnY - 26).size(60, 20).build();
-        this.themeToggleBtn = Button.builder((Boolean)CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? Component.translatable("coblemon_ts.editor.theme_light") : Component.translatable("coblemon_ts.editor.theme_dark"), (btn) -> {
+        this.themeToggleBtn = Button.builder((Boolean)CobblemonTSConfig.LIGHT_EDITOR_THEME.get() ? Component.translatable("cobblemon_ts.editor.theme_light") : Component.translatable("cobblemon_ts.editor.theme_dark"), (btn) -> {
             boolean newVal = !(Boolean)CobblemonTSConfig.LIGHT_EDITOR_THEME.get();
             CobblemonTSConfig.LIGHT_EDITOR_THEME.set(newVal);
             CobblemonTSConfig.LIGHT_EDITOR_THEME.save();
-            btn.setMessage(newVal ? Component.translatable("coblemon_ts.editor.theme_light") : Component.translatable("coblemon_ts.editor.theme_dark"));
+            btn.setMessage(newVal ? Component.translatable("cobblemon_ts.editor.theme_light") : Component.translatable("cobblemon_ts.editor.theme_dark"));
         }).pos(btnStartX, btnY).size(btnW, btnH).build();
-        this.saveButton = Button.builder(Component.translatable("coblemon_ts.editor.save"), (btn) -> this.saveChanges()).pos(btnStartX + btnW + btnGap, btnY).size(btnW, btnH).build();
-        this.deleteButton = Button.builder(Component.translatable("coblemon_ts.editor.delete"), (btn) -> this.deletePokemon()).pos(btnStartX + btnW * 2 + btnGap * 2, btnY).size(btnW, btnH).build();
-        this.closeButton = Button.builder(Component.translatable("coblemon_ts.editor.close"), (btn) -> this.onClose()).pos(btnStartX + btnW * 3 + btnGap * 3, btnY).size(btnW, btnH).build();
+        this.saveButton = Button.builder(Component.translatable("cobblemon_ts.editor.save"), (btn) -> this.saveChanges()).pos(btnStartX + btnW + btnGap, btnY).size(btnW, btnH).build();
+        this.deleteButton = Button.builder(Component.translatable("cobblemon_ts.editor.delete"), (btn) -> this.deletePokemon()).pos(btnStartX + btnW * 2 + btnGap * 2, btnY).size(btnW, btnH).build();
+        this.closeButton = Button.builder(Component.translatable("cobblemon_ts.editor.close"), (btn) -> this.onClose()).pos(btnStartX + btnW * 3 + btnGap * 3, btnY).size(btnW, btnH).build();
         this.addRenderableWidget(this.editorAutoCloseBtn);
         this.addRenderableWidget(this.themeToggleBtn);
         this.addRenderableWidget(this.saveButton);
@@ -1118,7 +1118,7 @@ public class PokemonEditorScreen extends Screen {
                 String shinyText = d.shiny ? " \u2728" : "";
                 label = "  Lv" + d.level + " " + display + shinyText + "  ";
             } else {
-                label = Component.translatable("coblemon_ts.editor.slot_empty", slot + 1).getString() + "  ";
+                label = Component.translatable("cobblemon_ts.editor.slot_empty", slot + 1).getString() + "  ";
             }
 
             if (slot == this.selectedSlot) {
@@ -1269,7 +1269,7 @@ public class PokemonEditorScreen extends Screen {
     private void updateShinyButton() {
         if (this.selectedSlot >= 0 && this.selectedSlot < this.partyData.size()) {
             PokemonData d = (PokemonData)this.partyData.get(this.selectedSlot);
-            this.sumShinyButton.setMessage(d.shiny ? Component.translatable("coblemon_ts.editor.shiny_on") : Component.translatable("coblemon_ts.editor.shiny_off"));
+            this.sumShinyButton.setMessage(d.shiny ? Component.translatable("cobblemon_ts.editor.shiny_on") : Component.translatable("cobblemon_ts.editor.shiny_off"));
         }
 
     }
@@ -1351,7 +1351,7 @@ public class PokemonEditorScreen extends Screen {
         if (this.selectedSlot >= 0 && this.selectedSlot < this.partyData.size()) {
             PokemonData d = (PokemonData)this.partyData.get(this.selectedSlot);
             String cur = this.normalizeStatusId(d.status);
-            String key = "coblemon_ts.editor.status_none";
+            String key = "cobblemon_ts.editor.status_none";
 
             for(String[] row : STATUS_DISPLAY) {
                 if (row[0].equals(cur)) {
@@ -1405,7 +1405,7 @@ public class PokemonEditorScreen extends Screen {
                 PokemonEditorDebug.logEditor("[Screen] Save triggers pending delete for slot {}", new Object[]{this.selectedSlot});
                 PacketDistributor.sendToServer(new PokemonEditorNetwork.DeletePokemonPacket(this.selectedSlot, this.targetPlayerUUID), new CustomPacketPayload[0]);
                 if (Minecraft.getInstance().player != null) {
-                    Minecraft.getInstance().player.sendSystemMessage(Component.translatable("coblemon_ts.editor.msg.deleted", this.selectedSlot + 1));
+                    Minecraft.getInstance().player.sendSystemMessage(Component.translatable("cobblemon_ts.editor.msg.deleted", this.selectedSlot + 1));
                 }
 
                 this.pendingDeleteSlot = -1;
@@ -1635,7 +1635,7 @@ public class PokemonEditorScreen extends Screen {
                     PokemonEditorDebug.logEditor("[Screen] savePokemonData: delete for slot {}", new Object[]{this.selectedSlot});
                     PacketDistributor.sendToServer(new PokemonEditorNetwork.DeletePokemonPacket(this.selectedSlot, this.targetPlayerUUID), new CustomPacketPayload[0]);
                     if (Minecraft.getInstance().player != null) {
-                        Minecraft.getInstance().player.sendSystemMessage(Component.translatable("coblemon_ts.editor.msg.deleted", this.selectedSlot + 1));
+                        Minecraft.getInstance().player.sendSystemMessage(Component.translatable("cobblemon_ts.editor.msg.deleted", this.selectedSlot + 1));
                     }
 
                     this.pendingDeleteSlot = -1;
@@ -1686,7 +1686,7 @@ public class PokemonEditorScreen extends Screen {
         this.originalSnapshots.set(this.selectedSlot, d.snapshot());
         this.updateSlotButtonLabel(this.selectedSlot);
         if (Minecraft.getInstance().player != null) {
-            Minecraft.getInstance().player.sendSystemMessage(Component.translatable("coblemon_ts.editor.msg.saved", this.selectedSlot + 1));
+            Minecraft.getInstance().player.sendSystemMessage(Component.translatable("cobblemon_ts.editor.msg.saved", this.selectedSlot + 1));
         }
 
         PokemonEditorDebug.logEditor("[Screen] Packet sent for slot {}", new Object[]{this.selectedSlot});
@@ -1703,8 +1703,8 @@ public class PokemonEditorScreen extends Screen {
             PokemonData d = (PokemonData)this.partyData.get(this.selectedSlot);
             if (d.exists) {
                 // [优化-L5] 添加删除二次确认弹窗
-                Component title = Component.translatable("coblemon_ts.editor.confirm_delete_title");
-                Component message = Component.translatable("coblemon_ts.editor.confirm_delete_msg", this.selectedSlot + 1);
+                Component title = Component.translatable("cobblemon_ts.editor.confirm_delete_title");
+                Component message = Component.translatable("cobblemon_ts.editor.confirm_delete_msg", this.selectedSlot + 1);
 
                 // 使用原版确认弹窗
                 ConfirmScreen confirmScreen = new ConfirmScreen(
@@ -1713,7 +1713,7 @@ public class PokemonEditorScreen extends Screen {
                             this.pendingDeleteSlot = this.selectedSlot;
                             PokemonEditorDebug.logEditor("[Screen] Delete marker set for slot {} (pending, will delete on save)", new Object[]{this.selectedSlot});
                             if (Minecraft.getInstance().player != null) {
-                                Minecraft.getInstance().player.sendSystemMessage(Component.translatable("coblemon_ts.editor.msg.marked_delete", this.selectedSlot + 1));
+                                Minecraft.getInstance().player.sendSystemMessage(Component.translatable("cobblemon_ts.editor.msg.marked_delete", this.selectedSlot + 1));
                             }
 
                             PokemonData emptyData = new PokemonData();
@@ -2099,8 +2099,8 @@ public class PokemonEditorScreen extends Screen {
         guiGraphics.fill(selectedTabX + 10, tabBarY + tabBarH + 1, selectedTabX + tabW - 10, tabBarY + tabBarH + 3, -12877066);
         int dividerX = panelX + 160;
         guiGraphics.fill(dividerX, partyY - 5, dividerX + 1, panelY + panelH - 5, -3418655);
-        guiGraphics.drawString(this.font, Component.translatable("coblemon_ts.editor.label.party").getString(), partyX + 55, partyY - 13, labelColor, false);
-        String editorTitle = Component.translatable("coblemon_ts.editor.title_with_player", this.targetPlayerName).getString();
+        guiGraphics.drawString(this.font, Component.translatable("cobblemon_ts.editor.label.party").getString(), partyX + 55, partyY - 13, labelColor, false);
+        String editorTitle = Component.translatable("cobblemon_ts.editor.title_with_player", this.targetPlayerName).getString();
         int editorTitleW = this.font.width(editorTitle);
         int editorTitleX = panelX + panelW - editorTitleW - 10;
         int maxLeftW = editorTitleX - editX - 20;
@@ -2109,7 +2109,7 @@ public class PokemonEditorScreen extends Screen {
                 PokemonData d = (PokemonData)this.partyData.get(this.selectedSlot);
                 if (d.exists) {
                     String title = d.displayName.isEmpty() ? PokemonNameMap.speciesToDisplay(d.speciesName) : d.displayName;
-                    String leftText = Component.translatable("coblemon_ts.editor.label.editing", title + (d.shiny ? " \u2728" : "")).getString();
+                    String leftText = Component.translatable("cobblemon_ts.editor.label.editing", title + (d.shiny ? " \u2728" : "")).getString();
                     if (this.font.width(leftText) > maxLeftW && maxLeftW > 20) {
                         String ellipsis = "...";
 
@@ -2122,7 +2122,7 @@ public class PokemonEditorScreen extends Screen {
                     guiGraphics.drawString(this.font, leftText, editX, editY - 13, labelColor, false);
                     guiGraphics.drawString(this.font, editorTitle, editorTitleX, editY - 13, -12877066, false);
                 } else {
-                    guiGraphics.drawString(this.font, Component.translatable("coblemon_ts.editor.label.empty_slot").getString(), editX, editY - 13, -10193781, false);
+                    guiGraphics.drawString(this.font, Component.translatable("cobblemon_ts.editor.label.empty_slot").getString(), editX, editY - 13, -10193781, false);
                     guiGraphics.drawString(this.font, editorTitle, editorTitleX, editY - 13, -12877066, false);
                 }
             } else {
@@ -2134,16 +2134,16 @@ public class PokemonEditorScreen extends Screen {
             int rowY = editY + 18;
             int rowStep = 28;
             String[] labels = new String[]{
-                Component.translatable("coblemon_ts.editor.label.species").getString(),
-                Component.translatable("coblemon_ts.editor.label.level").getString(),
-                Component.translatable("coblemon_ts.editor.label.name").getString(),
-                Component.translatable("coblemon_ts.editor.label.nature").getString(),
-                Component.translatable("coblemon_ts.editor.label.ability").getString(),
-                Component.translatable("coblemon_ts.editor.label.friendship").getString(),
-                Component.translatable("coblemon_ts.editor.label.form").getString(),
-                Component.translatable("coblemon_ts.editor.label.held_item").getString(),
-                Component.translatable("coblemon_ts.editor.label.gender").getString(),
-                Component.translatable("coblemon_ts.editor.label.shiny").getString()
+                Component.translatable("cobblemon_ts.editor.label.species").getString(),
+                Component.translatable("cobblemon_ts.editor.label.level").getString(),
+                Component.translatable("cobblemon_ts.editor.label.name").getString(),
+                Component.translatable("cobblemon_ts.editor.label.nature").getString(),
+                Component.translatable("cobblemon_ts.editor.label.ability").getString(),
+                Component.translatable("cobblemon_ts.editor.label.friendship").getString(),
+                Component.translatable("cobblemon_ts.editor.label.form").getString(),
+                Component.translatable("cobblemon_ts.editor.label.held_item").getString(),
+                Component.translatable("cobblemon_ts.editor.label.gender").getString(),
+                Component.translatable("cobblemon_ts.editor.label.shiny").getString()
             };
 
             for(int i = 0; i < labels.length; ++i) {
@@ -2153,7 +2153,7 @@ public class PokemonEditorScreen extends Screen {
 
             if (this.selectedSlot >= 0 && this.selectedSlot < this.partyData.size()) {
                 int gv = this.parseOrDefault(this.genderField, 2);
-                String genderText = " (" + (gv == 0 ? Component.translatable("coblemon_ts.editor.gender.male").getString() : (gv == 1 ? Component.translatable("coblemon_ts.editor.gender.female").getString() : Component.translatable("coblemon_ts.editor.gender.none").getString())) + ")";
+                String genderText = " (" + (gv == 0 ? Component.translatable("cobblemon_ts.editor.gender.male").getString() : (gv == 1 ? Component.translatable("cobblemon_ts.editor.gender.female").getString() : Component.translatable("cobblemon_ts.editor.gender.none").getString())) + ")";
                 // [线性-L10] 性别文字使用标签文字颜色，关闭阴影
                 guiGraphics.drawString(this.font, genderText, editX + 50 + 10 + 65 + 100, rowY + rowStep * 8 + 4, labelColor, false);
             }
@@ -2223,12 +2223,12 @@ public class PokemonEditorScreen extends Screen {
                     }
 
                     String[][] info = new String[][]{
-                        {Component.translatable("coblemon_ts.editor.label.species").getString(), d.speciesName},
-                        {Component.translatable("coblemon_ts.editor.label.level").getString(), "Lv." + d.level},
-                        {Component.translatable("coblemon_ts.editor.label.gender").getString(), d.gender == 0 ? Component.translatable("coblemon_ts.editor.gender.male_short").getString() : (d.gender == 1 ? Component.translatable("coblemon_ts.editor.gender.female_short").getString() : Component.translatable("coblemon_ts.editor.gender.none_short").getString())},
-                        {Component.translatable("coblemon_ts.editor.label.nature").getString(), natureDisp},
-                        {Component.translatable("coblemon_ts.editor.label.ability").getString(), PokemonNameMap.abilityToDisplay(d.ability)},
-                        {Component.translatable("coblemon_ts.editor.label.form").getString(), PokemonNameMap.formToChinese(d.speciesName, d.formName)}
+                        {Component.translatable("cobblemon_ts.editor.label.species").getString(), d.speciesName},
+                        {Component.translatable("cobblemon_ts.editor.label.level").getString(), "Lv." + d.level},
+                        {Component.translatable("cobblemon_ts.editor.label.gender").getString(), d.gender == 0 ? Component.translatable("cobblemon_ts.editor.gender.male_short").getString() : (d.gender == 1 ? Component.translatable("cobblemon_ts.editor.gender.female_short").getString() : Component.translatable("cobblemon_ts.editor.gender.none_short").getString())},
+                        {Component.translatable("cobblemon_ts.editor.label.nature").getString(), natureDisp},
+                        {Component.translatable("cobblemon_ts.editor.label.ability").getString(), PokemonNameMap.abilityToDisplay(d.ability)},
+                        {Component.translatable("cobblemon_ts.editor.label.form").getString(), PokemonNameMap.formToChinese(d.speciesName, d.formName)}
                     };
 
                     // [线性-L18] 动态计算标签最大宽度，防止英文本地化后标签与值重叠
@@ -2423,12 +2423,12 @@ public class PokemonEditorScreen extends Screen {
             String evTitle = "EV (0-252)";
             guiGraphics.drawString(this.font, evTitle, evColX + 60 - this.font.width(evTitle) / 2, editY + 15, -12877066, false);
             String[] statLabels = new String[]{
-                Component.translatable("coblemon_ts.editor.stat.hp").getString(),
-                Component.translatable("coblemon_ts.editor.stat.attack").getString(),
-                Component.translatable("coblemon_ts.editor.stat.defense").getString(),
-                Component.translatable("coblemon_ts.editor.stat.sp_atk").getString(),
-                Component.translatable("coblemon_ts.editor.stat.sp_def").getString(),
-                Component.translatable("coblemon_ts.editor.stat.speed").getString()
+                Component.translatable("cobblemon_ts.editor.stat.hp").getString(),
+                Component.translatable("cobblemon_ts.editor.stat.attack").getString(),
+                Component.translatable("cobblemon_ts.editor.stat.defense").getString(),
+                Component.translatable("cobblemon_ts.editor.stat.sp_atk").getString(),
+                Component.translatable("cobblemon_ts.editor.stat.sp_def").getString(),
+                Component.translatable("cobblemon_ts.editor.stat.speed").getString()
             };
 
             for(int i = 0; i < statLabels.length; ++i) {
@@ -2445,11 +2445,11 @@ public class PokemonEditorScreen extends Screen {
 
             int sumY = ivStartY + statRowH * 6 - 4;
             int evCap = CobblemonTSConfig.getEVTotalCap();
-            guiGraphics.drawString(this.font, Component.translatable("coblemon_ts.editor.label.ev_sum", evSum, evCap).getString(), evColX, sumY, evSum <= evCap ? -12877066 : -1096636, false);
+            guiGraphics.drawString(this.font, Component.translatable("cobblemon_ts.editor.label.ev_sum", evSum, evCap).getString(), evColX, sumY, evSum <= evCap ? -12877066 : -1096636, false);
             if (this.selectedSlot >= 0 && this.crownVisible) {
                 PokemonData d = (PokemonData)this.partyData.get(this.selectedSlot);
                 int bgColor = d.goldenBottleCap ? -11141291 : -43691;
-                ResourceLocation crownIcon = ResourceLocation.fromNamespaceAndPath("coblemon_ts", "textures/item/gold_crown.png");
+                ResourceLocation crownIcon = ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "textures/item/gold_crown.png");
                 guiGraphics.pose().pushPose();
                 guiGraphics.pose().translate(0.0F, 0.0F, 400.0F);
                 guiGraphics.blit(crownIcon, this.crownIconX, this.crownIconY, 0.0F, 0.0F, 20, 20, 20, 20);
@@ -2483,15 +2483,15 @@ public class PokemonEditorScreen extends Screen {
             }
         } else if (this.activeTab == 1) {
             int battleY = editY + 15;
-            guiGraphics.drawString(this.font, Component.translatable("coblemon_ts.editor.label.current_hp").getString(), editX, battleY + 4, labelColor, false);
-            guiGraphics.drawString(this.font, Component.translatable("coblemon_ts.editor.label.max_hp").getString(), editX, battleY + 34, labelColor, false);
+            guiGraphics.drawString(this.font, Component.translatable("cobblemon_ts.editor.label.current_hp").getString(), editX, battleY + 4, labelColor, false);
+            guiGraphics.drawString(this.font, Component.translatable("cobblemon_ts.editor.label.max_hp").getString(), editX, battleY + 34, labelColor, false);
             int moveY = battleY + 70;
             int moveLabelW = 40;
             int moveW = 90;
 
             for(int i = 0; i < 4; ++i) {
                 int y = moveY + 25 * i;
-                guiGraphics.drawString(this.font, Component.translatable("coblemon_ts.editor.label.move", i + 1).getString(), editX, y + 4, labelColor, false);
+                guiGraphics.drawString(this.font, Component.translatable("cobblemon_ts.editor.label.move", i + 1).getString(), editX, y + 4, labelColor, false);
             }
 
             int moveFieldX = editX + moveLabelW + 10;
@@ -2499,8 +2499,8 @@ public class PokemonEditorScreen extends Screen {
             int ppLabelX = clearBtnX + 16 + 12;
             int ppFieldW = 50;
             int maxPPLabelX = ppLabelX + ppFieldW + 12;
-            guiGraphics.drawString(this.font, Component.translatable("coblemon_ts.editor.label.pp").getString(), ppLabelX, moveY - 15, labelColor, false);
-            guiGraphics.drawString(this.font, Component.translatable("coblemon_ts.editor.label.max_pp").getString(), maxPPLabelX, moveY - 15, -12877066, false);
+            guiGraphics.drawString(this.font, Component.translatable("cobblemon_ts.editor.label.pp").getString(), ppLabelX, moveY - 15, labelColor, false);
+            guiGraphics.drawString(this.font, Component.translatable("cobblemon_ts.editor.label.max_pp").getString(), maxPPLabelX, moveY - 15, -12877066, false);
             int move2Y = moveY + 25;
             int move3Y = moveY + 50;
             int move4Y = moveY + 75;
@@ -2575,11 +2575,11 @@ public class PokemonEditorScreen extends Screen {
         } else if (this.activeTab == 3) {
             int advY = editY + 15;
             if (!this.viewingAllTeam) {
-                guiGraphics.drawString(this.font, Component.translatable("coblemon_ts.editor.label.experience").getString(), editX, advY + 4, labelColor, false);
-                guiGraphics.drawString(this.font, Component.translatable("coblemon_ts.editor.label.uuid").getString(), editX, advY + 39, labelColor, false);
-                guiGraphics.drawString(this.font, Component.translatable("coblemon_ts.editor.label.data_area").getString(), editX + 10, advY + 64, labelColor, false);
+                guiGraphics.drawString(this.font, Component.translatable("cobblemon_ts.editor.label.experience").getString(), editX, advY + 4, labelColor, false);
+                guiGraphics.drawString(this.font, Component.translatable("cobblemon_ts.editor.label.uuid").getString(), editX, advY + 39, labelColor, false);
+                guiGraphics.drawString(this.font, Component.translatable("cobblemon_ts.editor.label.data_area").getString(), editX + 10, advY + 64, labelColor, false);
             } else {
-                guiGraphics.drawString(this.font, Component.translatable("coblemon_ts.editor.label.all_team_data").getString(), editX + 10, editY + 4, labelColor, false);
+                guiGraphics.drawString(this.font, Component.translatable("cobblemon_ts.editor.label.all_team_data").getString(), editX + 10, editY + 4, labelColor, false);
             }
         }
 
@@ -2853,7 +2853,7 @@ public class PokemonEditorScreen extends Screen {
             guiGraphics.fill(dlgX - 2, dlgY - 2, dlgX + dlgW + 2, dlgY + dlgH + 2, -16777216);
             guiGraphics.fill(dlgX, dlgY, dlgX + dlgW, dlgY + dlgH, dlgBg);
             guiGraphics.fill(dlgX, dlgY, dlgX + dlgW, dlgY + 28, dlgTitleBg);
-            guiGraphics.drawString(this.font, Component.translatable("coblemon_ts.editor.label.import_dialog").getString(), dlgX + 12, dlgY + 10, -1, true);
+            guiGraphics.drawString(this.font, Component.translatable("cobblemon_ts.editor.label.import_dialog").getString(), dlgX + 12, dlgY + 10, -1, true);
             int closeX = dlgX + dlgW - 28;
             int closeY = dlgY + 6;
             guiGraphics.fill(closeX, closeY, closeX + 22, closeY + 16, -4645860);
@@ -3175,11 +3175,11 @@ public class PokemonEditorScreen extends Screen {
                             this.advRawScrollOffset = 0;
                             if (this.minecraft.player != null) {
                                 File var10001 = this.pendingImportFiles[fileIdx];
-                                this.minecraft.player.sendSystemMessage(Component.translatable("coblemon_ts.editor.msg.loaded", var10001.getName()));
+                                this.minecraft.player.sendSystemMessage(Component.translatable("cobblemon_ts.editor.msg.loaded", var10001.getName()));
                             }
                         } catch (Exception e) {
                             if (this.minecraft.player != null) {
-                                this.minecraft.player.sendSystemMessage(Component.translatable("coblemon_ts.editor.msg.load_failed", e.getMessage()));
+                                this.minecraft.player.sendSystemMessage(Component.translatable("cobblemon_ts.editor.msg.load_failed", e.getMessage()));
                             }
                         }
 

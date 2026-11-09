@@ -40,7 +40,7 @@ public class TestBuildScreen extends Screen {
     private int fieldH = 16;
 
     public TestBuildScreen() {
-        super(Component.translatable("coblemon_ts.testbuild.title"));
+        super(Component.translatable("cobblemon_ts.testbuild.title"));
     }
 
     @Override
@@ -54,7 +54,7 @@ public class TestBuildScreen extends Screen {
 
         // ===== 行0: 初始宝可梦选择 | 统一主题切换 =====
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.testbuild.starter_select"),
+                Component.translatable("cobblemon_ts.testbuild.starter_select"),
                 btn -> { PacketDistributor.sendToServer(new TestBuildOpenStarterPacket()); this.onClose(); })
                 .pos(col0X, startY).size(btnW, btnH).build());
 
@@ -69,23 +69,23 @@ public class TestBuildScreen extends Screen {
 
         // ===== 行1: 颜色编辑器 | 清除所有护符 =====
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.testbuild.color_editor"),
+                Component.translatable("cobblemon_ts.testbuild.color_editor"),
                 btn -> Minecraft.getInstance().setScreen(new ColorEditorScreen()))
                 .pos(col0X, startY + rowStep).size(btnW, btnH).build());
 
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.testbuild.clear_charms"),
+                Component.translatable("cobblemon_ts.testbuild.clear_charms"),
                 btn -> { PacketDistributor.sendToServer(new ClearAllCharmsPacket()); this.onClose(); })
                 .pos(col1X, startY + rowStep).size(btnW, btnH).build());
 
         // ===== 行2: 幸运方块权重 | HUD设置 =====
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.testbuild.lucky_weight"),
+                Component.translatable("cobblemon_ts.testbuild.lucky_weight"),
                 btn -> Minecraft.getInstance().setScreen(new com.cobblemon_ts.mod.gui.lucky.LuckyWeightEditorScreen()))
                 .pos(col0X, startY + rowStep * 2).size(btnW, btnH).build());
 
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.testbuild.hud_settings"),
+                Component.translatable("cobblemon_ts.testbuild.hud_settings"),
                 btn -> Minecraft.getInstance().setScreen(new HudSettingsScreen()))
                 .pos(col1X, startY + rowStep * 2).size(btnW, btnH).build());
 
@@ -123,13 +123,13 @@ public class TestBuildScreen extends Screen {
 
         // ===== 行3: 保存护符配置 | 道具袋编辑器（对称布局） =====
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.testbuild.save_charm_config"),
+                Component.translatable("cobblemon_ts.testbuild.save_charm_config"),
                 btn -> saveAll())
                 .pos(col0X, charmStartY + rowStep * 3 + 5)
                 .size(btnW, btnH).build());
 
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.testbuild.pokebag_editor"),
+                Component.translatable("cobblemon_ts.testbuild.pokebag_editor"),
                 btn -> Minecraft.getInstance().setScreen(new PokebagConfigScreen()))
                 .pos(col1X, charmStartY + rowStep * 3 + 5)
                 .size(btnW, btnH).build());
@@ -177,7 +177,7 @@ public class TestBuildScreen extends Screen {
 
     private String getThemeToggleKey() {
         boolean light = CobblemonTSConfig.LIGHT_PANEL_THEME.get();
-        return light ? "coblemon_ts.testbuild.theme_light" : "coblemon_ts.testbuild.theme_dark";
+        return light ? "cobblemon_ts.testbuild.theme_light" : "cobblemon_ts.testbuild.theme_dark";
     }
 
     private void saveAll() {
@@ -207,11 +207,11 @@ public class TestBuildScreen extends Screen {
 
             if (Minecraft.getInstance().player != null)
                 Minecraft.getInstance().player.displayClientMessage(
-                        Component.translatable("coblemon_ts.testbuild.charm_saved"), false);
+                        Component.translatable("cobblemon_ts.testbuild.charm_saved"), false);
         } catch (NumberFormatException e) {
             if (Minecraft.getInstance().player != null)
                 Minecraft.getInstance().player.displayClientMessage(
-                        Component.translatable("coblemon_ts.testbuild.input_error"), false);
+                        Component.translatable("cobblemon_ts.testbuild.input_error"), false);
         }
     }
 
@@ -226,12 +226,12 @@ public class TestBuildScreen extends Screen {
         g.drawCenteredString(this.font, this.title, centerX, this.height / 2 - 100, 0xFFFFFF);
 
         // [线性-TB-V3i] 护符标签着色渲染（绿=拥有 / 红=无）
-        renderCharmLabel(g, "shiny_charm",   "coblemon_ts.testbuild.shiny_boost",   col0X, labelY_base);
-        renderCharmLabel(g, "catching_charm","coblemon_ts.testbuild.catch_boost",   col1X, labelY_base);
-        renderCharmLabel(g, "exp_charm",     "coblemon_ts.testbuild.exp_boost",     col0X, labelY_base + rowStep);
-        renderCharmLabel(g, "oval_charm",    "coblemon_ts.testbuild.hatch_boost",   col1X, labelY_base + rowStep);
-        renderCharmLabel(g, "exp_all",       "coblemon_ts.testbuild.exp_all_percent", col0X, labelY_base + rowStep * 2);
-        renderCharmLabel(g, "pokebag",       "coblemon_ts.testbuild.bag_stack",     col1X, labelY_base + rowStep * 2);
+        renderCharmLabel(g, "shiny_charm",   "cobblemon_ts.testbuild.shiny_boost",   col0X, labelY_base);
+        renderCharmLabel(g, "catching_charm","cobblemon_ts.testbuild.catch_boost",   col1X, labelY_base);
+        renderCharmLabel(g, "exp_charm",     "cobblemon_ts.testbuild.exp_boost",     col0X, labelY_base + rowStep);
+        renderCharmLabel(g, "oval_charm",    "cobblemon_ts.testbuild.hatch_boost",   col1X, labelY_base + rowStep);
+        renderCharmLabel(g, "exp_all",       "cobblemon_ts.testbuild.exp_all_percent", col0X, labelY_base + rowStep * 2);
+        renderCharmLabel(g, "pokebag",       "cobblemon_ts.testbuild.bag_stack",     col1X, labelY_base + rowStep * 2);
     }
 
     private void renderCharmLabel(GuiGraphics g, String charmId, String translationKey, int x, int y) {

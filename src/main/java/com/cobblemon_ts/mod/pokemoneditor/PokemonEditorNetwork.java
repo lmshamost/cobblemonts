@@ -22,10 +22,10 @@ import java.util.UUID;
 // ========================================================================
 public class PokemonEditorNetwork {
 
-    public static final ResourceLocation PKT_OPEN_EDITOR = ResourceLocation.fromNamespaceAndPath("coblemon_ts", "open_editor");
-    public static final ResourceLocation PKT_POKEMON_DATA = ResourceLocation.fromNamespaceAndPath("coblemon_ts", "pokemon_data");
-    public static final ResourceLocation PKT_UPDATE_POKEMON = ResourceLocation.fromNamespaceAndPath("coblemon_ts", "update_pokemon");
-    public static final ResourceLocation PKT_DELETE_POKEMON = ResourceLocation.fromNamespaceAndPath("coblemon_ts", "delete_pokemon");
+    public static final ResourceLocation PKT_OPEN_EDITOR = ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "open_editor");
+    public static final ResourceLocation PKT_POKEMON_DATA = ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "pokemon_data");
+    public static final ResourceLocation PKT_UPDATE_POKEMON = ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "update_pokemon");
+    public static final ResourceLocation PKT_DELETE_POKEMON = ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "delete_pokemon");
 
     // ---------- 1. OpenEditorPacket (Server→Client) ----------
     public record OpenEditorPacket(int partySize, String playerName, UUID playerUUID) implements CustomPacketPayload {

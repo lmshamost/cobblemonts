@@ -16,7 +16,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public record UpdateCharmStatePacket(String charmId, boolean owned) implements CustomPacketPayload {
     public static final Type<UpdateCharmStatePacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath("coblemon_ts", "update_charm_state"));
+            ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "update_charm_state"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, UpdateCharmStatePacket> STREAM_CODEC =
             StreamCodec.composite(

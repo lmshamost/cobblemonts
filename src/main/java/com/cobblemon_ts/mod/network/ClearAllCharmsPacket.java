@@ -16,7 +16,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public record ClearAllCharmsPacket() implements CustomPacketPayload {
     public static final Type<ClearAllCharmsPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath("coblemon_ts", "clear_all_charms"));
+            ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "clear_all_charms"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, ClearAllCharmsPacket> STREAM_CODEC =
             StreamCodec.unit(new ClearAllCharmsPacket());
@@ -42,7 +42,7 @@ public record ClearAllCharmsPacket() implements CustomPacketPayload {
                 }
                 manager.setPokebagOwned(false);
 
-                sp.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.coblemon_ts.all_charms_cleared"));
+                sp.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.cobblemon_ts.all_charms_cleared"));
             }
         });
     }

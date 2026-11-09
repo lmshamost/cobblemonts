@@ -16,7 +16,7 @@ import java.lang.reflect.Method;
 public record SwapPartySlotsPacket(int slot1, int slot2) implements CustomPacketPayload {
 
     public static final Type<SwapPartySlotsPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath("coblemon_ts", "swap_party_slots"));
+            ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "swap_party_slots"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, SwapPartySlotsPacket> STREAM_CODEC = new StreamCodec<>() {
         @Override

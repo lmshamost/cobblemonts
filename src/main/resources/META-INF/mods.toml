@@ -3,7 +3,7 @@ loaderVersion="[1,)"
 license="All Rights Reserved"
 
 [[mods]]
-modId="coblemon_ts"
+modId="cobblemon_ts"
 version="${mod_version}"
 displayName="Cobblemon TS"
 authors="Your Name"
@@ -12,21 +12,21 @@ Cobblemon TS - Enhanced Charm System for Cobblemon
 Adds various charms that provide bonuses like increased catch rate, experience boost, and shiny chance.
 """
 
-[[dependencies.coblemon_ts]]
+[[dependencies.cobblemon_ts]]
 modId="neoforge"
 mandatory=true
 versionRange="[21.1,)"
 ordering="NONE"
 side="BOTH"
 
-[[dependencies.coblemon_ts]]
+[[dependencies.cobblemon_ts]]
 modId="minecraft"
 mandatory=true
 versionRange="[1.21.1,)"
 ordering="NONE"
 side="BOTH"
 
-[[dependencies.coblemon_ts]]
+[[dependencies.cobblemon_ts]]
 modId="cobblemon"
 mandatory=true
 versionRange="[1.0.0,)"

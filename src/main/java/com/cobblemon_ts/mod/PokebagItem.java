@@ -22,14 +22,14 @@ public class PokebagItem extends Item {
 
             CharmSlotManager manager = playerData.getCharmSlotManager();
             if (manager.isPokebagOwned()) {
-                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.coblemon_ts.pokebag_already_owned"));
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.cobblemon_ts.pokebag_already_owned"));
                 return InteractionResultHolder.fail(player.getItemInHand(hand));
             }
 
             manager.setPokebagOwned(true);
             ItemStack stack = player.getItemInHand(hand);
             stack.shrink(1);
-            player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.coblemon_ts.pokebag_obtained"));
+            player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.cobblemon_ts.pokebag_obtained"));
             return InteractionResultHolder.consume(stack);
         }
         return InteractionResultHolder.success(player.getItemInHand(hand));

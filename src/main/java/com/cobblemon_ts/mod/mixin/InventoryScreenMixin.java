@@ -174,7 +174,7 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
         guiGraphics.fill(partyPanelX, topPos, partyPanelX + panelWidth, topPos + 18, -856295947);
         guiGraphics.fill(partyPanelX + 1, topPos + 1, partyPanelX + panelWidth - 1, topPos + 17, -855638017);
         guiGraphics.drawCenteredString(this.font,
-                Component.translatable("coblemon_ts.ui.party").getString(),
+                Component.translatable("cobblemon_ts.ui.party").getString(),
                 partyPanelX + panelWidth / 2, topPos + 5, 0xFFFFFFFF);
     }
 
@@ -296,7 +296,7 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
         // JAR L82-L104: 居中标题
         int textColor = PartyUIState.getPanelTextColor();
         guiGraphics.drawCenteredString(this.font,
-                Component.translatable("coblemon_ts.ui.party").getString(),
+                Component.translatable("cobblemon_ts.ui.party").getString(),
                 panelX + panelWidth / 2, panelY + 4, textColor);
 
         // JAR L105-L111: 获取队伍列表（使用缓存）
@@ -496,7 +496,7 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
         // ===== 顶部标题（对齐精灵栏"Party"阴影效果） =====
         int textColor = PartyUIState.getPanelTextColor();
         guiGraphics.drawCenteredString(this.font,
-                Component.translatable("coblemon_ts.ui.charms"),
+                Component.translatable("cobblemon_ts.ui.charms"),
                 drawerX + drawerWidth / 2, charmDrawerY + 4, textColor);
 
         // ===== 6个框：道具袋 + 5种护符，与精灵栏槽位边框风格一致 =====
@@ -535,10 +535,10 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
                     int textX = iconX + iconSize + 3;
 
                     boolean auto = bagManager != null && bagManager.isAutoCollect();
-                    String autoLabel = Component.translatable("coblemon_ts.ui.auto_collect").getString();
+                    String autoLabel = Component.translatable("cobblemon_ts.ui.auto_collect").getString();
                     String status = auto
-                            ? Component.translatable("coblemon_ts.ui.auto_on").getString()
-                            : Component.translatable("coblemon_ts.ui.auto_off").getString();
+                            ? Component.translatable("cobblemon_ts.ui.auto_on").getString()
+                            : Component.translatable("cobblemon_ts.ui.auto_off").getString();
                     int autoColor = textColor;
                     int statusColor = auto ? 0xFF_00FF00 : 0xFF_FF5555;
 
@@ -563,7 +563,7 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
 
                     // 右侧文字区域：标签 + 数值 双行（避免3行重叠）
                     int textX = iconX + iconSize + 3;
-                    String charmLabel = Component.translatable("coblemon_ts.charm." + getCharmKey(type)).getString();
+                    String charmLabel = Component.translatable("cobblemon_ts.charm." + getCharmKey(type)).getString();
                     guiGraphics.drawString(this.font, charmLabel, textX, slotY + 3, textColor, false);
                     guiGraphics.drawString(this.font, getCharmValue(type), textX, slotY + 15, textColor, false);
 
@@ -594,13 +594,13 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
         // [线性-C02] 动态菜单项：拥有道具袋时添加"使用道具"
         boolean hasPokebag = state.charmManager != null && state.charmManager.isPokebagOwned();
         java.util.List<String> itemList = new java.util.ArrayList<>();
-        itemList.add(Component.translatable("coblemon_ts.ui.summary").getString());
-        itemList.add(Component.translatable("coblemon_ts.ui.set_first").getString());
-        itemList.add(Component.translatable("coblemon_ts.ui.evolve").getString());
-        itemList.add(Component.translatable("coblemon_ts.ui.send_pc").getString());
-        itemList.add(Component.translatable("coblemon_ts.ui.release").getString());
+        itemList.add(Component.translatable("cobblemon_ts.ui.summary").getString());
+        itemList.add(Component.translatable("cobblemon_ts.ui.set_first").getString());
+        itemList.add(Component.translatable("cobblemon_ts.ui.evolve").getString());
+        itemList.add(Component.translatable("cobblemon_ts.ui.send_pc").getString());
+        itemList.add(Component.translatable("cobblemon_ts.ui.release").getString());
         if (hasPokebag) {
-            itemList.add(Component.translatable("coblemon_ts.ui.use_item").getString());
+            itemList.add(Component.translatable("cobblemon_ts.ui.use_item").getString());
         }
         String[] items = itemList.toArray(new String[0]);
 
@@ -649,7 +649,7 @@ public abstract class InventoryScreenMixin extends AbstractContainerScreen {
         poseStack.popPose();
     }
 
-    // [线性-C04] 护符标签键 → translatable key: coblemon_ts.charm.<suffix>
+    // [线性-C04] 护符标签键 → translatable key: cobblemon_ts.charm.<suffix>
     private static String getCharmKey(CharmType type) {
         return switch (type) {
             case SHINY    -> "shiny";

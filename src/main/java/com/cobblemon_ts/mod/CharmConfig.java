@@ -113,7 +113,7 @@ public class CharmConfig {
                 "#cobblemon:mints",
                 "#cobblemon:candies",
                 "#cobblemon:vitamins",
-                "#coblemon_ts:baguse"
+                "#cobblemon_ts:baguse"
             ), obj -> obj instanceof String);
 
         POKEBAG_SLOTS = BUILDER
@@ -175,40 +175,40 @@ public class CharmConfig {
         LUCKY_WEIGHTS = BUILDER
             .comment("幸运方块权重与保底配置（仿原版loot_tables的quality机制）",
                      "格式: 方块ID|物品列表(逗号分隔)|权重(整数)|保底(整数)",
-                     "方块ID: coblemon_ts:item_lucky_block / coblemon_ts:lucky_block / coblemon_ts:legendary_lucky_block / coblemon_ts:ultra_beast_lucky_block / coblemon_ts:shiny_lucky_block",
+                     "方块ID: cobblemon_ts:item_lucky_block / cobblemon_ts:lucky_block / cobblemon_ts:legendary_lucky_block / cobblemon_ts:ultra_beast_lucky_block / cobblemon_ts:shiny_lucky_block",
                      "物品列表: item_id 或 tag:#tag_id 或 nbt:item_id@{components} 或 pokemon英文名",
                      "权重: 整数, 0=跳过加权随机仅靠保底, 数值越大概率越高",
                      "保底: 整数, 0=无保底, 每N次触发必出一次",
                      "动态幸运加成: 见 luck_weight_per_level 配置项 → 给最低权重物品加权",
                      "示例:",
-                     "  coblemon_ts:item_lucky_block|coblemon_ts:catching_charm,coblemon_ts:shiny_charm|1|50",
-                     "  coblemon_ts:item_lucky_block|coblemon_ts:exp_charm,coblemon_ts:exp_all|2|30",
-                     "  coblemon_ts:ultra_beast_lucky_block|nihilego|1|800\n---\n" +
+                     "  cobblemon_ts:item_lucky_block|cobblemon_ts:catching_charm,cobblemon_ts:shiny_charm|1|50",
+                     "  cobblemon_ts:item_lucky_block|cobblemon_ts:exp_charm,cobblemon_ts:exp_all|2|30",
+                     "  cobblemon_ts:ultra_beast_lucky_block|nihilego|1|800\n---\n" +
                      "Lucky Block weight & pity config (mimics vanilla loot_tables quality mechanism)",
                      "Format: block_id|item_list(comma separated)|weight(int)|pity(int)",
-                     "Block IDs: coblemon_ts:item_lucky_block / coblemon_ts:lucky_block / coblemon_ts:legendary_lucky_block / coblemon_ts:ultra_beast_lucky_block / coblemon_ts:shiny_lucky_block",
+                     "Block IDs: cobblemon_ts:item_lucky_block / cobblemon_ts:lucky_block / cobblemon_ts:legendary_lucky_block / cobblemon_ts:ultra_beast_lucky_block / cobblemon_ts:shiny_lucky_block",
                      "Item list: item_id or tag:#tag_id or nbt:item_id@{components} or pokemon_english_name",
                      "Weight: integer, 0=skip weighted random (pity only), higher = more likely",
                      "Pity: integer, 0=no pity, guaranteed every N triggers",
                      "Dynamic luck bonus: see luck_weight_per_level → adds weight to lowest-weight items",
                      "Examples:",
-                     "  coblemon_ts:item_lucky_block|coblemon_ts:catching_charm,coblemon_ts:shiny_charm|1|50",
-                     "  coblemon_ts:item_lucky_block|coblemon_ts:exp_charm,coblemon_ts:exp_all|2|30",
-                     "  coblemon_ts:ultra_beast_lucky_block|nihilego|1|800")
+                     "  cobblemon_ts:item_lucky_block|cobblemon_ts:catching_charm,cobblemon_ts:shiny_charm|1|50",
+                     "  cobblemon_ts:item_lucky_block|cobblemon_ts:exp_charm,cobblemon_ts:exp_all|2|30",
+                     "  cobblemon_ts:ultra_beast_lucky_block|nihilego|1|800")
             .defineList("lucky_weights", Arrays.asList(
                 // === 物品幸运方块默认配置 ===
-                "coblemon_ts:item_lucky_block|coblemon_ts:catching_charm,coblemon_ts:shiny_charm|1|50",
-                "coblemon_ts:item_lucky_block|coblemon_ts:exp_charm,coblemon_ts:exp_all|2|30",
-                "coblemon_ts:item_lucky_block|coblemon_ts:oval_charm|1|50",
-                "coblemon_ts:item_lucky_block|coblemon_ts:gold_crown|2|30",
-                "coblemon_ts:item_lucky_block|cobblemon:master_ball|3|0",
-                "coblemon_ts:item_lucky_block|tag:#cobblemon:candies|10|0",
-                "coblemon_ts:item_lucky_block|minecraft:dragon_egg,minecraft:nether_star|1|0",
-                "coblemon_ts:item_lucky_block|minecraft:emerald,minecraft:diamond|15|0",
-                "coblemon_ts:item_lucky_block|minecraft:redstone_block,minecraft:gold_ingot,minecraft:iron_ingot,minecraft:coal_block|20|0",
-                "coblemon_ts:item_lucky_block|nbt:minecraft:turtle_helmet@components:{\"minecraft:attribute_modifiers\":{modifiers:[{type:\"minecraft:generic.luck\",id:\"minecraft:generic.luck\",amount:10.0d,operation:\"add_value\",slot:\"head\"}],show_in_tooltip:false}}|1|100",
+                "cobblemon_ts:item_lucky_block|cobblemon_ts:catching_charm,cobblemon_ts:shiny_charm|1|50",
+                "cobblemon_ts:item_lucky_block|cobblemon_ts:exp_charm,cobblemon_ts:exp_all|2|30",
+                "cobblemon_ts:item_lucky_block|cobblemon_ts:oval_charm|1|50",
+                "cobblemon_ts:item_lucky_block|cobblemon_ts:gold_crown|2|30",
+                "cobblemon_ts:item_lucky_block|cobblemon:master_ball|3|0",
+                "cobblemon_ts:item_lucky_block|tag:#cobblemon:candies|10|0",
+                "cobblemon_ts:item_lucky_block|minecraft:dragon_egg,minecraft:nether_star|1|0",
+                "cobblemon_ts:item_lucky_block|minecraft:emerald,minecraft:diamond|15|0",
+                "cobblemon_ts:item_lucky_block|minecraft:redstone_block,minecraft:gold_ingot,minecraft:iron_ingot,minecraft:coal_block|20|0",
+                "cobblemon_ts:item_lucky_block|nbt:minecraft:turtle_helmet@components:{\"minecraft:attribute_modifiers\":{modifiers:[{type:\"minecraft:generic.luck\",id:\"minecraft:generic.luck\",amount:10.0d,operation:\"add_value\",slot:\"head\"}],show_in_tooltip:false}}|1|100",
                 // === 闪光幸运方块默认配置 ===
-                "coblemon_ts:shiny_lucky_block|mewtwo|50|100"
+                "cobblemon_ts:shiny_lucky_block|mewtwo|50|100"
             ), obj -> obj instanceof String);
 
         LUCK_WEIGHT_PER_LEVEL = BUILDER

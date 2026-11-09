@@ -19,8 +19,8 @@ import net.minecraft.resources.ResourceLocation;
 // 菜单捕捉按钮: BTN3_Y=50, h=25, 底边=menuY+75 → menuY+75=guiScaledH-30 → menuY=guiScaledH-105
 public class BattleChangeMenuActionSelection extends BattleActionSelection {
 
-    private static final ResourceLocation MENU1 = ResourceLocation.parse("coblemon_ts:textures/gui/battle_change_menu1.png");
-    private static final ResourceLocation MENU2 = ResourceLocation.parse("coblemon_ts:textures/gui/battle_change_menu2.png");
+    private static final ResourceLocation MENU1 = ResourceLocation.parse("cobblemon_ts:textures/gui/battle_change_menu1.png");
+    private static final ResourceLocation MENU2 = ResourceLocation.parse("cobblemon_ts:textures/gui/battle_change_menu2.png");
 
     private static final int MENU_W = 92;
     private static final int MENU_H = 80;

@@ -13,7 +13,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class PkBagScreen extends Screen {
 
-    private static final ResourceLocation PKBAG = ResourceLocation.parse("coblemon_ts:textures/gui/pkbag.png");
+    private static final ResourceLocation PKBAG = ResourceLocation.parse("cobblemon_ts:textures/gui/pkbag.png");
 
     // pkbag.png 尺寸 92x168
     private static final int PKBAG_W = 92;

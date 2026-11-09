@@ -19,7 +19,7 @@ import java.util.List;
 public record RequestPokebagContentsPacket() implements CustomPacketPayload {
 
     public static final Type<RequestPokebagContentsPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath("coblemon_ts", "request_pokebag_contents"));
+            ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "request_pokebag_contents"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, RequestPokebagContentsPacket> STREAM_CODEC =
             StreamCodec.unit(new RequestPokebagContentsPacket());

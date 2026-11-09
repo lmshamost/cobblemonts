@@ -6,6 +6,7 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.client.Minecraft;
 import net.neoforged.bus.api.IEventBus;
@@ -39,6 +40,11 @@ import com.cobblemon_ts.mod.network.UpdateCharmStatePacket;
 import com.cobblemon_ts.mod.network.RequestCharmStatesPacket;
 import com.cobblemon_ts.mod.network.SyncCharmStatesS2CPacket;
 import com.cobblemon_ts.mod.command.ClearCharmCommand;
+import com.cobblemon_ts.mod.command.HudCommand;
+import com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity;
+import com.cobblemon_ts.mod.block.ChunkBarrierEntityInterceptor;
+import com.cobblemon_ts.mod.gui.ChunkBarrierContainer;
+import com.cobblemon_ts.mod.gui.ChunkBarrierScreen;
 import com.cobblemon_ts.mod.lucky.LuckyBlocks;
 import com.cobblemon_ts.mod.lucky.LuckyRecipeCondition;
 import com.cobblemon_ts.mod.gui.ColorEditorConfig;
@@ -46,6 +52,7 @@ import com.cobblemon_ts.mod.gui.ModContainers;
 import com.cobblemon_ts.mod.gui.PartyHeldItemScreen;
 import com.cobblemon_ts.mod.gui.PartyHeldItemContainer;
 import com.cobblemon_ts.mod.gui.PokebagScreen;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import com.cobblemon_ts.mod.pokemoneditor.PokemonEditorItems;
 import com.cobblemon_ts.mod.pokemoneditor.PokemonEditorNetwork;
 import com.cobblemon_ts.mod.pokemoneditor.PokemonEditorClientHandler;
@@ -77,25 +84,27 @@ import net.minecraft.client.Minecraft;
 
 @Mod(CobblemonTS.MODID)
 public class CobblemonTS {
-    public static final String MODID = "coblemon_ts";
+    public static final String MODID = "cobblemon_ts";
+    public static final java.util.Map<net.minecraft.server.level.ServerLevel, java.util.Map<Long, Integer>> BARRIER_INDEX = new java.util.HashMap<>();
+    public static final java.util.Map<net.minecraft.server.level.ServerLevel, java.util.Set<com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity>> BARRIER_BE_SET = new java.util.HashMap<>();
     public static final Logger LOGGER = LogUtils.getLogger();
 
     // [线性-R06] 精灵雷达双按键：NUMPAD7=编辑器, NUMPAD8=开关追踪
     public static final KeyMapping RADAR_EDITOR_KEY = new KeyMapping(
-            "key.coblemon_ts.radar.editor",
+            "key.cobblemon_ts.radar.editor",
             InputConstants.KEY_NUMPAD7,
-            "key.categories.coblemon_ts"
+            "key.categories.cobblemon_ts"
     );
     public static final KeyMapping RADAR_TOGGLE_KEY = new KeyMapping(
-            "key.coblemon_ts.radar.toggle",
+            "key.cobblemon_ts.radar.toggle",
             InputConstants.KEY_NUMPAD8,
-            "key.categories.coblemon_ts"
+            "key.categories.cobblemon_ts"
     );
     
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> CHARM_TAB = CREATIVE_MODE_TABS.register("charm_tab", () -> CreativeModeTab.builder()
-            .title(Component.translatable("itemGroup.coblemon_ts"))
+            .title(Component.translatable("itemGroup.cobblemon_ts"))
             .withTabsBefore(CreativeModeTabs.COMBAT)
             .icon(() -> CharmItems.SHINY_CHARM.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
@@ -122,6 +131,13 @@ public class CobblemonTS {
     public static final DeferredRegister<MapCodec<? extends net.neoforged.neoforge.common.loot.IGlobalLootModifier>> LOOT_MODIFIER_SERIALIZERS =
             DeferredRegister.create(NeoForgeRegistries.GLOBAL_LOOT_MODIFIER_SERIALIZERS, MODID);
 
+    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES =
+            DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, MODID);
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ChunkBarrierBlockEntity>> CHUNK_BARRIER_BE =
+            BLOCK_ENTITY_TYPES.register("chunk_barrier",
+                    () -> BlockEntityType.Builder.of(ChunkBarrierBlockEntity::new, LuckyBlocks.CHUNK_BARRIER.get()).build(null));
+
     static {
         CONDITION_SERIALIZERS.register("lucky_recipes_enabled", () -> LuckyRecipeCondition.CODEC);
         LOOT_MODIFIER_SERIALIZERS.register("charm_loot", () -> CharmLootModifier.CODEC); // [线性-L06] 护符战利品
@@ -137,12 +153,14 @@ public class CobblemonTS {
         LuckyBlocks.register(modEventBus);
         CONDITION_SERIALIZERS.register(modEventBus);
         LOOT_MODIFIER_SERIALIZERS.register(modEventBus); // [线性-L06] 注册战利品修饰器
+        BLOCK_ENTITY_TYPES.register(modEventBus);
         ModContainers.MENU_TYPES.register(modEventBus);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, CharmConfig.SPEC, "CoblemonTest/common.toml");
         modContainer.registerConfig(ModConfig.Type.COMMON, CobblemonTSConfig.SPEC, "CoblemonTest/global.toml");
         modContainer.registerConfig(ModConfig.Type.COMMON, DebugConfig.SPEC, "CoblemonTest/debug.toml");
         modContainer.registerConfig(ModConfig.Type.COMMON, ColorEditorConfig.SPEC, "CoblemonTest/colors.toml");
+        modContainer.registerConfig(ModConfig.Type.COMMON, ChunkBarrierServerConfig.SPEC, "CoblemonTest/chunk_barrier.toml");
 
 
         modEventBus.register(CobblemonTS.class);
@@ -156,15 +174,11 @@ public class CobblemonTS {
     
     private void commonSetup(FMLCommonSetupEvent event) {
         CharmEventHandler.init();
-        // [线性-D01] 配方追踪：服务器启动后检查RecipeManager
-        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(CobblemonTS::onServerStarted);
-        // 注册 NeoForge 游戏事件总线（用于客户端 Tick 同步 Cobblemon 原生 UI）
         if (FMLEnvironment.dist == Dist.CLIENT) {
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(CobblemonTS::onClientTick);
         }
-        // [线性-CMD03] 注册 /cts set 指令（服务端，需权限2）
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(ClearCharmCommand::register);
-        // [线性-CMD-HUD] 注册 /cts hud 客户端指令（RegisterClientCommandsEvent 在 NeoForge EVENT_BUS）
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(CobblemonTS::onServerStarted);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(com.cobblemon_ts.mod.command.HudCommand::register);
         }
@@ -211,17 +225,47 @@ public class CobblemonTS {
         LOGGER.info("[RecipeCheck] ========== 服务器启动，检查RecipeManager ==========");
         int coblemonCount = 0;
         for (ResourceLocation key : rm.getRecipeIds().toList()) {
-            if (key.getNamespace().equals("coblemon_ts")) {
+            if (key.getNamespace().equals("cobblemon_ts")) {
                 coblemonCount++;
-                LOGGER.info("[RecipeCheck] 已加载coblemon_ts配方: {}", key);
+                LOGGER.info("[RecipeCheck] 已加载cobblemon_ts配方: {}", key);
             }
         }
         if (coblemonCount == 0) {
-            LOGGER.warn("[RecipeCheck] ⚠ 未找到任何coblemon_ts配方！");
+            LOGGER.warn("[RecipeCheck] ⚠ 未找到任何cobblemon_ts配方！");
         } else {
-            LOGGER.info("[RecipeCheck] coblemon_ts配方总数: {}", coblemonCount);
+            LOGGER.info("[RecipeCheck] cobblemon_ts配方总数: {}", coblemonCount);
         }
         LOGGER.info("[RecipeCheck] ================================================");
+
+        try {
+            var allLevels = event.getServer().getAllLevels();
+            for (var level : allLevels) {
+                if (!(level instanceof net.minecraft.server.level.ServerLevel sl)) continue;
+                var beSet = BARRIER_BE_SET.get(sl);
+                if (beSet == null || beSet.isEmpty()) continue;
+
+                int beCount = 0;
+                int totalChunks = 0;
+                int forceLoadChunks = 0;
+                for (var be : beSet) {
+                    if (be == null || be.isRemoved()) continue;
+                    beCount++;
+                    for (var e : be.getConfig().chunkRules.entrySet()) {
+                        totalChunks++;
+                        if ((e.getValue() & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_FORCELOAD) != 0) {
+                            forceLoadChunks++;
+                        }
+                    }
+                    be.applyAllForceLoads(sl);
+                }
+                rebuildLevelIndex(sl);
+                LOGGER.info("[ChunkBarrier] 维度 {}: {} 个BE, 覆盖 {} 个区块, {} 个强制加载",
+                        sl.dimension().location(), beCount, totalChunks, forceLoadChunks);
+            }
+            LOGGER.info("[ChunkBarrier] 服务器启动完成");
+        } catch (Throwable t) {
+            LOGGER.error("[ChunkBarrier] Exception during server start", t);
+        }
     }
 
     // ========== 客户端 Tick：同步 Cobblemon ClientStorageManager.this.party ← partyStores ==========
@@ -279,7 +323,7 @@ public class CobblemonTS {
                 if (mc.player != null) {
                     mc.player.displayClientMessage(
                         net.minecraft.network.chat.Component.translatable(
-                            state.isRadarTrackingEnabled() ? "coblemon_ts.radar.tracking_on" : "coblemon_ts.radar.tracking_off"), true);
+                            state.isRadarTrackingEnabled() ? "cobblemon_ts.radar.tracking_on" : "cobblemon_ts.radar.tracking_off"), true);
                 }
             }
         }
@@ -306,6 +350,7 @@ public class CobblemonTS {
     private void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ModContainers.PARTY_HELD_ITEM.get(), PartyHeldItemScreen::new);
         event.register(ModContainers.POKEBAG.get(), PokebagScreen::new);
+        event.register(ModContainers.CHUNK_BARRIER.get(), ChunkBarrierScreen::new);
     }
 
     @net.neoforged.api.distmarker.OnlyIn(Dist.CLIENT)
@@ -429,6 +474,11 @@ public class CobblemonTS {
                 UpdateCharmStatePacket.STREAM_CODEC,
                 UpdateCharmStatePacket::handleServerSide
         );
+        registrar.playToServer(
+                com.cobblemon_ts.mod.network.SyncConfigPayload.TYPE,
+                com.cobblemon_ts.mod.network.SyncConfigPayload.STREAM_CODEC,
+                com.cobblemon_ts.mod.network.SyncConfigPayload::handleServerSide
+        );
     }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
@@ -449,6 +499,163 @@ public class CobblemonTS {
             event.accept(LuckyBlocks.ULTRA_BEAST_LUCKY_BLOCK);
             event.accept(LuckyBlocks.SHINY_LUCKY_BLOCK);
             event.accept(LuckyBlocks.ITEM_LUCKY_BLOCK);
+            event.accept(LuckyBlocks.CHUNK_BARRIER);
+        }
+    }
+
+    public static void registerBarrierBE(com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity be, net.minecraft.server.level.ServerLevel sl) {
+        BARRIER_BE_SET.computeIfAbsent(sl, k -> java.util.concurrent.ConcurrentHashMap.newKeySet()).add(be);
+        LOGGER.info("[ChunkBarrier] +register BE at {} dim={} totalBEs={}", be.getBlockPos(), sl.dimension().location(), BARRIER_BE_SET.get(sl).size());
+        rebuildLevelIndex(sl);
+    }
+
+    public static void unregisterBarrierBE(com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity be, net.minecraft.server.level.ServerLevel sl) {
+        var set = BARRIER_BE_SET.get(sl);
+        if (set != null) set.remove(be);
+        LOGGER.info("[ChunkBarrier] -unregister BE at {} dim={}", be.getBlockPos(), sl.dimension().location());
+        rebuildLevelIndex(sl);
+    }
+
+    public static void rebuildLevelIndex(net.minecraft.server.level.ServerLevel sl) {
+        try {
+            var beSet = BARRIER_BE_SET.get(sl);
+            var newMap = new java.util.HashMap<Long, Integer>();
+            if (beSet != null) {
+                for (var be : beSet) {
+                    if (be == null || be.isRemoved()) continue;
+                    for (var e : be.getConfig().chunkRules.entrySet()) {
+                        long key = e.getKey();
+                        int flags = e.getValue() & 0xFF;
+                        if (flags != 0) {
+                            newMap.merge(key, flags, (a, b) -> a | b);
+                        }
+                    }
+                }
+            }
+            if (newMap.isEmpty()) {
+                BARRIER_INDEX.remove(sl);
+                LOGGER.info("[ChunkBarrier] rebuildLevelIndex dim={} -> empty ({} BEs)", sl.dimension().location(), beSet == null ? 0 : beSet.size());
+            } else {
+                BARRIER_INDEX.put(sl, newMap);
+                LOGGER.info("[ChunkBarrier] rebuildLevelIndex dim={} -> {} chunks from {} BEs", sl.dimension().location(), newMap.size(), beSet == null ? 0 : beSet.size());
+            }
+        } catch (Throwable t) {
+            LOGGER.error("[ChunkBarrier] Exception rebuilding index", t);
+        }
+    }
+
+    public static boolean isEntityBlocked(net.minecraft.world.entity.Entity entity, net.minecraft.server.level.ServerLevel sl) {
+        long cx = entity.blockPosition().getX() >> 4;
+        long cz = entity.blockPosition().getZ() >> 4;
+        long chunkKey = ((long) cx << 32) | (cz & 0xFFFFFFFFL);
+
+        var levelMap = BARRIER_INDEX.get(sl);
+        if (levelMap == null || levelMap.isEmpty()) return false;
+        int flags = levelMap.getOrDefault(chunkKey, 0);
+        if (flags == 0) return false;
+
+        var entityType = entity.getType();
+        var typeKey = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(entityType);
+        String ns = typeKey.getNamespace();
+        String path = typeKey.getPath();
+
+        if ((flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_POKEMON) != 0
+                && ns.equals("cobblemon") && path.equals("pokemon")) return true;
+        if ((flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_NPC) != 0
+                && ns.equals("cobblemon") && path.equals("npc")) return true;
+
+        var cat = entityType.getCategory();
+        boolean isHostile = cat == net.minecraft.world.entity.MobCategory.MONSTER;
+        boolean isPassive = cat == net.minecraft.world.entity.MobCategory.CREATURE
+                || cat == net.minecraft.world.entity.MobCategory.AMBIENT
+                || cat == net.minecraft.world.entity.MobCategory.WATER_CREATURE
+                || cat == net.minecraft.world.entity.MobCategory.WATER_AMBIENT
+                || cat == net.minecraft.world.entity.MobCategory.UNDERGROUND_WATER_CREATURE
+                || cat == net.minecraft.world.entity.MobCategory.AXOLOTLS;
+        if (isHostile && (flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_HOSTILE) != 0) return true;
+        if (isPassive && (flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_PASSIVE) != 0) return true;
+
+        return false;
+    }
+
+    public static void onEntityJoinLevel(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent event) {
+        var entity = event.getEntity();
+        if (entity == null) return;
+        var level = event.getLevel();
+        if (level == null || level.isClientSide()) return;
+        if (!(level instanceof net.minecraft.server.level.ServerLevel sl)) return;
+
+        try {
+            long cx = entity.blockPosition().getX() >> 4;
+            long cz = entity.blockPosition().getZ() >> 4;
+
+            if (isEntityBlocked(entity, sl)) {
+                var typeKey = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
+                LOGGER.info("[ChunkBarrier] >>> EntityJoinLevel BLOCKED entity={} at chunk [{},{}]", typeKey, cx, cz);
+                event.setCanceled(true);
+            }
+        } catch (Throwable t) {
+            LOGGER.error("[ChunkBarrier] Exception in EntityJoinLevel", t);
+        }
+    }
+
+    public static void onMobSpawnPositionCheck(net.neoforged.neoforge.event.entity.living.MobSpawnEvent.PositionCheck event) {
+        try {
+            if (event.getLevel() == null || event.getLevel().isClientSide()) return;
+            var level = event.getLevel();
+            if (!(level instanceof net.minecraft.server.level.ServerLevel sl)) return;
+            var spawnType = event.getSpawnType();
+            if (spawnType == null) return;
+            if (spawnType == net.minecraft.world.entity.MobSpawnType.SPAWN_EGG
+                    || spawnType == net.minecraft.world.entity.MobSpawnType.BREEDING
+                    || spawnType == net.minecraft.world.entity.MobSpawnType.DISPENSER
+                    || spawnType == net.minecraft.world.entity.MobSpawnType.BUCKET
+                    || spawnType == net.minecraft.world.entity.MobSpawnType.COMMAND
+                    || spawnType == net.minecraft.world.entity.MobSpawnType.EVENT
+                    || spawnType == net.minecraft.world.entity.MobSpawnType.TRIAL_SPAWNER
+                    || spawnType == net.minecraft.world.entity.MobSpawnType.CONVERSION
+                    || spawnType == net.minecraft.world.entity.MobSpawnType.TRIGGERED) return;
+
+            long cx = (long) event.getX() >> 4;
+            long cz = (long) event.getZ() >> 4;
+            long chunkKey = ((long) cx << 32) | (cz & 0xFFFFFFFFL);
+
+            var levelMap = BARRIER_INDEX.get(sl);
+            if (levelMap == null || levelMap.isEmpty()) return;
+            int flags = levelMap.getOrDefault(chunkKey, 0);
+
+            var entity = event.getEntity();
+            if (entity == null) return;
+            var entityType = entity.getType();
+
+            if (flags == 0) return;
+            var typeKey = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(entityType);
+            String ns = typeKey.getNamespace();
+            String path = typeKey.getPath();
+
+            boolean blocked = false;
+            if ((flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_POKEMON) != 0
+                    && ns.equals("cobblemon") && path.equals("pokemon")) blocked = true;
+            if (!blocked && (flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_NPC) != 0
+                    && ns.equals("cobblemon") && path.equals("npc")) blocked = true;
+            if (!blocked) {
+                var cat = entityType.getCategory();
+                boolean isHostile = cat == net.minecraft.world.entity.MobCategory.MONSTER;
+                boolean isPassive = cat == net.minecraft.world.entity.MobCategory.CREATURE
+                        || cat == net.minecraft.world.entity.MobCategory.AMBIENT
+                        || cat == net.minecraft.world.entity.MobCategory.WATER_CREATURE
+                        || cat == net.minecraft.world.entity.MobCategory.WATER_AMBIENT
+                        || cat == net.minecraft.world.entity.MobCategory.UNDERGROUND_WATER_CREATURE
+                        || cat == net.minecraft.world.entity.MobCategory.AXOLOTLS;
+                if (isHostile && (flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_HOSTILE) != 0) blocked = true;
+                if (isPassive && (flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_PASSIVE) != 0) blocked = true;
+            }
+
+            if (blocked) {
+                event.setResult(net.neoforged.neoforge.event.entity.living.MobSpawnEvent.PositionCheck.Result.FAIL);
+            }
+        } catch (Throwable t) {
+            LOGGER.error("[ChunkBarrier] Exception in spawn check", t);
         }
     }
 

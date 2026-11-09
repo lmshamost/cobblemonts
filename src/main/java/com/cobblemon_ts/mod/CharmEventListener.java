@@ -47,7 +47,7 @@ public class CharmEventListener {
         }
 
         if (changed) {
-            player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.coblemon_ts.start_items_granted"));
+            player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.cobblemon_ts.start_items_granted"));
         }
     }
     

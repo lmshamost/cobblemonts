@@ -34,7 +34,7 @@ public class PokebagInventoryPickScreen extends Screen {
     private final List<String> displayIds;
 
     public PokebagInventoryPickScreen(boolean isWhitelist, PokebagTagListScreen parent) {
-        super(Component.translatable("coblemon_ts.pokebag_config.pick_inv"));
+        super(Component.translatable("cobblemon_ts.pokebag_config.pick_inv"));
         this.isWhitelist = isWhitelist;
         this.parent = parent;
 
@@ -118,14 +118,14 @@ public class PokebagInventoryPickScreen extends Screen {
         int infoY = panelY + panelH + 4;
         String hint = "左键选中/取消 | 右键确认添加";
         guiGraphics.drawCenteredString(this.font,
-                Component.translatable("coblemon_ts.pokebag_config.pick_hint"),
+                Component.translatable("cobblemon_ts.pokebag_config.pick_hint"),
                 this.width / 2, infoY, 0xFFAAAAAA);
 
         if (!selectedIds.isEmpty()) {
             String selInfo = selectedIds.size() + " 个物品已选中";
             guiGraphics.drawCenteredString(this.font,
                     Component.literal("§a" + selectedIds.size()
-                            + " " + Component.translatable("coblemon_ts.pokebag_config.selected").getString()),
+                            + " " + Component.translatable("cobblemon_ts.pokebag_config.selected").getString()),
                     this.width / 2, infoY + 12, 0xFF55FF55);
         }
     }

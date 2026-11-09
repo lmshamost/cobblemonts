@@ -1,10 +1,10 @@
 {
   "replace": false,
   "values": [
-    "coblemon_ts:lucky_block",
-    "coblemon_ts:legendary_lucky_block",
-    "coblemon_ts:ultra_beast_lucky_block",
-    "coblemon_ts:shiny_lucky_block",
-    "coblemon_ts:item_lucky_block"
+    "cobblemon_ts:lucky_block",
+    "cobblemon_ts:legendary_lucky_block",
+    "cobblemon_ts:ultra_beast_lucky_block",
+    "cobblemon_ts:shiny_lucky_block",
+    "cobblemon_ts:item_lucky_block"
   ]
 }

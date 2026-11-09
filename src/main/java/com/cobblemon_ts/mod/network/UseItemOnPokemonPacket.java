@@ -23,7 +23,7 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
         boolean fromPokebag) implements CustomPacketPayload {
 
     public static final Type<UseItemOnPokemonPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath("coblemon_ts", "use_item_on_pokemon"));
+            ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "use_item_on_pokemon"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, UseItemOnPokemonPacket> STREAM_CODEC = new StreamCodec<>() {
         @Override
@@ -100,7 +100,7 @@ public record UseItemOnPokemonPacket(UUID pokemonUuid, String itemId, int count,
                             break;
                         }
                         // ★ 金色王冠特殊处理：切换金色王冠状态（NBT持久化），无需选择技能UI
-                        if ("coblemon_ts:gold_crown".equals(packet.itemId())) {
+                        if ("cobblemon_ts:gold_crown".equals(packet.itemId())) {
                             if (handleGoldenBottleCap(serverPlayer, pokemon, packet)) {
                                 if (packet.fromPokebag()) deductFromPokebag(serverPlayer, packet.itemId(), packet.count());
                             }

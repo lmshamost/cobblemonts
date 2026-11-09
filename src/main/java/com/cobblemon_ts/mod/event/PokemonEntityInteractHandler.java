@@ -31,7 +31,7 @@ public class PokemonEntityInteractHandler {
         ItemStack held = player.getItemInHand(event.getHand());
         if (held.isEmpty()) return;
         String itemId = BuiltInRegistries.ITEM.getKey(held.getItem()).toString();
-        if (!"coblemon_ts:gold_crown".equals(itemId)) return;
+        if (!"cobblemon_ts:gold_crown".equals(itemId)) return;
 
         // ★ 检查目标实体是否为cobblemon的PokemonEntity
         var target = event.getTarget();

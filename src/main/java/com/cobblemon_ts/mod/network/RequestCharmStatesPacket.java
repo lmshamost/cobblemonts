@@ -20,7 +20,7 @@ import com.cobblemon_ts.mod.CharmType;
 
 public record RequestCharmStatesPacket() implements CustomPacketPayload {
     public static final Type<RequestCharmStatesPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath("coblemon_ts", "request_charm_states"));
+            ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "request_charm_states"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, RequestCharmStatesPacket> STREAM_CODEC =
             StreamCodec.unit(new RequestCharmStatesPacket());

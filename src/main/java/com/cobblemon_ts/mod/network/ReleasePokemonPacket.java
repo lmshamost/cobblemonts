@@ -14,7 +14,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 public record ReleasePokemonPacket(int slot) implements CustomPacketPayload {
 
     public static final Type<ReleasePokemonPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath("coblemon_ts", "release_pokemon"));
+            ResourceLocation.fromNamespaceAndPath("cobblemon_ts", "release_pokemon"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, ReleasePokemonPacket> STREAM_CODEC = new StreamCodec<>() {
         @Override

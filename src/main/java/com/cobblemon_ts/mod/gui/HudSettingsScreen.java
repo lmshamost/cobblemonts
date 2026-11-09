@@ -19,7 +19,7 @@ public class HudSettingsScreen extends Screen {
     private static final int ROW_STEP = BTN_H + BTN_GAP;
 
     public HudSettingsScreen() {
-        super(Component.translatable("coblemon_ts.hud.title"));
+        super(Component.translatable("cobblemon_ts.hud.title"));
     }
 
     @Override
@@ -29,45 +29,45 @@ public class HudSettingsScreen extends Screen {
         int y = 28;
 
         // [线性-P01-reorder] ==== 第1行: 药水buff背包 + 左上角 ====
-        addToggleBtn(leftX,  y, "coblemon_ts.hud.effect_icons_inv",       CobblemonTSConfig.SHOW_INVENTORY_EFFECT_ICONS);
-        addToggleBtn(rightX, y, "coblemon_ts.hud.effect_icons_top",      CobblemonTSConfig.SHOW_EFFECT_ICONS);
+        addToggleBtn(leftX,  y, "cobblemon_ts.hud.effect_icons_inv",       CobblemonTSConfig.SHOW_INVENTORY_EFFECT_ICONS);
+        addToggleBtn(rightX, y, "cobblemon_ts.hud.effect_icons_top",      CobblemonTSConfig.SHOW_EFFECT_ICONS);
         y += ROW_STEP;
 
         // [线性-P01-reorder] ==== 第2行: 药水隐藏闪烁 + 药水缩小 ====
-        addToggleBtn(leftX,  y, "coblemon_ts.hud.potion_hide_flash",     CobblemonTSConfig.HUD_POTION_HIDE_FLASH);
-        addToggleBtn(rightX, y, "coblemon_ts.hud.potion_shrink",          CobblemonTSConfig.HUD_POTION_SHRINK);
+        addToggleBtn(leftX,  y, "cobblemon_ts.hud.potion_hide_flash",     CobblemonTSConfig.HUD_POTION_HIDE_FLASH);
+        addToggleBtn(rightX, y, "cobblemon_ts.hud.potion_shrink",          CobblemonTSConfig.HUD_POTION_SHRINK);
         y += ROW_STEP;
 
         // [线性-P01-reorder] ==== 第3行: 雷达编辑器 + 精灵信息缩放 ====
         addRadarEditorBtn(leftX, y);
-        addToggleBtn(rightX, y, "coblemon_ts.hud.summary_guiscale",       CobblemonTSConfig.HUD_FORCE_SUMMARY_GUISCALE);
+        addToggleBtn(rightX, y, "cobblemon_ts.hud.summary_guiscale",       CobblemonTSConfig.HUD_FORCE_SUMMARY_GUISCALE);
         y += ROW_STEP;
 
         // ==== 第4行: 统一彩色条总开关 ====
-        addToggleBtn(leftX,  y, "coblemon_ts.hud.colored_bars",           CobblemonTSConfig.HUD_UNIFIED_COLORED_BARS);
-        addToggleBtn(rightX, y, "coblemon_ts.hud.hide_toggle_btns",       CobblemonTSConfig.HIDE_TOGGLE_BUTTONS);
+        addToggleBtn(leftX,  y, "cobblemon_ts.hud.colored_bars",           CobblemonTSConfig.HUD_UNIFIED_COLORED_BARS);
+        addToggleBtn(rightX, y, "cobblemon_ts.hud.hide_toggle_btns",       CobblemonTSConfig.HIDE_TOGGLE_BUTTONS);
         y += ROW_STEP;
 
         // ==== 第5行: 逐项-血条/饥饿 ====
-        addToggleBtn(leftX,  y, "coblemon_ts.hud.custom_health_bar",      CobblemonTSConfig.HUD_CUSTOM_HEALTH_BAR);
-        addToggleBtn(rightX, y, "coblemon_ts.hud.custom_food_bar",        CobblemonTSConfig.HUD_CUSTOM_FOOD_BAR);
+        addToggleBtn(leftX,  y, "cobblemon_ts.hud.custom_health_bar",      CobblemonTSConfig.HUD_CUSTOM_HEALTH_BAR);
+        addToggleBtn(rightX, y, "cobblemon_ts.hud.custom_food_bar",        CobblemonTSConfig.HUD_CUSTOM_FOOD_BAR);
         y += ROW_STEP;
 
         // ==== 第6行: 覆盖层 ====
-        addToggleBtn(leftX,  y, "coblemon_ts.hud.absorption_overlay",     CobblemonTSConfig.HUD_ABSORPTION_OVERLAY);
-        addToggleBtn(rightX, y, "coblemon_ts.hud.saturation_overlay",     CobblemonTSConfig.HUD_SATURATION_OVERLAY);
+        addToggleBtn(leftX,  y, "cobblemon_ts.hud.absorption_overlay",     CobblemonTSConfig.HUD_ABSORPTION_OVERLAY);
+        addToggleBtn(rightX, y, "cobblemon_ts.hud.saturation_overlay",     CobblemonTSConfig.HUD_SATURATION_OVERLAY);
         y += ROW_STEP;
 
         // ==== 第7行: 盔甲/经验 ====
-        addToggleBtn(leftX,  y, "coblemon_ts.hud.custom_armor_bar",       CobblemonTSConfig.HUD_CUSTOM_ARMOR_BAR);
-        addToggleBtn(rightX, y, "coblemon_ts.hud.custom_xp_bar",          CobblemonTSConfig.HUD_CUSTOM_XP_BAR);
+        addToggleBtn(leftX,  y, "cobblemon_ts.hud.custom_armor_bar",       CobblemonTSConfig.HUD_CUSTOM_ARMOR_BAR);
+        addToggleBtn(rightX, y, "cobblemon_ts.hud.custom_xp_bar",          CobblemonTSConfig.HUD_CUSTOM_XP_BAR);
         y += ROW_STEP;
 
         // ==== 返回按钮 ====
         y += 6;
         int cx = this.width / 2;
         this.addRenderableWidget(Button.builder(
-                Component.translatable("coblemon_ts.hud.close"),
+                Component.translatable("cobblemon_ts.hud.close"),
                 btn -> this.onClose())
                 .pos(cx - BTN_W / 2, y)
                 .size(BTN_W, BTN_H)
@@ -91,7 +91,7 @@ public class HudSettingsScreen extends Screen {
 
     // [线性-P01] 雷达编辑器按钮：打开精灵雷达编辑界面
     private void addRadarEditorBtn(int x, int y) {
-        Component label = Component.translatable("coblemon_ts.hud.radar_editor");
+        Component label = Component.translatable("cobblemon_ts.hud.radar_editor");
         this.addRenderableWidget(Button.builder(label, btn -> {
             Minecraft.getInstance().setScreen(new PokemonRadarScreen());
         }).pos(x, y).size(BTN_W, BTN_H).build());
@@ -100,7 +100,7 @@ public class HudSettingsScreen extends Screen {
     // [线性-H3] 格式化: "标签: §aON" / "标签: §cOFF"
     private static String formatLabel(String labelKey, boolean on) {
         String label = Component.translatable(labelKey).getString();
-        String status = Component.translatable(on ? "coblemon_ts.hud.on" : "coblemon_ts.hud.off").getString();
+        String status = Component.translatable(on ? "cobblemon_ts.hud.on" : "cobblemon_ts.hud.off").getString();
         return label + ": " + (on ? "§a" : "§c") + status;
     }
 
