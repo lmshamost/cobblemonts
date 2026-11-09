@@ -519,13 +519,13 @@ public class ChunkBarrierScreen extends AbstractContainerScreen<ChunkBarrierCont
             }
 
             if ((hflags & BAN_BITS) != 0) {
-                tip.add(Component.literal("  [禁止]"));
+                tip.add(Component.translatable("cobblemon_ts.chunk_barrier.tip.ban"));
             }
             if ((hflags & FORCE_BITS) != 0) {
-                tip.add(Component.literal("  [强制加载]"));
+                tip.add(Component.translatable("cobblemon_ts.chunk_barrier.tip.force_load"));
             }
             if ((hflags & BIT_LUCKY) != 0) {
-                tip.add(Component.literal("  [幸运方块禁止]"));
+                tip.add(Component.translatable("cobblemon_ts.chunk_barrier.tip.lucky_ban"));
             }
 
             if (!tip.isEmpty()) {
@@ -553,8 +553,8 @@ public class ChunkBarrierScreen extends AbstractContainerScreen<ChunkBarrierCont
         int banCnt = curBanChunkCount();
         int forceLimit = CharmConfig.getCbForceloadChunkLimit();
         int banLimit = CharmConfig.getCbBanChunkLimit();
-        String forceStr = "加载 " + forceCnt + "/" + forceLimit;
-        String banStr = "禁止 " + banCnt + "/" + banLimit;
+        String forceStr = Component.translatable("cobblemon_ts.chunk_barrier.count.force", forceCnt, forceLimit).getString();
+        String banStr = Component.translatable("cobblemon_ts.chunk_barrier.count.ban", banCnt, banLimit).getString();
         int forceColor = forceCnt >= forceLimit ? 0xFFFF6666 : 0xFFAAAAAA;
         int banColor = banCnt >= banLimit ? 0xFFFF6666 : 0xFFAAAAAA;
         graphics.drawString(font, forceStr, leftPos + PAD, panelTop + 4, forceColor);
@@ -562,7 +562,7 @@ public class ChunkBarrierScreen extends AbstractContainerScreen<ChunkBarrierCont
 
         // ② 提示行（panelTop + 4 + 14 + 2 = panelTop + 20）
         graphics.drawString(font,
-                "空名单=允许所有玩家  F3+G区块显示",
+                Component.translatable("cobblemon_ts.chunk_barrier.empty_list_hint").getString(),
                 leftPos + PAD, panelTop + 20, 0xFF888888);
 
         String title = editingTarget == TARGET_LUCKY
@@ -580,7 +580,7 @@ public class ChunkBarrierScreen extends AbstractContainerScreen<ChunkBarrierCont
 
         // ⑤ 操作说明（panelTop + 50 + 20 + 4 = panelTop + 74）
         graphics.drawString(font,
-                "左键切换黑白 右键删除/n点击名单列表切换名单添加",
+                Component.translatable("cobblemon_ts.chunk_barrier.hint_ops").getString(),
                 leftPos + PAD, panelTop + 74, 0xFF666666);
 
         int listBoxX = leftPos + LEFT_W + PAD;

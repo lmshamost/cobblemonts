@@ -371,6 +371,7 @@
   "cobblemon_ts.radar.label.level": "等级",
   "cobblemon_ts.radar.label.iv_atk_def": "HP/Atk/Def",
   "cobblemon_ts.radar.label.iv_spa_spd_spe": "SpA/SpD/Spe",
+  "cobblemon_ts.radar.label.range": "范围",
   "cobblemon_ts.radar.close": "关闭",
   "cobblemon_ts.radar.hint": "多值用;隔开 | 性别: 0=♂ 1=♀ 2=无\n等级/个体: 单值(50)或区间(1-100) | 多模式=任一 | 单模式=全部",
   "key.cobblemon_ts.radar.editor": "打开精灵雷达编辑器",
@@ -393,5 +394,12 @@
   "cobblemon_ts.chunk_barrier.tip.owner_line": "持有者: %s",
   "cobblemon_ts.chunk_barrier.tip.whitelist": "白名单: %s",
   "cobblemon_ts.chunk_barrier.tip.blacklist": "黑名单: %s",
+  "cobblemon_ts.chunk_barrier.tip.ban": "  [已禁止]",
+  "cobblemon_ts.chunk_barrier.tip.force_load": "  [强制加载]",
+  "cobblemon_ts.chunk_barrier.tip.lucky_ban": "  [幸运方块禁止]",
+  "cobblemon_ts.chunk_barrier.count.force": "加载 %d/%d",
+  "cobblemon_ts.chunk_barrier.count.ban": "禁止 %d/%d",
+  "cobblemon_ts.chunk_barrier.empty_list_hint": "空名单=允许所有玩家  F3+G区块显示",
+  "cobblemon_ts.chunk_barrier.hint_ops": "左键切换黑白 右键删除\n点击名单列表切换添加",
   "cobblemon_ts.chunk_barrier.readonly": "只读模式"
 }
