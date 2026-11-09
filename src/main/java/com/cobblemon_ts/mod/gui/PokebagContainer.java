@@ -3,7 +3,6 @@ package com.cobblemon_ts.mod.gui;
 import com.cobblemon_ts.mod.CharmConfig;
 import com.cobblemon_ts.mod.CharmPlayerData;
 import com.cobblemon_ts.mod.CobblemonTS;
-import com.cobblemon_ts.mod.DebugConfig;
 import com.cobblemon_ts.mod.PokebagInventory;
 import com.cobblemon_ts.mod.PokebagManager;
 import net.minecraft.network.chat.Component;
@@ -27,13 +26,13 @@ public class PokebagContainer extends AbstractContainerMenu {
         PokebagManager manager = CharmPlayerData.get(player).getPokebagManager();
         int bagSlots = manager.getBagInventory().getContainerSize();
         int cfgMaxStack = CharmConfig.POKEBAG_MAX_STACK_SIZE.get();
-        if (DebugConfig.DEBUG_POKEBAG.get()) {
+        if (false) {
             CobblemonTS.LOGGER.info("[Pokebag] 创建临时容器 bagSlots={} cfgMaxStack={}", bagSlots, cfgMaxStack);
         }
 
         // 使用 PokebagInventory 确保 addItem/setItem 使用正确的堆叠上限
         this.bagInventory = new PokebagInventory(bagSlots);
-        if (DebugConfig.DEBUG_POKEBAG.get()) {
+        if (false) {
             CobblemonTS.LOGGER.info("[Pokebag] 临时容器 getMaxStackSize={}", this.bagInventory.getMaxStackSize());
         }
 
@@ -42,12 +41,12 @@ public class PokebagContainer extends AbstractContainerMenu {
             ItemStack original = manager.getBagInventory().getItem(i);
             if (!original.isEmpty()) {
                 ItemStack copy = original.copy();
-                if (DebugConfig.DEBUG_POKEBAG.get()) {
+                if (false) {
                     CobblemonTS.LOGGER.info("[Pokebag] 复制 slot={} item={} count={} -> copy count={}",
                         i, original.getDescriptionId(), original.getCount(), copy.getCount());
                 }
                 bagInventory.setItem(i, copy);
-                if (DebugConfig.DEBUG_POKEBAG.get()) {
+                if (false) {
                     ItemStack after = bagInventory.getItem(i);
                     CobblemonTS.LOGGER.info("[Pokebag] setItem后 slot={} count={} (是否被截断: {})",
                         i, after.getCount(), after.getCount() != copy.getCount());
@@ -213,22 +212,22 @@ public class PokebagContainer extends AbstractContainerMenu {
     @Override
     public void removed(Player player) {
         super.removed(player);
-        if (DebugConfig.DEBUG_POKEBAG.get()) {
+        if (false) {
             CobblemonTS.LOGGER.info("[Pokebag] removed() 保存 player={}", player.getName().getString());
         }
         PokebagManager manager = CharmPlayerData.get(player).getPokebagManager();
-        if (DebugConfig.DEBUG_POKEBAG.get()) {
+        if (false) {
             CobblemonTS.LOGGER.info("[Pokebag] 玩家容器 getMaxStackSize={}", manager.getBagInventory().getMaxStackSize());
         }
         for (int i = 0; i < bagInventory.getContainerSize(); i++) {
             ItemStack tempStack = bagInventory.getItem(i);
             if (!tempStack.isEmpty()) {
-                if (DebugConfig.DEBUG_POKEBAG.get()) {
+                if (false) {
                     CobblemonTS.LOGGER.info("[Pokebag] 保存 slot={} item={} count={} -> 玩家容器",
                         i, tempStack.getDescriptionId(), tempStack.getCount());
                 }
                 manager.getBagInventory().setItem(i, tempStack.copy());
-                if (DebugConfig.DEBUG_POKEBAG.get()) {
+                if (false) {
                     ItemStack saved = manager.getBagInventory().getItem(i);
                     CobblemonTS.LOGGER.info("[Pokebag] 保存后玩家容器 slot={} count={}",
                         i, saved.getCount());
@@ -237,7 +236,7 @@ public class PokebagContainer extends AbstractContainerMenu {
                 manager.getBagInventory().setItem(i, ItemStack.EMPTY);
             }
         }
-        if (DebugConfig.DEBUG_POKEBAG.get()) {
+        if (false) {
             CobblemonTS.LOGGER.info("[Pokebag] removed() 保存完成");
         }
     }

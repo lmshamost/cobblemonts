@@ -91,3 +91,23 @@ This project is licensed under the **GPL-3.0-only**.
 See the [LICENSE](./LICENSE) file for details.
 
 本项目采用 **GPL-3.0-only** 协议开源，详见 [LICENSE](./LICENSE) 文件。
+
+---
+
+## Changelog / 更新日志
+
+### v1.1
+
+**English:**
+- Add HUD adaptations for Hunger, Freezing, Withering and Poison effects
+- Add adjustments to shrink the potion buff backpack interface
+- Add a toggle for the party info interface to switch from scale 2 to scale 4 layout
+- Add Pokémon Radar with IV, ability, nature, level and other filters
+- Add Chunk Barrier block — block zone-based spawning of Pokémon, players, lucky blocks, NPCs, hostiles, passives, and force chunk loading
+
+**中文:**
+- 增加饥饿、冰冻、凋零、中毒效果的 HUD 适配
+- 增加药水 Buff 背包界面缩小调整
+- 精灵信息界面尺寸为 2 时可切换到尺寸 4 的界面布局
+- 增加精灵雷达，支持个体值、特性、性格、等级等过滤条件
+- 增加区块禁止器方块，可按区块禁止精灵、玩家、幸运方块、NPC、敌对生物、中立生物的生成，并支持强制区块加载

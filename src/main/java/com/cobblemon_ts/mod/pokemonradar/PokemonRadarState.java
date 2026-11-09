@@ -63,6 +63,9 @@ public class PokemonRadarState {
     private Vec3 cardTargetPos = null;           // [线性-R06f] RCT图鉴追踪目标坐标（每tick由渲染器更新）
     private UUID cardTargetUuid = null;           // [线性-R06f] 离卡片目标最近的TrainerMob UUID
 
+    // [线性-R07] 雷达范围（方块距离）：默认16，最大64
+    private int radarRange = 16;
+
     private PokemonRadarState() {
         // [线性-R02a-init] 初始默认三个模式都开启，追踪总开关默认开
         this.legendaryMode = true;
@@ -163,6 +166,12 @@ public class PokemonRadarState {
     // [线性-R06b] NPC训练师名字过滤
     public String getNpcNameInput() { return npcNameInput; }
     public void setNpcNameInput(String v) { this.npcNameInput = v != null ? v : ""; }
+
+    // [线性-R07] 雷达范围（方块距离，1-64）
+    public int getRadarRange() { return radarRange; }
+    public void setRadarRange(int v) {
+        this.radarRange = Math.max(1, Math.min(64, v));
+    }
 
     // ==== 匹配逻辑 ====
 
@@ -536,6 +545,7 @@ public class PokemonRadarState {
             if (root.has("spdIvInput")) spdIvInput = root.get("spdIvInput").getAsString();
             if (root.has("speIvInput")) speIvInput = root.get("speIvInput").getAsString();
             if (root.has("npcNameInput")) npcNameInput = root.get("npcNameInput").getAsString();
+            if (root.has("radarRange")) radarRange = root.get("radarRange").getAsInt();
         } catch (Throwable ignored) {}
     }
 
@@ -562,6 +572,7 @@ public class PokemonRadarState {
             root.addProperty("spdIvInput", spdIvInput);
             root.addProperty("speIvInput", speIvInput);
             root.addProperty("npcNameInput", npcNameInput);
+            root.addProperty("radarRange", radarRange);
 
             Path path = getSavePath();
             Files.createDirectories(path.getParent());

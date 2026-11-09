@@ -59,9 +59,16 @@ public class PokemonRadarRenderer {
         VertexConsumer lineConsumer = bufferSource.getBuffer(RenderType.lines());
         RenderSystem.disableDepthTest(); // [线性-R05i] 穿透方块渲染
 
-        // [线性-R05c] 遍历所有宝可梦实体
+        // [线性-R05c] 遍历所有宝可梦实体（加距离过滤：radarRange内）
+        int range = state.getRadarRange();
+        double rangeSq = (double) range * range;
+        Vec3 playerPos = mc.player.position();
+
         for (Entity entity : mc.level.entitiesForRendering()) {
             if (!(entity instanceof PokemonEntity pokemonEntity)) continue;
+
+            // [线性-R07] 距离过滤
+            if (entity.distanceToSqr(playerPos) > rangeSq) continue;
 
             List<String> activeModes = state.getActiveModesForEntity(pokemonEntity);
             if (activeModes.isEmpty()) continue;
@@ -107,6 +114,8 @@ public class PokemonRadarRenderer {
                 for (Entity entity : mc.level.entitiesForRendering()) {
                     if (!trainerMobClass.isInstance(entity)) continue;
                     if (!state.matchesNpcFilter(entity)) continue;
+                    // [线性-R07] NPC也加距离过滤
+                    if (entity.distanceToSqr(playerPos) > rangeSq) continue;
 
                     AABB aabb = entity.getBoundingBox();
                     double x = aabb.minX - camPos.x;

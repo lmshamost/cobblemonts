@@ -18,6 +18,7 @@ import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.minecraft.world.item.crafting.RecipeManager;
 
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -87,7 +88,13 @@ public class CobblemonTS {
     public static final String MODID = "cobblemon_ts";
     public static final java.util.Map<net.minecraft.server.level.ServerLevel, java.util.Map<Long, Integer>> BARRIER_INDEX = new java.util.HashMap<>();
     public static final java.util.Map<net.minecraft.server.level.ServerLevel, java.util.Set<com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity>> BARRIER_BE_SET = new java.util.HashMap<>();
+    // [线性-R10] chunkKey → 覆盖该区块的 BE 列表（用于查幸运方块禁止/玩家黑白名单）
+    public static final java.util.Map<net.minecraft.server.level.ServerLevel, java.util.Map<Long, java.util.List<com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity>>> CHUNK_BE_MAP = new java.util.HashMap<>();
     public static final Logger LOGGER = LogUtils.getLogger();
+
+    private static Class<?> cachedPokemonEntityClass;
+    private static java.lang.reflect.Method cachedGetOwnerMethod;
+    private static volatile boolean pokemonEntityReflectInitFailed;
 
     // [线性-R06] 精灵雷达双按键：NUMPAD7=编辑器, NUMPAD8=开关追踪
     public static final KeyMapping RADAR_EDITOR_KEY = new KeyMapping(
@@ -159,7 +166,6 @@ public class CobblemonTS {
         modContainer.registerConfig(ModConfig.Type.SERVER, CharmConfig.SPEC, "cobblemonts/server.toml");
         modContainer.registerConfig(ModConfig.Type.COMMON, CobblemonTSConfig.SPEC, "cobblemonts/common.toml");
         modContainer.registerConfig(ModConfig.Type.CLIENT, ColorEditorConfig.SPEC, "cobblemonts/client.toml");
-        modContainer.registerConfig(ModConfig.Type.SERVER, ChunkBarrierServerConfig.SPEC, "cobblemonts/server.toml");
 
 
         modEventBus.register(CobblemonTS.class);
@@ -178,6 +184,9 @@ public class CobblemonTS {
         }
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(ClearCharmCommand::register);
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(CobblemonTS::onServerStarted);
+        // [线性-R10] 玩家扔球/召唤宝可梦禁止拦截 — 由 onEntityJoinLevel + tryWhitelistBypass 统一处理，此处不单独注册
+        // [线性-R10] 手持幸运方块提示 — 服务端tick检测
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(CobblemonTS::onServerTick);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(com.cobblemon_ts.mod.command.HudCommand::register);
         }
@@ -247,6 +256,58 @@ public class CobblemonTS {
             LOGGER.info("[ChunkBarrier] 服务器启动完成");
         } catch (Throwable t) {
             LOGGER.error("[ChunkBarrier] Exception during server start", t);
+        }
+    }
+
+    // [线性-R10] 每tick计数器：20tick(每秒)检测一次手持幸运方块提示
+    private static int luckyHandTickCounter = 0;
+
+    public static void onServerTick(ServerTickEvent.Post event) {
+        luckyHandTickCounter++;
+        if (luckyHandTickCounter < 20) return;
+        luckyHandTickCounter = 0;
+
+        try {
+            var server = event.getServer();
+            if (server == null) return;
+
+            for (var player : server.getPlayerList().getPlayers()) {
+                if (player == null) continue;
+                if (!(player.level() instanceof net.minecraft.server.level.ServerLevel sl)) continue;
+                checkLuckyHandBlocked(player, sl);
+            }
+        } catch (Throwable t) {
+            LOGGER.debug("[ChunkBarrier] onServerTick check fail: {}", t.getMessage());
+        }
+    }
+
+    // [线性-R10] 检测玩家主手/副手的幸运方块是否被当前区块禁止
+    private static void checkLuckyHandBlocked(net.minecraft.world.entity.player.Player player, net.minecraft.server.level.ServerLevel sl) {
+        for (var slot : new net.minecraft.world.item.ItemStack[]{player.getMainHandItem(), player.getOffhandItem()}) {
+            if (slot == null || slot.isEmpty()) continue;
+            // 通过 registry key 识别4种幸运方块
+            var regKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(slot.getItem());
+            if (regKey == null || !regKey.getNamespace().equals(CobblemonTS.MODID)) continue;
+
+            LuckyType type = switch (regKey.getPath()) {
+                case "lucky_block" -> LuckyType.LUCKY;
+                case "shiny_lucky_block" -> LuckyType.SHINY;
+                case "legendary_lucky_block" -> LuckyType.LEGENDARY;
+                case "ultra_beast_lucky_block" -> LuckyType.ULTRA;
+                default -> null;
+            };
+            if (type == null) continue;
+
+            int cx = player.blockPosition().getX() >> 4;
+            int cz = player.blockPosition().getZ() >> 4;
+            long chunkKey = chunkKeyOf(cx, cz);
+
+            if (isLuckyBlockBlocked(sl, chunkKey, type, player.getName().getString().toLowerCase())) {
+                player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                        "[ChunkBarrier] 当前区块禁止" + type.getDisplayName() + "！"
+                ));
+                return; // 只提示一次
+            }
         }
     }
 
@@ -461,6 +522,18 @@ public class CobblemonTS {
                 com.cobblemon_ts.mod.network.SyncConfigPayload.STREAM_CODEC,
                 com.cobblemon_ts.mod.network.SyncConfigPayload::handleServerSide
         );
+        // [线性-全局计数] 请求玩家全服区块禁止器计数 C→S
+        registrar.playToServer(
+                com.cobblemon_ts.mod.network.RequestChunkCountPacket.TYPE,
+                com.cobblemon_ts.mod.network.RequestChunkCountPacket.STREAM_CODEC,
+                com.cobblemon_ts.mod.network.RequestChunkCountPacket::handleServerSide
+        );
+        // [线性-全局计数] 服务端返回计数结果 S→C
+        registrar.playToClient(
+                com.cobblemon_ts.mod.network.SyncChunkCountS2CPacket.TYPE,
+                com.cobblemon_ts.mod.network.SyncChunkCountS2CPacket.STREAM_CODEC,
+                com.cobblemon_ts.mod.network.SyncChunkCountS2CPacket::handleClientSide
+        );
     }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
@@ -496,10 +569,44 @@ public class CobblemonTS {
         rebuildLevelIndex(sl);
     }
 
+    // [线性-R09] 统计某玩家的 ban chunks 和 forceload chunks（跨维度合计，同维度内区块去重）
+    // 返回 [banChunks, forceloadChunks]
+    public static int[] countPlayerChunks(java.util.UUID playerId, com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity excludeThis) {
+        int ban = 0, forceload = 0;
+        for (var entry : BARRIER_BE_SET.entrySet()) {
+            var levelBeSet = entry.getValue();
+            // 用 Set 按维度内去重
+            java.util.Set<Long> banSet = new java.util.HashSet<>();
+            java.util.Set<Long> forceSet = new java.util.HashSet<>();
+            for (var be : levelBeSet) {
+                if (be == null || be.isRemoved()) continue;
+                if (be == excludeThis) continue;
+                if (!playerId.equals(be.getOwnerId())) continue;
+                for (var e : be.getConfig().chunkRules.entrySet()) {
+                    long k = e.getKey();
+                    int flags = e.getValue() & 0xFF;
+                    if ((flags & (com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_POKEMON
+                            | com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_NPC
+                            | com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_HOSTILE
+                            | com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_PASSIVE)) != 0) {
+                        banSet.add(k);
+                    }
+                    if ((flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_FORCELOAD) != 0) {
+                        forceSet.add(k);
+                    }
+                }
+            }
+            ban += banSet.size();
+            forceload += forceSet.size();
+        }
+        return new int[]{ban, forceload};
+    }
+
     public static void rebuildLevelIndex(net.minecraft.server.level.ServerLevel sl) {
         try {
             var beSet = BARRIER_BE_SET.get(sl);
             var newMap = new java.util.HashMap<Long, Integer>();
+            var newChunkBeMap = new java.util.HashMap<Long, java.util.List<com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity>>();
             if (beSet != null) {
                 for (var be : beSet) {
                     if (be == null || be.isRemoved()) continue;
@@ -509,6 +616,8 @@ public class CobblemonTS {
                         if (flags != 0) {
                             newMap.merge(key, flags, (a, b) -> a | b);
                         }
+                        // [线性-R10] 建立 chunk → BE 映射
+                        newChunkBeMap.computeIfAbsent(key, k -> new java.util.ArrayList<>()).add(be);
                     }
                 }
             }
@@ -517,8 +626,100 @@ public class CobblemonTS {
             } else {
                 BARRIER_INDEX.put(sl, newMap);
             }
+            if (newChunkBeMap.isEmpty()) {
+                CHUNK_BE_MAP.remove(sl);
+            } else {
+                CHUNK_BE_MAP.put(sl, newChunkBeMap);
+            }
+            if (beSet == null || beSet.isEmpty()) {
+                BARRIER_BE_SET.remove(sl);
+            }
         } catch (Throwable t) {
             LOGGER.error("[ChunkBarrier] Exception rebuilding index", t);
+        }
+    }
+
+    public static void clearLevelIndex(net.minecraft.server.level.ServerLevel sl) {
+        BARRIER_INDEX.remove(sl);
+        BARRIER_BE_SET.remove(sl);
+        CHUNK_BE_MAP.remove(sl);
+    }
+
+    // [线性-R10] 幸运方块禁止类型枚举
+    public enum LuckyType {
+        LUCKY("幸运方块"),
+        SHINY("闪光幸运方块"),
+        LEGENDARY("传说幸运方块"),
+        ULTRA("究极异兽方块");
+
+        private final String displayName;
+        LuckyType(String displayName) { this.displayName = displayName; }
+        public String getDisplayName() { return displayName; }
+    }
+
+    // [线性-R10] 检查某玩家在某区块是否被禁止开启幸运方块
+    // 条件：chunk上有 BIT_LUCKY + BE的banLuckyBlock=true + 玩家不在lucky白名单/在黑名单
+    // playerNameLower=null 时跳过名单检查（红石触发等无玩家上下文场景）
+    public static boolean isLuckyBlockBlocked(net.minecraft.server.level.ServerLevel sl, long chunkKey, LuckyType type, String playerNameLower) {
+        var levelMap = BARRIER_INDEX.get(sl);
+        if (levelMap == null) return false;
+        int flags = levelMap.getOrDefault(chunkKey, 0);
+        if ((flags & ChunkBarrierBlockEntity.BIT_LUCKY) == 0) return false;
+
+        var beMap = CHUNK_BE_MAP.get(sl);
+        if (beMap == null) return false;
+        var bes = beMap.get(chunkKey);
+        if (bes == null) return false;
+        for (var be : bes) {
+            if (be == null || be.isRemoved()) continue;
+            var cfg = be.getConfig();
+            if (!cfg.banLuckyBlock) continue;
+            if (playerNameLower == null) return true;
+            if (cfg.isLuckyPlayerBanned(playerNameLower, be.getOwnerNameLower())) return true;
+        }
+        return false;
+    }
+
+    // [线性-R10] 检查某玩家在某区块是否被禁止扔宝可梦（per-chunk BIT_PLAYER + 全局 playerWhitelist）
+    public static boolean isPlayerBlockedInChunk(net.minecraft.server.level.ServerLevel sl, long chunkKey, String playerNameLower) {
+        var levelMap = BARRIER_INDEX.get(sl);
+        if (levelMap == null) return false;
+        int flags = levelMap.getOrDefault(chunkKey, 0);
+        if ((flags & ChunkBarrierBlockEntity.BIT_PLAYER) == 0) return false;
+
+        var beMap = CHUNK_BE_MAP.get(sl);
+        if (beMap == null) return false;
+        var bes = beMap.get(chunkKey);
+        if (bes == null) return false;
+        for (var be : bes) {
+            if (be == null || be.isRemoved()) continue;
+            if (be.getConfig().isPlayerBanned(playerNameLower, be.getOwnerNameLower())) return true;
+        }
+        return false;
+    }
+
+    // [线性-R10] 工具：从 BlockPos 计算 chunkKey
+    public static long chunkKeyOf(int blockX, int blockZ) {
+        int cx = blockX >> 4;
+        int cz = blockZ >> 4;
+        return ((long) cx << 32) | (cz & 0xFFFFFFFFL);
+    }
+
+    private static String getPokemonOwnerName(net.minecraft.world.entity.Entity entity) {
+        if (pokemonEntityReflectInitFailed) return null;
+        try {
+            if (cachedPokemonEntityClass == null) {
+                cachedPokemonEntityClass = Class.forName("com.cobblemon.mod.common.entity.pokemon.PokemonEntity");
+                cachedGetOwnerMethod = cachedPokemonEntityClass.getMethod("getOwner");
+                cachedGetOwnerMethod.setAccessible(true);
+            }
+            if (!cachedPokemonEntityClass.isInstance(entity)) return null;
+            Object owner = cachedGetOwnerMethod.invoke(entity);
+            if (!(owner instanceof net.minecraft.world.entity.player.Player p)) return null;
+            return p.getName().getString().toLowerCase();
+        } catch (Throwable t) {
+            pokemonEntityReflectInitFailed = true;
+            return null;
         }
     }
 
@@ -538,7 +739,11 @@ public class CobblemonTS {
         String path = typeKey.getPath();
 
         if ((flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_POKEMON) != 0
-                && ns.equals("cobblemon") && path.equals("pokemon")) return true;
+                && ns.equals("cobblemon") && path.equals("pokemon")) {
+            String ownerName = getPokemonOwnerName(entity);
+            if (ownerName == null) return false;
+            return isPlayerBlockedInChunk(sl, chunkKey, ownerName);
+        }
         if ((flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_NPC) != 0
                 && ns.equals("cobblemon") && path.equals("npc")) return true;
 
@@ -568,10 +773,31 @@ public class CobblemonTS {
             long cz = entity.blockPosition().getZ() >> 4;
 
             if (isEntityBlocked(entity, sl)) {
+                // [线性-R10] 玩家黑白名单豁免：白名单玩家召唤的宝可梦放行
+                if (tryWhitelistBypass(entity, sl)) return;
                 event.setCanceled(true);
             }
         } catch (Throwable t) {
             LOGGER.error("[ChunkBarrier] Exception in EntityJoinLevel", t);
+        }
+    }
+
+    // [线性-R10] 尝试白名单豁免：如果 entity 是 cobblemon pokemon 且 owner 在白名单 → 放行
+    private static boolean tryWhitelistBypass(net.minecraft.world.entity.Entity entity, net.minecraft.server.level.ServerLevel sl) {
+        try {
+            // 先判断是不是 cobblemon pokemon
+            var key = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
+            if (key == null || !key.getNamespace().equals("cobblemon") || !key.getPath().equals("pokemon")) return false;
+
+            String ownerName = getPokemonOwnerName(entity);
+            if (ownerName == null) return false;
+
+            long chunkKey = chunkKeyOf(entity.blockPosition().getX(), entity.blockPosition().getZ());
+
+            return !isPlayerBlockedInChunk(sl, chunkKey, ownerName);
+        } catch (Throwable t) {
+            LOGGER.debug("[ChunkBarrier] Whitelist bypass reflection fail: {}", t.getMessage());
+            return false;
         }
     }
 
@@ -611,7 +837,10 @@ public class CobblemonTS {
 
             boolean blocked = false;
             if ((flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_POKEMON) != 0
-                    && ns.equals("cobblemon") && path.equals("pokemon")) blocked = true;
+                    && ns.equals("cobblemon") && path.equals("pokemon")) {
+                String ownerName = getPokemonOwnerName(entity);
+                if (ownerName != null && isPlayerBlockedInChunk(sl, chunkKey, ownerName)) blocked = true;
+            }
             if (!blocked && (flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_NPC) != 0
                     && ns.equals("cobblemon") && path.equals("npc")) blocked = true;
             if (!blocked) {

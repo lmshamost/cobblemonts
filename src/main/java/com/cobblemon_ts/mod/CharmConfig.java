@@ -41,6 +41,12 @@ public class CharmConfig {
     public static final ModConfigSpec.BooleanValue REQUIRE_CREATIVE;
     public static final ModConfigSpec.BooleanValue EDITOR_AUTO_CLOSE;
 
+    // ==================== 区块禁止器设置 ====================
+    public static final ModConfigSpec.IntValue CB_DEFAULT_RANGE;
+    public static final ModConfigSpec.IntValue CB_MAX_RANGE;
+    public static final ModConfigSpec.IntValue CB_BAN_CHUNK_LIMIT;
+    public static final ModConfigSpec.IntValue CB_FORCELOAD_CHUNK_LIMIT;
+
     static {
         // [线性-C1] 护符设置
         BUILDER.comment("护符设置 | Charm Settings").push("charm_settings");
@@ -243,6 +249,40 @@ public class CharmConfig {
 
         BUILDER.pop();
 
+        // [线性-C6] 区块禁止器设置
+        BUILDER.comment("区块禁止器设置 | Chunk Barrier Settings").push("chunk_barrier");
+
+        CB_DEFAULT_RANGE = BUILDER
+            .comment("GUI 默认显示区块范围（奇数，最小3，最大16）\nGUI default range in chunks (odd, min 3, max 16)")
+            .defineInRange("default_range", 9, 3, 16);
+
+        CB_MAX_RANGE = BUILDER
+            .comment("GUI 允许的最大区块范围（奇数，硬上限 16，仅服主可改）\nMax allowed GUI range (odd, hard cap 16, server owner only)")
+            .defineInRange("max_range", 9, 3, 16);
+
+        CB_BAN_CHUNK_LIMIT = BUILDER
+            .comment("每玩家禁止区块上限（所有区块禁止器合计，同维度内区块自动去重）\nPer-player ban chunk limit (all barrier BEs combined, dedup per dimension)")
+            .defineInRange("ban_chunk_limit", 100, 0, 1024);
+
+        CB_FORCELOAD_CHUNK_LIMIT = BUILDER
+            .comment("每玩家强制加载区块上限（所有区块禁止器合计）\nPer-player force-load chunk limit (all barrier BEs combined)")
+            .defineInRange("forceload_chunk_limit", 50, 0, 1024);
+
+        BUILDER.pop();
+
         SPEC = BUILDER.build();
     }
+
+    // ======== 区块禁止器 getter（钳位保护） ========
+    public static int getCbDefaultRange() {
+        int v = CB_DEFAULT_RANGE.get();
+        return v % 2 == 0 ? v + 1 : v;
+    }
+    public static int getCbMaxRange() {
+        int v = CB_MAX_RANGE.get();
+        if (v > 16) v = 16;
+        return v % 2 == 0 ? v + 1 : v;
+    }
+    public static int getCbBanChunkLimit() { return CB_BAN_CHUNK_LIMIT.get(); }
+    public static int getCbForceloadChunkLimit() { return CB_FORCELOAD_CHUNK_LIMIT.get(); }
 }

@@ -33,7 +33,7 @@
   "cobblemon_ts.chunk_barrier.ban_pokemon": "精灵禁止",
   "cobblemon_ts.chunk_barrier.ban_npc": "NPC禁止",
   "cobblemon_ts.chunk_barrier.ban_hostile": "敌对生物禁止",
-  "cobblemon_ts.chunk_barrier.ban_passive": "和平生物禁止",
+  "cobblemon_ts.chunk_barrier.ban_passive": "中立生物禁止",
   "cobblemon_ts.chunk_barrier.force_load": "区块加载",
   "cobblemon_ts.chunk_barrier.status.active": "§l✓ 禁止已启用",
   "cobblemon_ts.chunk_barrier.status.inactive": "§l✗ 无禁止规则",
@@ -376,5 +376,22 @@
   "key.cobblemon_ts.radar.editor": "打开精灵雷达编辑器",
   "key.cobblemon_ts.radar.toggle": "开关精灵雷达追踪",
   "cobblemon_ts.radar.tracking_on": "§a✔ 追踪中",
-  "cobblemon_ts.radar.tracking_off": "§c✘ 已暂停"
+  "cobblemon_ts.radar.tracking_off": "§c✘ 已暂停",
+
+  "cobblemon_ts.chunk_barrier.lucky_title": "幸运方块",
+  "cobblemon_ts.chunk_barrier.player_title": "玩家名单",
+  "cobblemon_ts.chunk_barrier.player_title_lucky": "玩家名单(幸运方块)",
+  "cobblemon_ts.chunk_barrier.player_placeholder": "输入玩家名",
+  "cobblemon_ts.chunk_barrier.player_add": "添加",
+  "cobblemon_ts.chunk_barrier.player_empty": "（空）",
+  "cobblemon_ts.chunk_barrier.r10_lucky_toggle": "幸运方块禁止",
+  "cobblemon_ts.chunk_barrier.r10_player_toggle": "玩家禁止",
+  "cobblemon_ts.chunk_barrier.permission.denied": "§c你没有权限修改这个区块禁止器",
+  "cobblemon_ts.chunk_barrier.limit.ban": "§c禁止区块数超限！(%s/%s)",
+  "cobblemon_ts.chunk_barrier.limit.forceload": "§c强制加载区块数超限！(%s/%s)",
+  "cobblemon_ts.chunk_barrier.tip.chunk": "区块 [%d, %d]",
+  "cobblemon_ts.chunk_barrier.tip.owner_line": "持有者: %s",
+  "cobblemon_ts.chunk_barrier.tip.whitelist": "白名单: %s",
+  "cobblemon_ts.chunk_barrier.tip.blacklist": "黑名单: %s",
+  "cobblemon_ts.chunk_barrier.readonly": "只读模式"
 }

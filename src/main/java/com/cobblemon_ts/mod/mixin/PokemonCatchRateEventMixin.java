@@ -5,7 +5,6 @@ import com.cobblemon_ts.mod.CharmConfig;
 import com.cobblemon_ts.mod.CharmPlayerData;
 import com.cobblemon_ts.mod.CharmType;
 import com.cobblemon_ts.mod.CobblemonTS;
-import com.cobblemon_ts.mod.DebugConfig;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -30,7 +29,7 @@ public class PokemonCatchRateEventMixin {
                     float boost = CharmConfig.CATCHING_CHARM_BOOST.get().floatValue();
                     float boosted = original * boost;
 
-                    if (DebugConfig.DEBUG_CHARM.get()) {
+                    if (false) {
                         CobblemonTS.LOGGER.info("[CatchRate] 防晃护符加成: {} -> {} (x{}) player={}",
                                 original, boosted, boost, player.getName().getString());
                     }

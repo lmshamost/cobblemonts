@@ -37,7 +37,7 @@ public class PokebagManager {
 
     private SimpleContainer createBagContainer() {
         int maxStack = CharmConfig.POKEBAG_MAX_STACK_SIZE.get();
-        if (DebugConfig.DEBUG_POKEBAG.get()) {
+        if (false) {
             CobblemonTS.LOGGER.info("[PokebagMgr] createBagContainer() bagSize={} maxStack={}", bagSize, maxStack);
         }
         return new PokebagInventory(bagSize);
@@ -64,12 +64,12 @@ public class PokebagManager {
     public ItemStack addItemToBag(ItemStack stack) {
         if (stack.isEmpty()) return stack;
         if (!canItemEnterBag(stack)) return stack;
-        if (DebugConfig.DEBUG_POKEBAG.get()) {
+        if (false) {
             CobblemonTS.LOGGER.info("[PokebagMgr] addItemToBag() item={} count={} 容器maxStack={}",
                 stack.getDescriptionId(), stack.getCount(), bagInventory.getMaxStackSize());
         }
         ItemStack result = bagInventory.addItem(stack);
-        if (DebugConfig.DEBUG_POKEBAG.get()) {
+        if (false) {
             CobblemonTS.LOGGER.info("[PokebagMgr] addItemToBag() 剩余={} (0=全部放入)", result.getCount());
         }
         // [线性-B03] 物品成功放入 → 标记脏数据（由tick限流保存，不再每次拾取都NBT序列化）
@@ -160,7 +160,7 @@ public class PokebagManager {
             ItemStack stack = bagInventory.getItem(i);
             if (!stack.isEmpty()) {
                 int totalCount = stack.getCount();
-                if (DebugConfig.DEBUG_POKEBAG.get()) {
+                if (false) {
                     CobblemonTS.LOGGER.info("[PokebagMgr] serializeNBT() slot={} item={} totalCount={}",
                         i, stack.getDescriptionId(), totalCount);
                 }
@@ -175,7 +175,7 @@ public class PokebagManager {
                     items.add(itemTag);
                     remaining -= subCount;
                 }
-                if (DebugConfig.DEBUG_POKEBAG.get()) {
+                if (false) {
                     CobblemonTS.LOGGER.info("[PokebagMgr] serializeNBT() slot={} 拆分条目数={}",
                         i, (totalCount + MAX_SAVE_COUNT - 1) / MAX_SAVE_COUNT);
                 }
@@ -195,7 +195,7 @@ public class PokebagManager {
 
         if (tag.contains("Items")) {
             ListTag items = tag.getList("Items", 10);
-            if (DebugConfig.DEBUG_POKEBAG.get()) {
+            if (false) {
                 CobblemonTS.LOGGER.info("[PokebagMgr] deserializeNBT() 物品条目数={} 容器maxStack={}",
                     items.size(), bagInventory.getMaxStackSize());
             }
@@ -204,7 +204,7 @@ public class PokebagManager {
                 int slot = itemTag.getInt("Slot");
                 if (slot >= 0 && slot < bagSize) {
                     ItemStack stack = ItemStack.parse(provider, itemTag.getCompound("Item")).orElse(ItemStack.EMPTY);
-                    if (DebugConfig.DEBUG_POKEBAG.get()) {
+                    if (false) {
                         CobblemonTS.LOGGER.info("[PokebagMgr] deserializeNBT() slot={} item={} count={}",
                             slot, stack.getDescriptionId(), stack.getCount());
                     }
@@ -214,7 +214,7 @@ public class PokebagManager {
                             bagInventory.setItem(slot, stack);
                         } else if (ItemStack.isSameItemSameComponents(existing, stack)) {
                             existing.grow(stack.getCount());
-                            if (DebugConfig.DEBUG_POKEBAG.get()) {
+                            if (false) {
                                 CobblemonTS.LOGGER.info("[PokebagMgr] deserializeNBT() slot={} 合并后count={}",
                                     slot, existing.getCount());
                             }

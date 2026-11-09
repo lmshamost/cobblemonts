@@ -10,6 +10,7 @@ authors="Your Name"
 description="""
 Cobblemon TS - Enhanced Charm System for Cobblemon
 Adds various charms that provide bonuses like increased catch rate, experience boost, and shiny chance.
+v1.1: Hunger/Freeze/Wither/Poison HUD adapts, radar with IV/ability filter, Chunk Barrier block, party UI scale fix.
 """
 
 [[dependencies.cobblemon_ts]]

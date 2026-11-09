@@ -54,9 +54,8 @@ public class LuckyBlocks {
 
     public static final DeferredBlock<Block> CHUNK_BARRIER = registerBlock("chunk_barrier",
             () -> new ChunkBarrierBlock(BlockBehaviour.Properties.of()
-                    .strength(4.0F, 12.0F)
-                    .sound(SoundType.STONE)
-                    .requiresCorrectToolForDrops()
+                    .strength(2.0F, 3.0F)
+                    .sound(SoundType.WOOD)
                     .noOcclusion()));
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> blockSupplier) {
