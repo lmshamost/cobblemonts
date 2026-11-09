@@ -156,11 +156,10 @@ public class CobblemonTS {
         BLOCK_ENTITY_TYPES.register(modEventBus);
         ModContainers.MENU_TYPES.register(modEventBus);
 
-        modContainer.registerConfig(ModConfig.Type.COMMON, CharmConfig.SPEC, "CoblemonTest/common.toml");
-        modContainer.registerConfig(ModConfig.Type.COMMON, CobblemonTSConfig.SPEC, "CoblemonTest/global.toml");
-        modContainer.registerConfig(ModConfig.Type.COMMON, DebugConfig.SPEC, "CoblemonTest/debug.toml");
-        modContainer.registerConfig(ModConfig.Type.COMMON, ColorEditorConfig.SPEC, "CoblemonTest/colors.toml");
-        modContainer.registerConfig(ModConfig.Type.COMMON, ChunkBarrierServerConfig.SPEC, "CoblemonTest/chunk_barrier.toml");
+        modContainer.registerConfig(ModConfig.Type.SERVER, CharmConfig.SPEC, "cobblemonts/server.toml");
+        modContainer.registerConfig(ModConfig.Type.COMMON, CobblemonTSConfig.SPEC, "cobblemonts/common.toml");
+        modContainer.registerConfig(ModConfig.Type.CLIENT, ColorEditorConfig.SPEC, "cobblemonts/client.toml");
+        modContainer.registerConfig(ModConfig.Type.SERVER, ChunkBarrierServerConfig.SPEC, "cobblemonts/server.toml");
 
 
         modEventBus.register(CobblemonTS.class);
@@ -219,24 +218,7 @@ public class CobblemonTS {
         }
     }
 
-    // [线性-D01] 服务器启动后检查配方加载情况
     public static void onServerStarted(ServerStartedEvent event) {
-        RecipeManager rm = event.getServer().getRecipeManager();
-        LOGGER.info("[RecipeCheck] ========== 服务器启动，检查RecipeManager ==========");
-        int coblemonCount = 0;
-        for (ResourceLocation key : rm.getRecipeIds().toList()) {
-            if (key.getNamespace().equals("cobblemon_ts")) {
-                coblemonCount++;
-                LOGGER.info("[RecipeCheck] 已加载cobblemon_ts配方: {}", key);
-            }
-        }
-        if (coblemonCount == 0) {
-            LOGGER.warn("[RecipeCheck] ⚠ 未找到任何cobblemon_ts配方！");
-        } else {
-            LOGGER.info("[RecipeCheck] cobblemon_ts配方总数: {}", coblemonCount);
-        }
-        LOGGER.info("[RecipeCheck] ================================================");
-
         try {
             var allLevels = event.getServer().getAllLevels();
             for (var level : allLevels) {
@@ -505,14 +487,12 @@ public class CobblemonTS {
 
     public static void registerBarrierBE(com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity be, net.minecraft.server.level.ServerLevel sl) {
         BARRIER_BE_SET.computeIfAbsent(sl, k -> java.util.concurrent.ConcurrentHashMap.newKeySet()).add(be);
-        LOGGER.info("[ChunkBarrier] +register BE at {} dim={} totalBEs={}", be.getBlockPos(), sl.dimension().location(), BARRIER_BE_SET.get(sl).size());
         rebuildLevelIndex(sl);
     }
 
     public static void unregisterBarrierBE(com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity be, net.minecraft.server.level.ServerLevel sl) {
         var set = BARRIER_BE_SET.get(sl);
         if (set != null) set.remove(be);
-        LOGGER.info("[ChunkBarrier] -unregister BE at {} dim={}", be.getBlockPos(), sl.dimension().location());
         rebuildLevelIndex(sl);
     }
 
@@ -534,10 +514,8 @@ public class CobblemonTS {
             }
             if (newMap.isEmpty()) {
                 BARRIER_INDEX.remove(sl);
-                LOGGER.info("[ChunkBarrier] rebuildLevelIndex dim={} -> empty ({} BEs)", sl.dimension().location(), beSet == null ? 0 : beSet.size());
             } else {
                 BARRIER_INDEX.put(sl, newMap);
-                LOGGER.info("[ChunkBarrier] rebuildLevelIndex dim={} -> {} chunks from {} BEs", sl.dimension().location(), newMap.size(), beSet == null ? 0 : beSet.size());
             }
         } catch (Throwable t) {
             LOGGER.error("[ChunkBarrier] Exception rebuilding index", t);
@@ -590,8 +568,6 @@ public class CobblemonTS {
             long cz = entity.blockPosition().getZ() >> 4;
 
             if (isEntityBlocked(entity, sl)) {
-                var typeKey = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
-                LOGGER.info("[ChunkBarrier] >>> EntityJoinLevel BLOCKED entity={} at chunk [{},{}]", typeKey, cx, cz);
                 event.setCanceled(true);
             }
         } catch (Throwable t) {
