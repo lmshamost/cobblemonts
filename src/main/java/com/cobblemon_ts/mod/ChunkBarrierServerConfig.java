@@ -12,11 +12,11 @@ public class ChunkBarrierServerConfig {
         BUILDER.comment("区块禁止器设置 | Chunk Barrier Settings").push("chunk_barrier");
 
         DEFAULT_RANGE = BUILDER
-                .comment("GUI 榛樿鎴愬睍绀哄尯鍩?(濂囨暟) | Default GUI range (odd number)")
+                .comment("Default GUI range in chunks (odd number, min 3, max 16)\nGUI 默认显示区块范围（奇数）")
                 .defineInRange("default_range", 9, 3, 16);
 
         MAX_RANGE = BUILDER
-                .comment("GUI 鍏佽鏈澶у尯鍩?(濂囨暟, 鏈澶?16) | Max allowed GUI range (odd, absolute max 16)")
+                .comment("Max allowed GUI range (odd, hard cap 16, server owner only)\nGUI 允许的最大区块范围（奇数，硬上限 16，仅服主可改）")
                 .defineInRange("max_range", 9, 3, 16);
 
         BUILDER.pop();
