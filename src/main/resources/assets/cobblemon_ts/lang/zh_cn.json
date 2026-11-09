@@ -406,5 +406,7 @@
   "cobblemon_ts.chunk_barrier.hint_ops_line2": "点击名单列表切换添加/移除",
   "cobblemon_ts.chunk_barrier.list_title.player": "玩家名单",
   "cobblemon_ts.chunk_barrier.list_title.lucky": "幸运方块名单",
+  "cobblemon_ts.chunk_barrier.tag.white": "[白]",
+  "cobblemon_ts.chunk_barrier.tag.black": "[黑]",
   "cobblemon_ts.chunk_barrier.readonly": "只读模式"
 }

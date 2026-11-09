@@ -152,7 +152,9 @@ public class ChunkBarrierScreen extends AbstractContainerScreen<ChunkBarrierCont
             if (row >= maxRowsPerCol) break;
             boolean isWl = e.getValue();
             int tagColor = isWl ? 0xFFFFFFFF : 0xFF666666;
-            String tag = isWl ? "[白]" : "[黑]";
+            String tag = isWl
+                    ? Component.translatable("cobblemon_ts.chunk_barrier.tag.white").getString()
+                    : Component.translatable("cobblemon_ts.chunk_barrier.tag.black").getString();
             String namePart = " " + e.getKey();
 
             int ex = x + 2 + col * colW;

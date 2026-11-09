@@ -391,5 +391,7 @@
   "cobblemon_ts.chunk_barrier.hint_ops_line2": "Click list to toggle add/remove",
   "cobblemon_ts.chunk_barrier.list_title.player": "Players",
   "cobblemon_ts.chunk_barrier.list_title.lucky": "Lucky Blocks",
+  "cobblemon_ts.chunk_barrier.tag.white": "[W]",
+  "cobblemon_ts.chunk_barrier.tag.black": "[B]",
   "cobblemon_ts.chunk_barrier.readonly": "Read-only"
 }
