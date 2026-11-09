@@ -58,9 +58,14 @@ public class PokemonRadarScreen extends Screen {
     private int autocompleteScrollOffset = 0;
     private String lastSearchQuery = "";
 
-    // [线性-R04d] 界面缩放
-    private float uiScaleFactor = 1.0f;
-    // 布局常量
+    private int cts_origW, cts_origH;
+    private float cts_scale = 1.0f;
+    private float cts_offsetX = 0, cts_offsetY = 0;
+    private boolean cts_needScale = false;
+
+    private static final int LAYOUT_W = 440;
+    private static final int LAYOUT_H = 480;
+
     private int panelX, panelY, panelW, panelH;
     private int inputStartX, inputStartY, inputW, rowStep;
     private int speciesY, genderY, abilityY, natureY, levelY, ivRow1Y, ivRow2Y;
@@ -76,14 +81,22 @@ public class PokemonRadarScreen extends Screen {
     @Override
     protected void init() {
         this.clearWidgets();
+
+        // [线性-SCALE] 拦截：固定虚拟布局尺寸，实际渲染时按屏幕大小缩小
+        cts_origW = this.width;
+        cts_origH = this.height;
+        cts_scale = Math.min((float) cts_origW / LAYOUT_W, (float) cts_origH / LAYOUT_H);
+        if (cts_scale > 1.0f) cts_scale = 1.0f;
+        cts_needScale = cts_scale < 1.0f;
+        if (cts_needScale) {
+            cts_offsetX = (cts_origW - LAYOUT_W * cts_scale) / 2.0f;
+            cts_offsetY = (cts_origH - LAYOUT_H * cts_scale) / 2.0f;
+            this.width = LAYOUT_W;
+            this.height = LAYOUT_H;
+        }
+
         int screenW = this.width;
         int screenH = this.height;
-
-        float layoutW = 440f;
-        float layoutH = 480f;  // [线性-R07] 加范围行→480
-        this.uiScaleFactor = Math.min(screenW / layoutW, screenH / layoutH);
-        if (this.uiScaleFactor > 1.0f) this.uiScaleFactor = 1.0f;
-        if (this.uiScaleFactor < 0.4f) this.uiScaleFactor = 0.4f;
 
         this.panelX = screenW / 2 - 210;
         this.panelW = 420;
@@ -348,16 +361,21 @@ public class PokemonRadarScreen extends Screen {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         saveState();
-        guiGraphics.fillGradient(0, 0, this.width, this.height, -1072689136, -804253680);
 
-        if (this.uiScaleFactor < 1.0f) {
-            // [线性-R04-scalefix] 用面板实际中心做缩放锚点，窗口模式下保持居中
-            float panelCenterX = panelX + panelW / 2f;
-            float panelCenterY = panelY + panelH / 2f;
+        // [线性-SCALE] 渐变背景用真实屏幕尺寸
+        if (cts_needScale) {
+            this.width = cts_origW;
+            this.height = cts_origH;
+        }
+        guiGraphics.fillGradient(0, 0, this.width, this.height, -1072689136, -804253680);
+        if (cts_needScale) {
+            this.width = LAYOUT_W;
+            this.height = LAYOUT_H;
             guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(this.width / 2f, this.height / 2f, 0);
-            guiGraphics.pose().scale(this.uiScaleFactor, this.uiScaleFactor, 1.0f);
-            guiGraphics.pose().translate(-panelCenterX, -panelCenterY, 0);
+            guiGraphics.pose().translate(cts_offsetX, cts_offsetY, 0);
+            guiGraphics.pose().scale(cts_scale, cts_scale, 1.0f);
+            mouseX = (int) ((mouseX - cts_offsetX) / cts_scale);
+            mouseY = (int) ((mouseY - cts_offsetY) / cts_scale);
         }
 
         // 面板背景
@@ -424,7 +442,7 @@ public class PokemonRadarScreen extends Screen {
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        if (this.uiScaleFactor < 1.0f) {
+        if (cts_needScale) {
             guiGraphics.pose().popPose();
         }
     }
@@ -620,6 +638,7 @@ public class PokemonRadarScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (cts_needScale) { mouseX = (mouseX - cts_offsetX) / cts_scale; mouseY = (mouseY - cts_offsetY) / cts_scale; }
         // [线性-R04l] 下拉栏点击选择
         if (!this.autocompleteItems.isEmpty() && button == 0) {
             int maxShown = Math.min(this.autocompleteItems.size(), 8);
@@ -659,6 +678,7 @@ public class PokemonRadarScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (cts_needScale) { mouseX = (mouseX - cts_offsetX) / cts_scale; mouseY = (mouseY - cts_offsetY) / cts_scale; }
         if (!this.autocompleteItems.isEmpty() && this.autocompleteStartY > 0) {
             int maxShown = Math.min(this.autocompleteItems.size(), 8);
             int maxOffset = Math.max(0, this.autocompleteItems.size() - maxShown);
