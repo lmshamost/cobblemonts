@@ -562,14 +562,18 @@ public class ChunkBarrierScreen extends AbstractContainerScreen<ChunkBarrierCont
 
         // ② 提示行（panelTop + 4 + 14 + 2 = panelTop + 20）
         graphics.drawString(font,
-                Component.translatable("cobblemon_ts.chunk_barrier.empty_list_hint").getString(),
+                Component.translatable("cobblemon_ts.chunk_barrier.empty_list_hint_line1").getString(),
                 leftPos + PAD, panelTop + 20, 0xFF888888);
+        graphics.drawString(font,
+                Component.translatable("cobblemon_ts.chunk_barrier.empty_list_hint_line2").getString(),
+                leftPos + PAD, panelTop + 32, 0xFF888888);
 
         String title = editingTarget == TARGET_LUCKY
                 ? Component.translatable("cobblemon_ts.chunk_barrier.player_title_lucky").getString()
                 : Component.translatable("cobblemon_ts.chunk_barrier.player_title").getString();
-        graphics.drawString(font, "→ " + title,
-                leftPos + PAD, panelTop + 36, editingTarget == TARGET_LUCKY ? 0xFFFFAA22 : 0xFFFFDD66);
+        graphics.drawString(font,
+                Component.translatable("cobblemon_ts.chunk_barrier.arrow").getString() + title,
+                leftPos + PAD, panelTop + 44, editingTarget == TARGET_LUCKY ? 0xFFFFAA22 : 0xFFFFDD66);
 
         // ④ EditBox + Button（renderables 自动渲染，位置 init 里已算好）
         // 给输入框区域画独立背景框，让 EditBox 在深色面板上清晰可见
@@ -580,8 +584,11 @@ public class ChunkBarrierScreen extends AbstractContainerScreen<ChunkBarrierCont
 
         // ⑤ 操作说明（panelTop + 50 + 20 + 4 = panelTop + 74）
         graphics.drawString(font,
-                Component.translatable("cobblemon_ts.chunk_barrier.hint_ops").getString(),
+                Component.translatable("cobblemon_ts.chunk_barrier.hint_ops_line1").getString(),
                 leftPos + PAD, panelTop + 74, 0xFF666666);
+        graphics.drawString(font,
+                Component.translatable("cobblemon_ts.chunk_barrier.hint_ops_line2").getString(),
+                leftPos + PAD, panelTop + 86, 0xFF666666);
 
         int listBoxX = leftPos + LEFT_W + PAD;
         int listBoxY = panelTop + 4;
@@ -609,9 +616,11 @@ public class ChunkBarrierScreen extends AbstractContainerScreen<ChunkBarrierCont
         int colW = 100;
 
         drawNameListSection(graphics, listBoxX, listBoxY, listBoxW, splitY - listBoxY,
-                "玩家名单", playerMap(), playerNameColor(), rowH, colW);
+                Component.translatable("cobblemon_ts.chunk_barrier.list_title.player").getString(),
+                playerMap(), playerNameColor(), rowH, colW);
         drawNameListSection(graphics, listBoxX, splitY, listBoxW, listBoxY + listBoxH - splitY,
-                "幸运方块名单", luckyMap(), luckyNameColor(), rowH, colW);
+                Component.translatable("cobblemon_ts.chunk_barrier.list_title.lucky").getString(),
+                luckyMap(), luckyNameColor(), rowH, colW);
 
         // [线性-渲染widget] 手动渲染 EditBox 和 添加按钮
         if (playerNameInput != null) {

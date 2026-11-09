@@ -399,7 +399,12 @@
   "cobblemon_ts.chunk_barrier.tip.lucky_ban": "  [幸运方块禁止]",
   "cobblemon_ts.chunk_barrier.count.force": "加载 %d/%d",
   "cobblemon_ts.chunk_barrier.count.ban": "禁止 %d/%d",
-  "cobblemon_ts.chunk_barrier.empty_list_hint": "空名单=允许所有玩家  F3+G区块显示",
-  "cobblemon_ts.chunk_barrier.hint_ops": "左键切换黑白 右键删除\n点击名单列表切换添加",
+  "cobblemon_ts.chunk_barrier.empty_list_hint_line1": "空名单=允许所有玩家",
+  "cobblemon_ts.chunk_barrier.empty_list_hint_line2": "F3+G 显示区块边框",
+  "cobblemon_ts.chunk_barrier.arrow": "→ ",
+  "cobblemon_ts.chunk_barrier.hint_ops_line1": "左键切换黑白 右键删除",
+  "cobblemon_ts.chunk_barrier.hint_ops_line2": "点击名单列表切换添加/移除",
+  "cobblemon_ts.chunk_barrier.list_title.player": "玩家名单",
+  "cobblemon_ts.chunk_barrier.list_title.lucky": "幸运方块名单",
   "cobblemon_ts.chunk_barrier.readonly": "只读模式"
 }

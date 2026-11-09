@@ -384,7 +384,12 @@
   "cobblemon_ts.chunk_barrier.tip.lucky_ban": "  [Lucky Block Banned]",
   "cobblemon_ts.chunk_barrier.count.force": "Force %d/%d",
   "cobblemon_ts.chunk_barrier.count.ban": "Ban %d/%d",
-  "cobblemon_ts.chunk_barrier.empty_list_hint": "Empty list = allow all players  F3+G show chunks",
-  "cobblemon_ts.chunk_barrier.hint_ops": "LMB=Toggle B/W  RMB=Delete\nClick list to toggle add/remove",
+  "cobblemon_ts.chunk_barrier.empty_list_hint_line1": "Empty list = allow all players",
+  "cobblemon_ts.chunk_barrier.empty_list_hint_line2": "F3+G show chunk borders",
+  "cobblemon_ts.chunk_barrier.arrow": "→ ",
+  "cobblemon_ts.chunk_barrier.hint_ops_line1": "LMB=Toggle B/W  RMB=Delete",
+  "cobblemon_ts.chunk_barrier.hint_ops_line2": "Click list to toggle add/remove",
+  "cobblemon_ts.chunk_barrier.list_title.player": "Players",
+  "cobblemon_ts.chunk_barrier.list_title.lucky": "Lucky Blocks",
   "cobblemon_ts.chunk_barrier.readonly": "Read-only"
 }
