@@ -837,10 +837,7 @@ public class CobblemonTS {
 
             boolean blocked = false;
             if ((flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_POKEMON) != 0
-                    && ns.equals("cobblemon") && path.equals("pokemon")) {
-                String ownerName = getPokemonOwnerName(entity);
-                if (ownerName != null && isPlayerBlockedInChunk(sl, chunkKey, ownerName)) blocked = true;
-            }
+                    && ns.equals("cobblemon") && path.equals("pokemon")) blocked = true;
             if (!blocked && (flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_NPC) != 0
                     && ns.equals("cobblemon") && path.equals("npc")) blocked = true;
             if (!blocked) {
