@@ -96,6 +96,9 @@ public class CobblemonTS {
     private static java.lang.reflect.Method cachedGetOwnerMethod;
     private static volatile boolean pokemonEntityReflectInitFailed;
 
+    // [线性-R10] 幸运方块放行：同步命令窗口内的深度计数（int 原生、无装箱、无集合）
+    private static int luckySpawnDepth = 0;
+
     // [线性-R06] 精灵雷达双按键：NUMPAD7=编辑器, NUMPAD8=开关追踪
     public static final KeyMapping RADAR_EDITOR_KEY = new KeyMapping(
             "key.cobblemon_ts.radar.editor",
@@ -657,6 +660,10 @@ public class CobblemonTS {
         public String getDisplayName() { return displayName; }
     }
 
+    public static void beginLuckySpawn() { luckySpawnDepth++; }
+    public static void endLuckySpawn()   { if (luckySpawnDepth > 0) luckySpawnDepth--; }
+    public static boolean isLuckySpawnActive() { return luckySpawnDepth > 0; }
+
     // [线性-R10] 检查某玩家在某区块是否被禁止开启幸运方块
     // 条件：chunk上有 BIT_LUCKY + BE的banLuckyBlock=true + 玩家不在lucky白名单/在黑名单
     // playerNameLower=null 时跳过名单检查（红石触发等无玩家上下文场景）
@@ -769,6 +776,8 @@ public class CobblemonTS {
             long cz = entity.blockPosition().getZ() >> 4;
 
             if (isEntityBlocked(entity, sl)) {
+                // [线性-R10a] 幸运方块豁免：同步命令窗口内 → 放行（BIT_POKEMON 不应拦截幸运方块产物）
+                if (isLuckySpawnActive()) return;
                 // [线性-R10] 玩家黑白名单豁免：白名单玩家召唤的宝可梦放行
                 if (tryWhitelistBypass(entity, sl)) return;
                 event.setCanceled(true);
@@ -841,7 +850,10 @@ public class CobblemonTS {
 
             boolean blocked = false;
             if ((flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_POKEMON) != 0
-                    && ns.equals("cobblemon") && path.equals("pokemon")) blocked = true;
+                    && ns.equals("cobblemon") && path.equals("pokemon")) {
+                String ownerName = getPokemonOwnerName(entity);
+                if (ownerName == null) blocked = true;
+            }
             if (!blocked && (flags & com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity.BIT_NPC) != 0
                     && ns.equals("cobblemon") && path.equals("npc")) blocked = true;
             if (!blocked) {
@@ -858,6 +870,9 @@ public class CobblemonTS {
             }
 
             if (blocked) {
+                // [线性-R10a] 幸运方块豁免：命中标记 → 放行（只适用于 cobblemon pokemon）
+                String path2 = path;
+                if (ns.equals("cobblemon") && path2.equals("pokemon") && isLuckySpawnActive()) return;
                 event.setResult(net.neoforged.neoforge.event.entity.living.MobSpawnEvent.PositionCheck.Result.FAIL);
             }
         } catch (Throwable t) {

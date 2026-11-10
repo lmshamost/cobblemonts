@@ -59,7 +59,12 @@ public class ShinyPokemonBlock extends BaseLuckyBlock {
                 level, 2, "LuckyBlock",
                 Component.literal("LuckyBlock"), level.getServer(), null);
 
-        level.getServer().getCommands().performPrefixedCommand(source, command);
+        CobblemonTS.beginLuckySpawn();
+        try {
+            level.getServer().getCommands().performPrefixedCommand(source, command);
+        } finally {
+            CobblemonTS.endLuckySpawn();
+        }
         CobblemonTS.LOGGER.info("[LuckyBlock] 生成随机闪光宝可梦 {} Lv.{} at {}", species, pokemonLevel, pos);
     }
 }

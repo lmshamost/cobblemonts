@@ -55,7 +55,12 @@ public class RandomPokemonBlock extends BaseLuckyBlock {
         String command = String.format("spawnpokemon %s lvl=%d x=%d y=%d z=%d",
                 species, pokemonLevel, pos.getX(), pos.getY() + 1, pos.getZ());
 
-        executeCommand(level, pos, command);
+        CobblemonTS.beginLuckySpawn();
+        try {
+            executeCommand(level, pos, command);
+        } finally {
+            CobblemonTS.endLuckySpawn();
+        }
         CobblemonTS.LOGGER.info("[LuckyBlock] 生成随机宝可梦 {} Lv.{} at {}", species, pokemonLevel, pos);
     }
 

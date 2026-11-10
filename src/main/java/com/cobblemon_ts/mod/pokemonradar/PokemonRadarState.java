@@ -512,12 +512,23 @@ public class PokemonRadarState {
             Object speciesObj = getByName.invoke(null, speciesEnglishName.toLowerCase());
             if (speciesObj == null) return enList;
 
-            // Species.getAbilities() → Set<AbilityTemplate>
+            // Species.getAbilities() → Set<Ability>（每个 Ability 需先 getTemplate() 拿 AbilityTemplate）
             Object abilitiesObj = speciesObj.getClass().getMethod("getAbilities").invoke(speciesObj);
             if (abilitiesObj instanceof Iterable<?> iter) {
                 for (Object ab : iter) {
-                    // AbilityTemplate.getRealName() 或 ResourceLocation
-                    String id = extractStringId(ab);
+                    if (ab == null) continue;
+                    // [线性-fix] 先取 Ability.getTemplate() → AbilityTemplate 再提取 ID；否则拿到 Ability 内部名导致无法汉化
+                    Object template = null;
+                    try {
+                        for (java.lang.reflect.Method m : ab.getClass().getMethods()) {
+                            if ((m.getName().equals("getTemplate") || m.getName().equals("template"))
+                                    && m.getParameterCount() == 0) {
+                                template = m.invoke(ab);
+                                break;
+                            }
+                        }
+                    } catch (Throwable ignored) {}
+                    String id = extractStringId(template != null ? template : ab);
                     if (id != null && !id.isEmpty() && !enList.contains(id)) {
                         enList.add(id.toLowerCase());
                     }
