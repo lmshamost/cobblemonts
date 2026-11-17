@@ -25,7 +25,7 @@ public record OpenPokebagPacket() implements CustomPayload {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayerEntity serverPlayer) {
                 serverPlayer.openHandledScreen(new SimpleNamedScreenHandlerFactory(
-                        (containerId, inv, p) -> new PokebagContainer(containerId, inv),
+                        (containerId, inv, p) -> new PokebagContainer(containerId, inv, p),
                         PokebagContainer.TITLE
                 ));
             }

@@ -8,7 +8,7 @@ import net.minecraft.entity.player.PlayerInventory;
 
 public class PokebagScreen extends HandledScreen<PokebagContainer> {
     private static final Identifier CHEST_TEXTURE =
-            Identifier.of("client", "textures/gui/container/generic_54.png");
+            Identifier.of("minecraft", "textures/gui/container/generic_54.png");
 
     public PokebagScreen(PokebagContainer container, PlayerInventory inv, Text title) {
         super(container, inv, title);

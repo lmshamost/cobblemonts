@@ -1,5 +1,6 @@
 package com.cobblemon_ts.mod.gui;
 
+import com.cobblemon_ts.mod.CharmConfig;
 import com.cobblemon_ts.mod.CobblemonTS;
 import com.cobblemon_ts.mod.ModConfig;
 import com.google.gson.Gson;
@@ -51,6 +52,34 @@ public class ColorEditorConfig {
     public static final ModConfig.IntWrapper EDITOR_DARK_INPUT_TEXT      = new ModConfig.IntWrapper(0xFFF1F5F9);
     public static final ModConfig.IntWrapper EDITOR_DARK_TAB_ACTIVE      = new ModConfig.IntWrapper(0xFF2563EB);
 
+    // ==================== HUD 显示设置（客户端层） ====================
+    public static final CharmConfig.BooleanValue SHOW_EFFECT_ICONS = new CharmConfig.BooleanValue(true);
+    public static final CharmConfig.BooleanValue SHOW_INVENTORY_EFFECT_ICONS = new CharmConfig.BooleanValue(true);
+    public static final CharmConfig.BooleanValue HIDE_TOGGLE_BUTTONS = new CharmConfig.BooleanValue(false);
+    public static final CharmConfig.BooleanValue HUD_CUSTOM_HEALTH_BAR = new CharmConfig.BooleanValue(false);
+    public static final CharmConfig.BooleanValue HUD_CUSTOM_FOOD_BAR = new CharmConfig.BooleanValue(false);
+    public static final CharmConfig.BooleanValue HUD_CUSTOM_ARMOR_BAR = new CharmConfig.BooleanValue(false);
+    public static final CharmConfig.BooleanValue HUD_CUSTOM_XP_BAR = new CharmConfig.BooleanValue(false);
+    public static final CharmConfig.BooleanValue HUD_ABSORPTION_OVERLAY = new CharmConfig.BooleanValue(false);
+    public static final CharmConfig.BooleanValue HUD_SATURATION_OVERLAY = new CharmConfig.BooleanValue(false);
+    public static final CharmConfig.BooleanValue HUD_UNIFIED_COLORED_BARS = new CharmConfig.BooleanValue(true);
+    public static final CharmConfig.BooleanValue HUD_UNIFIED_AIR_BAR = new CharmConfig.BooleanValue(true);
+    public static final CharmConfig.BooleanValue HUD_UNIFIED_VEHICLE_BAR = new CharmConfig.BooleanValue(true);
+    public static final CharmConfig.BooleanValue HUD_UNIFIED_XP_BAR = new CharmConfig.BooleanValue(true);
+    public static final CharmConfig.IntValue HUD_NUMERIC_DISPLAY_MAX = new CharmConfig.IntValue(65536);
+    public static final CharmConfig.BooleanValue HUD_FORCE_SUMMARY_GUISCALE = new CharmConfig.BooleanValue(false);
+    public static final CharmConfig.BooleanValue HUD_SUMMARY_TEXT_SCALE = new CharmConfig.BooleanValue(true);
+    public static final CharmConfig.BooleanValue HUD_POTION_SHRINK = new CharmConfig.BooleanValue(false);
+    public static final CharmConfig.DoubleValue HUD_POTION_SHRINK_SCALE = new CharmConfig.DoubleValue(0.6);
+    public static final CharmConfig.BooleanValue HUD_POTION_HIDE_FLASH = new CharmConfig.BooleanValue(false);
+
+    // ==================== 面板主题（客户端层） ====================
+    public static final CharmConfig.BooleanValue LIGHT_PANEL_THEME = new CharmConfig.BooleanValue(false);
+    public static final CharmConfig.BooleanValue LIGHT_EDITOR_THEME = new CharmConfig.BooleanValue(true);
+
+    // ==================== 另一种捕捉模式（客户端层） ====================
+    public static final CharmConfig.BooleanValue ALTERNATIVE_CAPTURE_MODE = new CharmConfig.BooleanValue(true);
+
     /** 加载颜色配置 */
     public static void load() {
         if (Files.exists(CONFIG_PATH)) {
@@ -87,6 +116,29 @@ public class ColorEditorConfig {
                     read(root, "editor_dark_input_border", EDITOR_DARK_INPUT_BORDER);
                     read(root, "editor_dark_input_text", EDITOR_DARK_INPUT_TEXT);
                     read(root, "editor_dark_tab_active", EDITOR_DARK_TAB_ACTIVE);
+
+                    read(root, "show_effect_icons", SHOW_EFFECT_ICONS);
+                    read(root, "show_inventory_effect_icons", SHOW_INVENTORY_EFFECT_ICONS);
+                    read(root, "hide_toggle_buttons", HIDE_TOGGLE_BUTTONS);
+                    read(root, "custom_health_bar", HUD_CUSTOM_HEALTH_BAR);
+                    read(root, "custom_food_bar", HUD_CUSTOM_FOOD_BAR);
+                    read(root, "custom_armor_bar", HUD_CUSTOM_ARMOR_BAR);
+                    read(root, "custom_xp_bar", HUD_CUSTOM_XP_BAR);
+                    read(root, "absorption_overlay", HUD_ABSORPTION_OVERLAY);
+                    read(root, "saturation_overlay", HUD_SATURATION_OVERLAY);
+                    read(root, "unified_colored_bars", HUD_UNIFIED_COLORED_BARS);
+                    read(root, "unified_air_bar", HUD_UNIFIED_AIR_BAR);
+                    read(root, "unified_vehicle_bar", HUD_UNIFIED_VEHICLE_BAR);
+                    read(root, "unified_xp_bar", HUD_UNIFIED_XP_BAR);
+                    read(root, "hud_numeric_max", HUD_NUMERIC_DISPLAY_MAX);
+                    read(root, "hud_force_summary_guiscale", HUD_FORCE_SUMMARY_GUISCALE);
+                    read(root, "hud_summary_text_scale", HUD_SUMMARY_TEXT_SCALE);
+                    read(root, "hud_potion_shrink", HUD_POTION_SHRINK);
+                    read(root, "hud_potion_shrink_scale", HUD_POTION_SHRINK_SCALE);
+                    read(root, "hud_potion_hide_flash", HUD_POTION_HIDE_FLASH);
+                    read(root, "light_panel_theme", LIGHT_PANEL_THEME);
+                    read(root, "light_editor_theme", LIGHT_EDITOR_THEME);
+                    read(root, "alternative_capture_mode", ALTERNATIVE_CAPTURE_MODE);
                 }
             } catch (Exception e) {
                 CobblemonTS.LOGGER.error("[ColorEditorConfig] Failed to load", e);
@@ -129,6 +181,29 @@ public class ColorEditorConfig {
             write(root, "editor_dark_input_border", EDITOR_DARK_INPUT_BORDER);
             write(root, "editor_dark_input_text", EDITOR_DARK_INPUT_TEXT);
             write(root, "editor_dark_tab_active", EDITOR_DARK_TAB_ACTIVE);
+
+            write(root, "show_effect_icons", SHOW_EFFECT_ICONS);
+            write(root, "show_inventory_effect_icons", SHOW_INVENTORY_EFFECT_ICONS);
+            write(root, "hide_toggle_buttons", HIDE_TOGGLE_BUTTONS);
+            write(root, "custom_health_bar", HUD_CUSTOM_HEALTH_BAR);
+            write(root, "custom_food_bar", HUD_CUSTOM_FOOD_BAR);
+            write(root, "custom_armor_bar", HUD_CUSTOM_ARMOR_BAR);
+            write(root, "custom_xp_bar", HUD_CUSTOM_XP_BAR);
+            write(root, "absorption_overlay", HUD_ABSORPTION_OVERLAY);
+            write(root, "saturation_overlay", HUD_SATURATION_OVERLAY);
+            write(root, "unified_colored_bars", HUD_UNIFIED_COLORED_BARS);
+            write(root, "unified_air_bar", HUD_UNIFIED_AIR_BAR);
+            write(root, "unified_vehicle_bar", HUD_UNIFIED_VEHICLE_BAR);
+            write(root, "unified_xp_bar", HUD_UNIFIED_XP_BAR);
+            write(root, "hud_numeric_max", HUD_NUMERIC_DISPLAY_MAX);
+            write(root, "hud_force_summary_guiscale", HUD_FORCE_SUMMARY_GUISCALE);
+            write(root, "hud_summary_text_scale", HUD_SUMMARY_TEXT_SCALE);
+            write(root, "hud_potion_shrink", HUD_POTION_SHRINK);
+            write(root, "hud_potion_shrink_scale", HUD_POTION_SHRINK_SCALE);
+            write(root, "hud_potion_hide_flash", HUD_POTION_HIDE_FLASH);
+            write(root, "light_panel_theme", LIGHT_PANEL_THEME);
+            write(root, "light_editor_theme", LIGHT_EDITOR_THEME);
+            write(root, "alternative_capture_mode", ALTERNATIVE_CAPTURE_MODE);
             Files.createDirectories(CONFIG_PATH.getParent());
             Files.writeString(CONFIG_PATH, GSON.toJson(root));
         } catch (Exception e) {
@@ -140,6 +215,25 @@ public class ColorEditorConfig {
         if (obj.has(key)) target.set(obj.get(key).getAsInt());
     }
     private static void write(JsonObject obj, String key, ModConfig.IntWrapper src) {
+        obj.addProperty(key, src.get());
+    }
+
+    private static void read(JsonObject obj, String key, CharmConfig.BooleanValue target) {
+        if (obj.has(key)) target.set(obj.get(key).getAsBoolean());
+    }
+    private static void read(JsonObject obj, String key, CharmConfig.IntValue target) {
+        if (obj.has(key)) target.set(obj.get(key).getAsInt());
+    }
+    private static void read(JsonObject obj, String key, CharmConfig.DoubleValue target) {
+        if (obj.has(key)) target.set(obj.get(key).getAsDouble());
+    }
+    private static void write(JsonObject obj, String key, CharmConfig.BooleanValue src) {
+        obj.addProperty(key, src.get());
+    }
+    private static void write(JsonObject obj, String key, CharmConfig.IntValue src) {
+        obj.addProperty(key, src.get());
+    }
+    private static void write(JsonObject obj, String key, CharmConfig.DoubleValue src) {
         obj.addProperty(key, src.get());
     }
 

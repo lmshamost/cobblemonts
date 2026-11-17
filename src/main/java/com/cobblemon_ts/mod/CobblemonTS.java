@@ -116,7 +116,6 @@ public class CobblemonTS implements ModInitializer {
         CobblemonTSConfig.load();
         DebugConfig.load();
         ColorEditorConfig.load();
-        RadarPermissionManager.load();
 
         // 注册方块的初始化（静态块自动执行）
         LuckyBlocks.init();

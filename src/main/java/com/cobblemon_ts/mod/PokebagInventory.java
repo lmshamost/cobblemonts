@@ -14,14 +14,10 @@ public class PokebagInventory extends SimpleInventory {
         return CharmConfig.POKEBAG_MAX_STACK_SIZE.get();
     }
 
+    // [线性-B06] 容器堆叠上限带参覆写：对齐 SimpleInventory 的大堆叠存储，避免 640 被按物品原生 64 截断
     @Override
-    public void setStack(int slot, ItemStack stack) {
-        int countBefore = stack.getCount();
-        super.setStack(slot, stack);
-        int maxStack = CharmConfig.POKEBAG_MAX_STACK_SIZE.get();
-        if (stack.getCount() < countBefore && stack.getCount() < maxStack) {
-            stack.setCount(Math.min(countBefore, maxStack));
-        }
+    public int getMaxCount(ItemStack stack) {
+        return CharmConfig.POKEBAG_MAX_STACK_SIZE.get();
     }
 
     @Override

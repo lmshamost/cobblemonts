@@ -217,6 +217,8 @@ public class ChunkBarrierScreen extends HandledScreen<ChunkBarrierContainer> {
         // [线性-SCALE] 在 super.init() 之前拦截
         int realW = this.width;
         int realH = this.height;
+        // [线性-SCALE-fix] 每次init先重置，避免小窗口→全屏后残留旧的缩小状态导致不适配
+        cts_needScale = false;
         if (backgroundWidth > realW || backgroundHeight > realH) {
             cts_origW = realW;
             cts_origH = realH;
@@ -736,7 +738,14 @@ public class ChunkBarrierScreen extends HandledScreen<ChunkBarrierContainer> {
         if (button == 1) {
             int clearedBit = findLeftButtonBitAt((int) mouseX, (int) mouseY);
             if (clearedBit > 0) {
-                if (!isReadOnly()) clearBitInRange(clearedBit);
+                if (!isReadOnly()) {
+                    // [线性-SHIFT] shift+右键 = 给范围内所有chunk添加该类型（对称于右键清除所有）
+                    if (hasShiftDown()) {
+                        setBitInRange(clearedBit);
+                    } else {
+                        clearBitInRange(clearedBit);
+                    }
+                }
                 return true;
             }
         }
@@ -879,6 +888,42 @@ public class ChunkBarrierScreen extends HandledScreen<ChunkBarrierContainer> {
             }
         }
         return 0;
+    }
+
+    // [线性-SHIFT] shift+右键左边类型按钮 = 给范围内所有chunk添加该类型（对称于右键清除所有）
+    private void setBitInRange(int bit) {
+        // [线性-SHIFT] forceload / ban 满限拦截，防止批量添加突破上限
+        if ((bit & FORCE_BITS) != 0 && isForceLimitFull()) {
+            if (!forceLimitNotified) {
+                MinecraftClient.getInstance().player.sendMessage(
+                        Text.translatable("cobblemon_ts.chunk_barrier.limit.forceload",
+                                curForceChunkCount(), CharmConfig.getCbForceloadChunkLimit()), false);
+                forceLimitNotified = true;
+            }
+            return;
+        }
+        if ((bit & BAN_BITS) != 0 && isBanLimitFull()) {
+            if (!banLimitNotified) {
+                MinecraftClient.getInstance().player.sendMessage(
+                        Text.translatable("cobblemon_ts.chunk_barrier.limit.ban",
+                                curBanChunkCount(), CharmConfig.getCbBanChunkLimit()), false);
+                banLimitNotified = true;
+            }
+            return;
+        }
+
+        ChunkBarrierConfig cfg = this.handler.getConfig();
+        for (int gx = 0; gx < gridSize; gx++) {
+            for (int gz = 0; gz < gridSize; gz++) {
+                int cx = centerChunkX + (gx - gridSize / 2);
+                int cz = centerChunkZ + (gz - gridSize / 2);
+                int cur = cfg.getFlags(cx, cz);
+                if ((cur & bit) == 0) {
+                    cfg.setFlags(cx, cz, cur | bit);
+                }
+            }
+        }
+        syncToServer();
     }
 
     private void clearBitInRange(int bit) {

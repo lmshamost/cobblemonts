@@ -155,10 +155,6 @@ public class ModMenuIntegration implements ModMenuApi {
                 "道具袋容量 (格子数)", v -> CharmConfig.POKEBAG_SLOTS.set(v));
         addInt(eb, cat, "最大堆叠数量", CharmConfig.POKEBAG_MAX_STACK_SIZE.get(), 1, 8192,
                 "道具袋单格最大堆叠数量", v -> CharmConfig.POKEBAG_MAX_STACK_SIZE.set(v));
-        addBool(eb, cat, "限制取出数量", CharmConfig.POKEBAG_EXTRACT_LIMIT_ENABLED.get(),
-                "是否限制 shift+左键 从道具袋取出的数量", v -> CharmConfig.POKEBAG_EXTRACT_LIMIT_ENABLED.set(v));
-        addInt(eb, cat, "取出数量上限", CharmConfig.POKEBAG_EXTRACT_LIMIT.get(), 1, 1024,
-                "shift+左键 单次取出道具的最大数量", v -> CharmConfig.POKEBAG_EXTRACT_LIMIT.set(v));
 
         // --- 幸运方块 ---
         addStrList(eb, cat, "传说宝可梦列表", CharmConfig.LEGENDARY_POKEMON.get(),

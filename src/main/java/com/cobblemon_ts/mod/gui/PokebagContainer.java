@@ -1,9 +1,9 @@
 package com.cobblemon_ts.mod.gui;
 
 import com.cobblemon_ts.mod.CharmConfig;
+import com.cobblemon_ts.mod.CharmEventListener;
 import com.cobblemon_ts.mod.CharmPlayerData;
 import com.cobblemon_ts.mod.CobblemonTS;
-import com.cobblemon_ts.mod.DebugConfig;
 import com.cobblemon_ts.mod.PokebagInventory;
 import com.cobblemon_ts.mod.PokebagManager;
 import net.minecraft.text.Text;
@@ -12,49 +12,34 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.item.ItemStack;
 
 public class PokebagContainer extends ScreenHandler {
     public static final Text TITLE = Text.translatable("container.cobblemon_ts.pokebag");
+    // [线性-B06] shift+alt 全取的按钮标记：客户端Mixin检测到 Alt 时把 mouseButton 改写为该值，服务端据此识别
+    public static final int EXTRACT_ALL_BUTTON = 100;
     private final SimpleInventory bagInventory;
-    private final PlayerEntity player;
+    private final PlayerEntity dataOwner;
 
+    // [线性-B09] 客户端构造：menuType.create 工厂路径，只创建「本地副本视图」，数据由服务端同步包(initializeContents)填充。
+    // 与真实容器隔离，客户端本地预测点击只改副本，不与服务端真实执行叠加(否则放入翻倍/左键拿起消失)。
     public PokebagContainer(int containerId, PlayerInventory playerInv) {
+        this(containerId, playerInv, playerInv.player, new PokebagInventory(CharmConfig.POKEBAG_SLOTS.get()));
+    }
+
+    // [线性-BAG02] 服务端构造(invsee)：打开者(openerInv)与数据源(dataOwner)分离，OP可打开目标玩家道具袋，
+    // 引用数据源玩家的真实共享容器，玩家与OP同看一份数据，实时互通，无需复制/写回。
+    public PokebagContainer(int containerId, PlayerInventory openerInv, PlayerEntity dataOwner) {
+        this(containerId, openerInv, dataOwner, CharmPlayerData.get(dataOwner).getPokebagManager().getBagInventory());
+    }
+
+    private PokebagContainer(int containerId, PlayerInventory openerInv, PlayerEntity dataOwner, SimpleInventory bagInventory) {
         super(ModContainers.POKEBAG, containerId);
-        this.player = playerInv.player;
+        this.dataOwner = dataOwner;
+        this.bagInventory = bagInventory;
 
-        // 末影箱模式：创建临时容器，关闭时保存回玩家数据
-        PokebagManager manager = CharmPlayerData.get(player).getPokebagManager();
-        int bagSlots = manager.getBagInventory().size();
-        int cfgMaxStack = CharmConfig.POKEBAG_MAX_STACK_SIZE.get();
-        if (DebugConfig.DEBUG_POKEBAG.get()) {
-            CobblemonTS.LOGGER.info("[Pokebag] 创建临时容器 bagSlots={} cfgMaxStack={}", bagSlots, cfgMaxStack);
-        }
-
-        // 使用 PokebagInventory 确保 addItem/setItem 使用正确的堆叠上限
-        this.bagInventory = new PokebagInventory(bagSlots);
-        if (DebugConfig.DEBUG_POKEBAG.get()) {
-            CobblemonTS.LOGGER.info("[Pokebag] 临时容器 getMaxStackSize={}", this.bagInventory.getMaxCountPerStack());
-        }
-
-        // 复制玩家数据到临时容器
-        for (int i = 0; i < bagSlots; i++) {
-            ItemStack original = manager.getBagInventory().getStack(i);
-            if (!original.isEmpty()) {
-                ItemStack copy = original.copy();
-                if (DebugConfig.DEBUG_POKEBAG.get()) {
-                    CobblemonTS.LOGGER.info("[Pokebag] 复制 slot={} item={} count={} -> copy count={}",
-                        i, original.getItem().getTranslationKey(), original.getCount(), copy.getCount());
-                }
-                bagInventory.setStack(i, copy);
-                if (DebugConfig.DEBUG_POKEBAG.get()) {
-                    ItemStack after = bagInventory.getStack(i);
-                    CobblemonTS.LOGGER.info("[Pokebag] setItem后 slot={} count={} (是否被截断: {})",
-                        i, after.getCount(), after.getCount() != copy.getCount());
-                }
-            }
-        }
-
+        int bagSlots = bagInventory.size();
         int rows = bagSlots / 9;
 
         // 道具袋格子（带标签过滤和大堆叠支持）
@@ -68,8 +53,13 @@ public class PokebagContainer extends ScreenHandler {
                     }
 
                     @Override
+                    public int getMaxItemCount(ItemStack stack) {
+                        return CharmConfig.POKEBAG_MAX_STACK_SIZE.get();
+                    }
+
+                    @Override
                     public boolean canInsert(ItemStack stack) {
-                        PokebagManager bagManager = CharmPlayerData.get(PokebagContainer.this.player).getPokebagManager();
+                        PokebagManager bagManager = CharmPlayerData.get(PokebagContainer.this.dataOwner).getPokebagManager();
                         return bagManager.canItemEnterBag(stack);
                     }
                 });
@@ -81,13 +71,13 @@ public class PokebagContainer extends ScreenHandler {
         // 玩家背包
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(playerInv, col + row * 9 + 9, 8 + col * 18, invY + row * 18));
+                this.addSlot(new Slot(openerInv, col + row * 9 + 9, 8 + col * 18, invY + row * 18));
             }
         }
 
         // 玩家快捷栏
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(playerInv, col, 8 + col * 18, invY + 58));
+            this.addSlot(new Slot(openerInv, col, 8 + col * 18, invY + 58));
         }
     }
 
@@ -105,32 +95,18 @@ public class PokebagContainer extends ScreenHandler {
             int bagSize = bagInventory.size();
 
             if (index < bagSize) {
-                // 从道具袋移动到玩家背包（shift+click 取物限制）
-                if (CharmConfig.POKEBAG_EXTRACT_LIMIT_ENABLED.get()) {
-                    int limit = CharmConfig.POKEBAG_EXTRACT_LIMIT.get();
-                    if (stack.getCount() > limit) {
-                        ItemStack extractStack = stack.copy();
-                        extractStack.setCount(limit);
-                        stack.decrement(limit);
-                        if (!this.insertItem(extractStack, bagSize, this.slots.size(), true)) {
-                            stack.increment(extractStack.getCount());
-                            return ItemStack.EMPTY;
-                        }
-                        result = extractStack.copy();
-                        if (stack.isEmpty()) {
-                            slot.setStack(ItemStack.EMPTY);
-                        } else {
-                            slot.markDirty();
-                        }
-                        return result;
-                    }
+                // [线性-B07] 从道具袋移到玩家背包：直接走原版 insertItem，由其按目标槽正常堆叠(64)自动拆分，
+                // 单次shift+点击只移动一个堆叠。不再手动 shrink+move 副本，避免与原版 onSlotClick 点击逻辑重复导致数量翻倍/物品消失。
+                this.insertItem(stack, bagSize, this.slots.size(), true);
+                if (stack.isEmpty()) {
+                    slot.setStack(ItemStack.EMPTY);
+                } else {
+                    slot.markDirty();
                 }
-                if (!this.insertItem(stack, bagSize, this.slots.size(), true)) {
-                    return ItemStack.EMPTY;
-                }
+                return ItemStack.EMPTY;
             } else {
-                // 从玩家背包移动到道具袋（只允许符合条件的物品）
-                PokebagManager manager = CharmPlayerData.get(player).getPokebagManager();
+                // 从玩家背包移动到道具袋（按数据源玩家的准入规则判断）
+                PokebagManager manager = CharmPlayerData.get(dataOwner).getPokebagManager();
                 if (!manager.canItemEnterBag(stack)) {
                     return ItemStack.EMPTY;
                 }
@@ -200,6 +176,38 @@ public class PokebagContainer extends ScreenHandler {
         return stack.getCount() < originalCount;
     }
 
+    // [线性-B06] shift+alt 全取：客户端Mixin检测到Alt时把mouseButton改写为EXTRACT_ALL_BUTTON，服务端据此识别并执行
+    @Override
+    public void onSlotClick(int slotId, int button, SlotActionType clickType, PlayerEntity player) {
+        if (clickType == SlotActionType.QUICK_MOVE && button == EXTRACT_ALL_BUTTON) {
+            this.extractAllFromSlot(player, slotId);
+            return;
+        }
+        super.onSlotClick(slotId, button, clickType, player);
+    }
+
+    // [线性-B06] 全取该槽：复制整堆→清槽→用insertItem按玩家背包正常堆叠(64)分批移动，放不下的回填原槽
+    private void extractAllFromSlot(PlayerEntity player, int slotId) {
+        int bagSize = bagInventory.size();
+        if (slotId < 0 || slotId >= bagSize) return;
+        Slot slot = this.slots.get(slotId);
+        if (slot == null || !slot.hasStack()) return;
+        if (!slot.canTakeItems(player)) return;
+
+        ItemStack stack = slot.getStack().copy();
+        slot.setStack(ItemStack.EMPTY);
+
+        // insertItem 每次只填一个空槽/合并同类，天然按目标槽64拆分；循环直到移完或背包满
+        while (!stack.isEmpty() && this.insertItem(stack, bagSize, this.slots.size(), true)) {
+            // 已移动一部分，继续
+        }
+
+        if (!stack.isEmpty()) {
+            slot.setStack(stack);
+        }
+        slot.markDirty();
+    }
+
     @Override
     public boolean canUse(PlayerEntity player) {
         return bagInventory.canPlayerUse(player);
@@ -208,32 +216,10 @@ public class PokebagContainer extends ScreenHandler {
     @Override
     public void onClosed(PlayerEntity player) {
         super.onClosed(player);
-        if (DebugConfig.DEBUG_POKEBAG.get()) {
-            CobblemonTS.LOGGER.info("[Pokebag] onClosed() 保存 player={}", player.getName().getString());
-        }
-        PokebagManager manager = CharmPlayerData.get(player).getPokebagManager();
-        if (DebugConfig.DEBUG_POKEBAG.get()) {
-            CobblemonTS.LOGGER.info("[Pokebag] 玩家容器 getMaxStackSize={}", manager.getBagInventory().getMaxCountPerStack());
-        }
-        for (int i = 0; i < bagInventory.size(); i++) {
-            ItemStack tempStack = bagInventory.getStack(i);
-            if (!tempStack.isEmpty()) {
-                if (DebugConfig.DEBUG_POKEBAG.get()) {
-                    CobblemonTS.LOGGER.info("[Pokebag] 保存 slot={} item={} count={} -> 玩家容器",
-                        i, tempStack.getItem().getTranslationKey(), tempStack.getCount());
-                }
-                manager.getBagInventory().setStack(i, tempStack.copy());
-                if (DebugConfig.DEBUG_POKEBAG.get()) {
-                    ItemStack saved = manager.getBagInventory().getStack(i);
-                    CobblemonTS.LOGGER.info("[Pokebag] 保存后玩家容器 slot={} count={}",
-                        i, saved.getCount());
-                }
-            } else {
-                manager.getBagInventory().setStack(i, ItemStack.EMPTY);
-            }
-        }
-        if (DebugConfig.DEBUG_POKEBAG.get()) {
-            CobblemonTS.LOGGER.info("[Pokebag] onClosed() 保存完成");
+        // [线性-BAG04] 共享视图：数据直接引用真实容器，无需写回，关闭时仅立即落盘
+        CharmPlayerData ownerData = CharmEventListener.getPlayerDataIfPresent(dataOwner);
+        if (ownerData != null) {
+            ownerData.getPokebagManager().forceFlush();
         }
     }
 }

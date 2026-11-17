@@ -7,6 +7,7 @@ import com.cobblemon_ts.mod.CharmState;
 import com.cobblemon_ts.mod.CharmType;
 import com.cobblemon_ts.mod.CobblemonTS;
 import com.cobblemon_ts.mod.RadarPermissionManager;
+import com.cobblemon_ts.mod.gui.PokebagContainer;
 import com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity;
 import com.cobblemon_ts.mod.network.OpenHudScreenS2CPacket;
 import com.cobblemon_ts.mod.network.PacketDistributor;
@@ -18,6 +19,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.command.argument.EntityArgumentType;
+import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.text.Text;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -35,10 +37,6 @@ public class ClearCharmCommand {
             if (name.startsWith(remaining)) {
                 builder.suggest(name);
             }
-        }
-        // [线性-RADAR-PERM-CMD] 雷达权限：非护符，独立补全建议
-        if ("radar".startsWith(remaining)) {
-            builder.suggest("radar");
         }
         return builder.buildFuture();
     };
@@ -81,6 +79,37 @@ public class ClearCharmCommand {
                 .then(CommandManager.literal("hud")
                     .executes(ctx -> executeOpenHud(ctx.getSource()))
                 )
+                // [线性-CMD02] /cts open <player> — OP打开目标玩家的道具袋（继承OP权限）
+                .then(CommandManager.literal("open")
+                    .then(CommandManager.argument("player", EntityArgumentType.player())
+                        .executes(ctx -> executeOpenPokebag(ctx.getSource(),
+                            EntityArgumentType.getPlayer(ctx, "player")))
+                    )
+                )
+                // [线性-RDR4] /cts radar <player> <true|false> — 设置单个玩家雷达权限
+                //             /cts radar reload — 重读黑名单并向所有在线玩家重推权限
+                .then(CommandManager.literal("radar")
+                    .then(CommandManager.argument("player", EntityArgumentType.player())
+                        .then(CommandManager.argument("onoff", BoolArgumentType.bool())
+                            .executes(ctx -> {
+                                ServerPlayerEntity target = EntityArgumentType.getPlayer(ctx, "player");
+                                boolean enable = BoolArgumentType.getBool(ctx, "onoff");
+                                RadarPermissionManager.setRadarPermission(target, enable);
+                                String summaryKey = enable ? "command.cobblemon_ts.cts.radar.success_on"
+                                                           : "command.cobblemon_ts.cts.radar.success_off";
+                                ctx.getSource().sendFeedback(() -> Text.translatable(summaryKey, 1), true);
+                                return 1;
+                            })
+                        )
+                    )
+                    .then(CommandManager.literal("reload")
+                        .executes(ctx -> {
+                            int count = RadarPermissionManager.resyncAllRadarPermissions(ctx.getSource().getServer());
+                            ctx.getSource().sendFeedback(() -> Text.translatable("command.cobblemon_ts.cts.radar.reload", count), true);
+                            return count;
+                        })
+                    )
+                )
         );
     }
 
@@ -98,6 +127,20 @@ public class ClearCharmCommand {
             source.sendError(Text.literal("打开HUD设置失败: " + e.getMessage()));
             return 0;
         }
+    }
+
+    // [线性-CMD02] 执行打开：OP打开目标玩家的道具袋进行查看/修改
+    private static int executeOpenPokebag(ServerCommandSource source, ServerPlayerEntity target) {
+        if (!(source.getEntity() instanceof ServerPlayerEntity op)) {
+            source.sendError(Text.translatable("command.cobblemon_ts.cts.open.console"));
+            return 0;
+        }
+        op.openHandledScreen(new SimpleNamedScreenHandlerFactory(
+            (syncId, inventory, player) -> new PokebagContainer(syncId, inventory, target),
+            PokebagContainer.TITLE));
+        source.sendFeedback(() -> Text.translatable(
+            "command.cobblemon_ts.cts.open.success", target.getDisplayName()), true);
+        return 1;
     }
 
     // [线性-CMD02b] 执行 /cts clear chunks：清理无主或离线的区块禁止器
@@ -150,19 +193,6 @@ public class ClearCharmCommand {
     // [线性-CMD01c] 执行设置：on=true启用 / on=false清除
     private static void executeSet(ServerCommandSource source, Collection<ServerPlayerEntity> players,
                                    String charmName, boolean enable) {
-        // [线性-RADAR-PERM-CMD] 雷达权限独立处理：不属于护符，走 RadarPermissionManager
-        if ("radar".equals(charmName)) {
-            for (ServerPlayerEntity sp : players) {
-                RadarPermissionManager.setRadarPermission(sp, enable);
-            }
-            String statusKey = enable ? "command.cobblemon_ts.cts.radar.on" : "command.cobblemon_ts.cts.radar.off";
-            for (ServerPlayerEntity sp : players) {
-                sp.sendMessage(Text.translatable(statusKey));
-            }
-            String summaryKey = enable ? "command.cobblemon_ts.cts.radar.success_on" : "command.cobblemon_ts.cts.radar.success_off";
-            source.sendFeedback(() -> Text.translatable(summaryKey, players.size()), true);
-            return;
-        }
         for (ServerPlayerEntity sp : players) {
             CharmPlayerData data = CharmPlayerData.get(sp);
             if (data == null) {

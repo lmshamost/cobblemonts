@@ -34,8 +34,6 @@ public class CharmConfig {
     static final String POKEBAG_WHITELIST_TAGS_K = "pokebag_whitelist_tags";
     static final String POKEBAG_SLOTS_K = "pokebag_slots";
     static final String POKEBAG_MAX_STACK_SIZE_K = "pokebag_max_stack_size";
-    static final String POKEBAG_EXTRACT_LIMIT_ENABLED_K = "pokebag_extract_limit_enabled";
-    static final String POKEBAG_EXTRACT_LIMIT_K = "pokebag_extract_limit";
     static final String LEGENDARY_POKEMON_K = "legendary_pokemon";
     static final String ULTRA_BEAST_POKEMON_K = "ultra_beast_pokemon";
     static final String MIN_SPAWN_LEVEL_K = "min_spawn_level";
@@ -51,10 +49,10 @@ public class CharmConfig {
     static final String CB_FORCELOAD_CHUNK_LIMIT_K = "cb_forceload_chunk_limit";
 
     // ========== value wrappers (compatible with old .get()/.set() calls) ==========
-    public static class DoubleValue { double v; DoubleValue(double v){this.v=v;} public double get(){return v;} public void set(double v){this.v=v;} }
-    public static class IntValue { int v; IntValue(int v){this.v=v;} public int get(){return v;} public void set(int v){this.v=v;} }
-    public static class BooleanValue { boolean v; BooleanValue(boolean v){this.v=v;} public boolean get(){return v;} public void set(boolean v){this.v=v;} }
-    public static class ConfigValue<T> { T v; ConfigValue(T v){this.v=v;} public T get(){return v;} public void set(T v){this.v=v;} }
+    public static class DoubleValue { double v; public DoubleValue(double v){this.v=v;} public double get(){return v;} public void set(double v){this.v=v;} }
+    public static class IntValue { int v; public IntValue(int v){this.v=v;} public int get(){return v;} public void set(int v){this.v=v;} }
+    public static class BooleanValue { boolean v; public BooleanValue(boolean v){this.v=v;} public boolean get(){return v;} public void set(boolean v){this.v=v;} }
+    public static class ConfigValue<T> { T v; public ConfigValue(T v){this.v=v;} public T get(){return v;} public void set(T v){this.v=v;} }
 
     // ==================== 护符设置 ====================
     public static final DoubleValue CATCHING_CHARM_BOOST = new DoubleValue(1.5);
@@ -78,8 +76,6 @@ public class CharmConfig {
         "#cobblemon:candies","#cobblemon:vitamins","#cobblemon_ts:baguse"));
     public static final IntValue POKEBAG_SLOTS = new IntValue(27);
     public static final IntValue POKEBAG_MAX_STACK_SIZE = new IntValue(640);
-    public static final BooleanValue POKEBAG_EXTRACT_LIMIT_ENABLED = new BooleanValue(true);
-    public static final IntValue POKEBAG_EXTRACT_LIMIT = new IntValue(64);
 
     // ==================== 幸运方块设置 ====================
     public static final ConfigValue<List<String>> LEGENDARY_POKEMON = new ConfigValue<>(Arrays.asList(
@@ -167,10 +163,6 @@ public class CharmConfig {
         else { json.addProperty(POKEBAG_SLOTS_K, 27); needSave=true; }
         if (json.has(POKEBAG_MAX_STACK_SIZE_K)) POKEBAG_MAX_STACK_SIZE.v = json.get(POKEBAG_MAX_STACK_SIZE_K).getAsInt();
         else { json.addProperty(POKEBAG_MAX_STACK_SIZE_K, 640); needSave=true; }
-        if (json.has(POKEBAG_EXTRACT_LIMIT_ENABLED_K)) POKEBAG_EXTRACT_LIMIT_ENABLED.v = json.get(POKEBAG_EXTRACT_LIMIT_ENABLED_K).getAsBoolean();
-        else { json.addProperty(POKEBAG_EXTRACT_LIMIT_ENABLED_K, true); needSave=true; }
-        if (json.has(POKEBAG_EXTRACT_LIMIT_K)) POKEBAG_EXTRACT_LIMIT.v = json.get(POKEBAG_EXTRACT_LIMIT_K).getAsInt();
-        else { json.addProperty(POKEBAG_EXTRACT_LIMIT_K, 64); needSave=true; }
 
         // [线性-C4] 幸运方块
         if (json.has(LEGENDARY_POKEMON_K)) LEGENDARY_POKEMON.v = jsonArrayToList(json.getAsJsonArray(LEGENDARY_POKEMON_K));
@@ -230,8 +222,6 @@ public class CharmConfig {
         json.add(POKEBAG_WHITELIST_TAGS_K, listToJsonArray(POKEBAG_WHITELIST_TAGS.v));
         json.addProperty(POKEBAG_SLOTS_K, POKEBAG_SLOTS.v);
         json.addProperty(POKEBAG_MAX_STACK_SIZE_K, POKEBAG_MAX_STACK_SIZE.v);
-        json.addProperty(POKEBAG_EXTRACT_LIMIT_ENABLED_K, POKEBAG_EXTRACT_LIMIT_ENABLED.v);
-        json.addProperty(POKEBAG_EXTRACT_LIMIT_K, POKEBAG_EXTRACT_LIMIT.v);
 
         // [线性-C4] 幸运方块
         json.add(LEGENDARY_POKEMON_K, listToJsonArray(LEGENDARY_POKEMON.v));
@@ -289,8 +279,6 @@ public class CharmConfig {
         arr.add("pokebag_whitelist_tags: 道具袋允许放入的物品标签列表");
         arr.add("pokebag_slots: 道具袋容量槽位 (默认 27)");
         arr.add("pokebag_max_stack_size: 道具袋单格最大堆叠数量 (默认 640)");
-        arr.add("pokebag_extract_limit_enabled: 是否启用单次取出数量限制 (默认 true)");
-        arr.add("pokebag_extract_limit: 单次取出数量上限 (默认 64)");
         arr.add("");
         arr.add("== 幸运方块 ==");
         arr.add("legendary_pokemon: 传说宝可梦名单，用于幸运方块传说掉落池");

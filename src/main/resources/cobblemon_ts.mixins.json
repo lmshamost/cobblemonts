@@ -29,7 +29,8 @@
         "GuiHealthFoodMixin",
         "cobblemon.SummaryInfoWidgetMixin",
         "MinecraftResizeDisplayAccessor",
-        "MinecraftSetScreenScaleMixin"
+        "MinecraftSetScreenScaleMixin",
+        "PokebagScreenClickMixin"
     ],
     "injectors": {
         "defaultRequire": 0

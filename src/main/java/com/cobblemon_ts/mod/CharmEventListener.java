@@ -14,6 +14,11 @@ public class CharmEventListener {
     public static void onPlayerLogin(PlayerEntity player) {
         loadPlayerData(player);
 
+        // [线性-RDR2e] 登录时下发雷达权限（与开局道具开关无关）
+        if (player instanceof ServerPlayerEntity sp) {
+            RadarPermissionManager.onPlayerJoin(sp);
+        }
+
         if (!CharmConfig.START_ITEMS_ENABLED.get()) return;
 
         CharmPlayerData data = getPlayerData(player);
@@ -87,6 +92,11 @@ public class CharmEventListener {
             data.setPlayer(player);
             return data;
         });
+    }
+
+    // [线性-BAG03] 只读获取（不创建）：invsee 关闭时数据源可能已登出，避免误重建玩家数据
+    public static CharmPlayerData getPlayerDataIfPresent(PlayerEntity player) {
+        return playerDataMap.get(player.getUuidAsString());
     }
 
     private static void loadPlayerData(PlayerEntity player) {
