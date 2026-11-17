@@ -3,6 +3,7 @@ package com.cobblemon_ts.mod;
 
 import com.cobblemon_ts.mod.network.PokebagClientCache;
 import com.cobblemon_ts.mod.network.SyncCharmStatesS2CPacket;
+import com.cobblemon_ts.mod.network.SyncRadarPermissionS2CPacket;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -16,6 +17,7 @@ public class ClientEventHandler {
             net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
         PokebagClientCache.clear();
         SyncCharmStatesS2CPacket.clearCache();
+        SyncRadarPermissionS2CPacket.clearCache();
         CobblemonTS.LOGGER.debug("[ClientCleanup] 缓存已清理");
     }
 }

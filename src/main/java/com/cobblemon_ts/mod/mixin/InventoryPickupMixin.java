@@ -3,7 +3,6 @@ package com.cobblemon_ts.mod.mixin;
 import com.cobblemon_ts.mod.CharmPlayerData;
 import com.cobblemon_ts.mod.CharmSlotManager;
 import com.cobblemon_ts.mod.PokebagManager;
-import com.cobblemon_ts.mod.gui.PokebagContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -18,6 +17,9 @@ public class InventoryPickupMixin {
     @Inject(method = "add(ILnet/minecraft/world/item/ItemStack;)Z", at = @At("HEAD"), cancellable = true)
     private void onAddItem(int slot, ItemStack stack, CallbackInfoReturnable<Boolean> cir) {
         if (stack.isEmpty()) return;
+        // [线性-B07] slot==-1 才是掉落物自动拾取；slot>=0 是 placeItemBackInInventory 等"指定槽位"路径。
+        // 若不拦截，关闭容器时鼠标上的物品会被误判为拾取而重新吸入道具袋，导致"左键拿起→关闭→物品消失"。
+        if (slot != -1) return;
 
         Inventory inv = (Inventory) (Object) this;
         Player player = inv.player;
@@ -37,12 +39,9 @@ public class InventoryPickupMixin {
         if (!bagManager.canItemEnterBag(stack)) return;
 
         int originalCount = stack.getCount();
-        ItemStack remaining;
-        if (player.containerMenu instanceof PokebagContainer pokebagContainer) {
-            remaining = pokebagContainer.getBagInventory().addItem(stack.copy());
-        } else {
-            remaining = bagManager.addItemToBag(stack.copy());
-        }
+        // [线性-B07] 统一走 bagManager.addItemToBag：它操作的真实容器与当前打开菜单引用的是同一实例，
+        // 且内部会正确设置脏标记落盘；之前的 if 分支直接调容器.addItem 会跳过脏标记导致数据不持久化。
+        ItemStack remaining = bagManager.addItemToBag(stack.copy());
 
         int eaten = originalCount - remaining.getCount();
         if (eaten > 0) {

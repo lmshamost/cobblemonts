@@ -18,6 +18,11 @@ public class CharmEventListener {
         // [线性-B02] 始终加载持久化数据，不受START_ITEMS_ENABLED开关影响
         loadPlayerData(player);
 
+        // [线性-RDR2e] 登录时下发雷达权限（与开局道具开关无关）
+        if (player instanceof net.minecraft.server.level.ServerPlayer sp) {
+            RadarPermissionManager.onPlayerJoin(sp);
+        }
+
         // 开局道具开关：默认关闭，需配置启用才发放初始物品
         if (!CharmConfig.START_ITEMS_ENABLED.get()) return;
 
@@ -103,6 +108,11 @@ public class CharmEventListener {
             data.setPlayer(player);
             return data;
         });
+    }
+
+    // [线性-BAG03] 只读获取（不创建）：invsee关闭时数据源可能已登出，避免误重建玩家数据
+    public static CharmPlayerData getPlayerDataIfPresent(Player player) {
+        return playerDataMap.get(player.getStringUUID());
     }
     
     private static void loadPlayerData(Player player) {

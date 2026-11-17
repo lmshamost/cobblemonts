@@ -26,7 +26,7 @@ public record OpenPokebagPacket() implements CustomPacketPayload {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer sp) {
                 sp.openMenu(new SimpleMenuProvider(
-                        (containerId, inv, p) -> new PokebagContainer(containerId, inv),
+                        (containerId, inv, p) -> new PokebagContainer(containerId, inv, p),
                         PokebagContainer.TITLE
                 ));
             }

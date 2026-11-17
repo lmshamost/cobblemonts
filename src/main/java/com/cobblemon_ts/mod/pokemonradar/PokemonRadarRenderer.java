@@ -4,7 +4,7 @@ package com.cobblemon_ts.mod.pokemonradar;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon_ts.mod.CobblemonTS;
-import com.cobblemon_ts.mod.CobblemonTSConfig;
+import com.cobblemon_ts.mod.network.SyncRadarPermissionS2CPacket;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -35,8 +35,8 @@ public class PokemonRadarRenderer {
         // [线性-R05a] 只在AFTER_TRANSLUCENT_BLOCKS阶段渲染，确保框在实体之上
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
 
-        // [线性-R05b] 检查雷达总开关
-        if (!CobblemonTSConfig.POKEMON_RADAR_ENABLED.get()) return;
+        // [线性-R05b] 检查雷达权限（服务端同步缓存）
+        if (!SyncRadarPermissionS2CPacket.isClientAllowed()) return;
 
         PokemonRadarState state = PokemonRadarState.getInstance();
         if (!state.isAnyModeActive()) return;
@@ -173,7 +173,7 @@ public class PokemonRadarRenderer {
     // [线性-R05f] 神兽模式悬停提示：玩家准星对准神兽时显示名字
     @SubscribeEvent
     public static void onRenderGuiOverlay(RenderGuiEvent.Post event) {
-        if (!CobblemonTSConfig.POKEMON_RADAR_ENABLED.get()) return;
+        if (!SyncRadarPermissionS2CPacket.isClientAllowed()) return;
 
         PokemonRadarState state = PokemonRadarState.getInstance();
         if (!state.isLegendaryMode()) return;

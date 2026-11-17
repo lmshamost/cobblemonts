@@ -17,7 +17,8 @@
     "GuiEffectIconMixin",
     "GuiHealthFoodMixin",
     "MinecraftResizeDisplayAccessor",
-    "MinecraftSetScreenScaleMixin"
+    "MinecraftSetScreenScaleMixin",
+    "PokebagScreenClickMixin"
   ],
   "mixins": [
     "PokemonMixin",

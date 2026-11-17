@@ -40,6 +40,7 @@ import com.cobblemon_ts.mod.network.SyncPokebagContentsPacket;
 import com.cobblemon_ts.mod.network.UpdateCharmStatePacket;
 import com.cobblemon_ts.mod.network.RequestCharmStatesPacket;
 import com.cobblemon_ts.mod.network.SyncCharmStatesS2CPacket;
+import com.cobblemon_ts.mod.network.SyncRadarPermissionS2CPacket;
 import com.cobblemon_ts.mod.command.ClearCharmCommand;
 import com.cobblemon_ts.mod.command.HudCommand;
 import com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity;
@@ -306,9 +307,10 @@ public class CobblemonTS {
             long chunkKey = chunkKeyOf(cx, cz);
 
             if (isLuckyBlockBlocked(sl, chunkKey, type, player.getName().getString().toLowerCase())) {
-                player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                // [线性-R10a] action bar 悬浮提示（物品名上方），非聊天栏
+                player.displayClientMessage(net.minecraft.network.chat.Component.literal(
                         "[ChunkBarrier] 当前区块禁止" + type.getDisplayName() + "！"
-                ));
+                ), true);
                 return; // 只提示一次
             }
         }
@@ -356,20 +358,30 @@ public class CobblemonTS {
 
     @net.neoforged.api.distmarker.OnlyIn(Dist.CLIENT)
     public static void onClientTick(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
-        // [线性-R07a] 精灵雷达按键：NUMPAD7打开编辑器, NUMPAD8开关追踪（需配置总开关开启）
+        // [线性-R07a] 精灵雷达按键：NUMPAD7打开编辑器, NUMPAD8开关追踪（权限由服务端同步缓存控制）
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null && CobblemonTSConfig.POKEMON_RADAR_ENABLED.get()) {
-            if (RADAR_EDITOR_KEY.consumeClick()) {
-                mc.setScreen(new PokemonRadarScreen());
-            }
-            if (RADAR_TOGGLE_KEY.consumeClick()) {
-                PokemonRadarState state = PokemonRadarState.getInstance();
-                state.setRadarTrackingEnabled(!state.isRadarTrackingEnabled());
-                state.saveToFile(); // [线性-R08c] 开关切换后持久化
-                if (mc.player != null) {
+        if (mc.player != null) {
+            boolean editorPressed = RADAR_EDITOR_KEY.consumeClick();
+            boolean togglePressed = RADAR_TOGGLE_KEY.consumeClick();
+            if (!SyncRadarPermissionS2CPacket.isClientAllowed()) {
+                // [线性-RDR3] 无权限：按键已被消费，仅提示，不执行任何动作
+                if (editorPressed || togglePressed) {
                     mc.player.displayClientMessage(
-                        net.minecraft.network.chat.Component.translatable(
-                            state.isRadarTrackingEnabled() ? "cobblemon_ts.radar.tracking_on" : "cobblemon_ts.radar.tracking_off"), true);
+                        net.minecraft.network.chat.Component.translatable("cobblemon_ts.radar.no_permission"), true);
+                }
+            } else {
+                if (editorPressed) {
+                    mc.setScreen(new PokemonRadarScreen());
+                }
+                if (togglePressed) {
+                    PokemonRadarState state = PokemonRadarState.getInstance();
+                    state.setRadarTrackingEnabled(!state.isRadarTrackingEnabled());
+                    state.saveToFile(); // [线性-R08c] 开关切换后持久化
+                    if (mc.player != null) {
+                        mc.player.displayClientMessage(
+                            net.minecraft.network.chat.Component.translatable(
+                                state.isRadarTrackingEnabled() ? "cobblemon_ts.radar.tracking_on" : "cobblemon_ts.radar.tracking_off"), true);
+                    }
                 }
             }
         }
@@ -536,6 +548,12 @@ public class CobblemonTS {
                 com.cobblemon_ts.mod.network.SyncChunkCountS2CPacket.TYPE,
                 com.cobblemon_ts.mod.network.SyncChunkCountS2CPacket.STREAM_CODEC,
                 com.cobblemon_ts.mod.network.SyncChunkCountS2CPacket::handleClientSide
+        );
+        // [线性-RDR1] 雷达权限同步 S→C
+        registrar.playToClient(
+                SyncRadarPermissionS2CPacket.TYPE,
+                SyncRadarPermissionS2CPacket.STREAM_CODEC,
+                SyncRadarPermissionS2CPacket::handleClientSide
         );
     }
 

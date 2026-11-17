@@ -26,8 +26,6 @@ public class CharmConfig {
     public static final ModConfigSpec.ConfigValue<List<? extends String>> POKEBAG_WHITELIST_TAGS;
     public static final ModConfigSpec.IntValue POKEBAG_SLOTS;
     public static final ModConfigSpec.IntValue POKEBAG_MAX_STACK_SIZE;
-    public static final ModConfigSpec.BooleanValue POKEBAG_EXTRACT_LIMIT_ENABLED;
-    public static final ModConfigSpec.IntValue POKEBAG_EXTRACT_LIMIT;
 
     // ==================== 幸运方块设置 ====================
     public static final ModConfigSpec.ConfigValue<List<? extends String>> LEGENDARY_POKEMON;
@@ -129,15 +127,6 @@ public class CharmConfig {
         POKEBAG_MAX_STACK_SIZE = BUILDER
             .comment("道具袋物品堆叠上限（单个格子最大数量，1-8192） | Max stack size per slot in Poké Bag (1-8192)")
             .defineInRange("max_stack_size", 640, 1, 8192);
-
-        POKEBAG_EXTRACT_LIMIT_ENABLED = BUILDER
-            .comment("是否限制shift+左键从道具袋取出的数量（开启则每次最多取extract_limit个，关闭则全部取出）\n" +
-                     "Limit shift+click extraction from Poké Bag (enabled = max extract_limit per operation, disabled = extract all)")
-            .define("extract_limit_enabled", true);
-
-        POKEBAG_EXTRACT_LIMIT = BUILDER
-            .comment("shift+左键从道具袋取出物品时的最大数量 | Max items extracted per shift+click from Poké Bag")
-            .defineInRange("extract_limit", 64, 1, 1024);
 
         BUILDER.pop();
 

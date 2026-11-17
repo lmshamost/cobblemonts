@@ -20,7 +20,7 @@ public class PokebagManager {
     // [线性-B02] 自动保存回调：数据一改即时写persistentData
     private Runnable onDirty = () -> {};
 
-    // [线性-B03] 性能优化：拾取物频繁触发NBT序列化 → 改为脏标记 + 限流保存
+    // 线性-[B03] 性能优化：拾取物频繁触发NBT序列化 → 改为脏标记 + 限流保存
     private boolean dirty = false;
     private long lastFlushTime = 0;
     private static final long FLUSH_COOLDOWN_MS = 1000; // 1秒最多保存一次
@@ -149,36 +149,22 @@ public class PokebagManager {
         tryFlush();
     }
 
-    private static final int MAX_SAVE_COUNT = 64;
-
     public CompoundTag serializeNBT(HolderLookup.Provider provider) {
         CompoundTag tag = new CompoundTag();
         tag.putBoolean("autoCollect", autoCollect);
 
+        // [线性-B05] 独立int count存储：ItemStack只存1，真实数量放Count字段，避免64拆分冗余
         ListTag items = new ListTag();
         for (int i = 0; i < bagInventory.getContainerSize(); i++) {
             ItemStack stack = bagInventory.getItem(i);
             if (!stack.isEmpty()) {
-                int totalCount = stack.getCount();
-                if (false) {
-                    CobblemonTS.LOGGER.info("[PokebagMgr] serializeNBT() slot={} item={} totalCount={}",
-                        i, stack.getDescriptionId(), totalCount);
-                }
-                int remaining = totalCount;
-                while (remaining > 0) {
-                    int subCount = Math.min(remaining, MAX_SAVE_COUNT);
-                    ItemStack subStack = stack.copy();
-                    subStack.setCount(subCount);
-                    CompoundTag itemTag = new CompoundTag();
-                    itemTag.putInt("Slot", i);
-                    itemTag.put("Item", subStack.save(provider));
-                    items.add(itemTag);
-                    remaining -= subCount;
-                }
-                if (false) {
-                    CobblemonTS.LOGGER.info("[PokebagMgr] serializeNBT() slot={} 拆分条目数={}",
-                        i, (totalCount + MAX_SAVE_COUNT - 1) / MAX_SAVE_COUNT);
-                }
+                CompoundTag itemTag = new CompoundTag();
+                itemTag.putInt("Slot", i);
+                itemTag.putInt("Count", stack.getCount());
+                ItemStack saveStack = stack.copy();
+                saveStack.setCount(1);
+                itemTag.put("Item", saveStack.save(provider));
+                items.add(itemTag);
             }
         }
         tag.put("Items", items);
@@ -192,31 +178,29 @@ public class PokebagManager {
 
         this.bagSize = CharmConfig.POKEBAG_SLOTS.get();
         this.bagInventory = createBagContainer();
+        int maxStack = CharmConfig.POKEBAG_MAX_STACK_SIZE.get();
 
         if (tag.contains("Items")) {
             ListTag items = tag.getList("Items", 10);
-            if (false) {
-                CobblemonTS.LOGGER.info("[PokebagMgr] deserializeNBT() 物品条目数={} 容器maxStack={}",
-                    items.size(), bagInventory.getMaxStackSize());
-            }
             for (int i = 0; i < items.size(); i++) {
                 CompoundTag itemTag = items.getCompound(i);
                 int slot = itemTag.getInt("Slot");
                 if (slot >= 0 && slot < bagSize) {
                     ItemStack stack = ItemStack.parse(provider, itemTag.getCompound("Item")).orElse(ItemStack.EMPTY);
-                    if (false) {
-                        CobblemonTS.LOGGER.info("[PokebagMgr] deserializeNBT() slot={} item={} count={}",
-                            slot, stack.getDescriptionId(), stack.getCount());
-                    }
                     if (!stack.isEmpty()) {
-                        ItemStack existing = bagInventory.getItem(slot);
-                        if (existing.isEmpty()) {
+                        if (itemTag.contains("Count")) {
+                            // [线性-B05] 新格式：独立count直接覆盖，并做上限保护
+                            int count = Math.min(Math.max(itemTag.getInt("Count"), 1), maxStack);
+                            stack.setCount(count);
                             bagInventory.setItem(slot, stack);
-                        } else if (ItemStack.isSameItemSameComponents(existing, stack)) {
-                            existing.grow(stack.getCount());
-                            if (false) {
-                                CobblemonTS.LOGGER.info("[PokebagMgr] deserializeNBT() slot={} 合并后count={}",
-                                    slot, existing.getCount());
+                        } else {
+                            // [线性-B05] 旧格式兼容：64拆分条目合并回同一槽，下次保存自动转新格式
+                            ItemStack existing = bagInventory.getItem(slot);
+                            if (existing.isEmpty()) {
+                                bagInventory.setItem(slot, stack);
+                            } else if (ItemStack.isSameItemSameComponents(existing, stack)) {
+                                existing.grow(stack.getCount());
+                                existing.limitSize(maxStack);
                             }
                         }
                     }

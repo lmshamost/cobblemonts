@@ -3,9 +3,11 @@ package com.cobblemon_ts.mod.command;
 
 import com.cobblemon_ts.mod.CharmPlayerData;
 import com.cobblemon_ts.mod.CharmSlotManager;
+import com.cobblemon_ts.mod.RadarPermissionManager;
 import com.cobblemon_ts.mod.CharmState;
 import com.cobblemon_ts.mod.CharmType;
 import com.cobblemon_ts.mod.CobblemonTS;
+import com.cobblemon_ts.mod.gui.PokebagContainer;
 import com.cobblemon_ts.mod.block.ChunkBarrierBlockEntity;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
@@ -16,6 +18,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.server.level.ServerPlayer;
 
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -69,7 +72,52 @@ public class ClearCharmCommand {
                         )
                     )
                 )
+                // [线性-CMD02] /cts open <player> — OP打开目标玩家的道具袋（继承OP权限）
+                .then(Commands.literal("open")
+                    .then(Commands.argument("player", EntityArgument.player())
+                        .executes(ctx -> executeOpenPokebag(ctx.getSource(),
+                            EntityArgument.getPlayer(ctx, "player")))
+                    )
+                )
+                // [线性-RDR4] /cts radar <player> <true|false> — 设置单个玩家雷达权限
+                //             /cts radar reload — 重读黑名单并向所有在线玩家重推权限
+                .then(Commands.literal("radar")
+                    .then(Commands.argument("player", EntityArgument.player())
+                        .then(Commands.argument("onoff", BoolArgumentType.bool())
+                            .executes(ctx -> {
+                                ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
+                                boolean enable = BoolArgumentType.getBool(ctx, "onoff");
+                                RadarPermissionManager.setRadarPermission(target, enable);
+                                String summaryKey = enable ? "command.cobblemon_ts.cts.radar.success_on"
+                                                           : "command.cobblemon_ts.cts.radar.success_off";
+                                ctx.getSource().sendSuccess(() -> Component.translatable(summaryKey, 1), true);
+                                return 1;
+                            })
+                        )
+                    )
+                    .then(Commands.literal("reload")
+                        .executes(ctx -> {
+                            int count = RadarPermissionManager.resyncAllRadarPermissions(ctx.getSource().getServer());
+                            ctx.getSource().sendSuccess(() -> Component.translatable("command.cobblemon_ts.cts.radar.reload", count), true);
+                            return count;
+                        })
+                    )
+                )
         );
+    }
+
+    // [线性-CMD02] 执行打开：OP打开目标玩家的道具袋进行查看/修改
+    private static int executeOpenPokebag(CommandSourceStack source, ServerPlayer target) {
+        if (!(source.getEntity() instanceof ServerPlayer op)) {
+            source.sendFailure(Component.translatable("command.cobblemon_ts.cts.open.console"));
+            return 0;
+        }
+        op.openMenu(new SimpleMenuProvider(
+            (containerId, inv, p) -> new PokebagContainer(containerId, inv, target),
+            PokebagContainer.TITLE));
+        source.sendSuccess(() -> Component.translatable(
+            "command.cobblemon_ts.cts.open.success", target.getDisplayName()), true);
+        return 1;
     }
 
     // [线性-CMD01c] 执行设置：on=true启用 / on=false清除

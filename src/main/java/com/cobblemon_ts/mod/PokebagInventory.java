@@ -14,14 +14,10 @@ public class PokebagInventory extends SimpleContainer {
         return CharmConfig.POKEBAG_MAX_STACK_SIZE.get();
     }
 
+    // [线性-B06] 容器堆叠上限带参覆写：SOP同款，让SimpleContainer.setItem的limitSize不再按物品原生64截断，否则大堆叠(如640)存入即被砍成64
     @Override
-    public void setItem(int slot, ItemStack stack) {
-        int countBefore = stack.getCount();
-        super.setItem(slot, stack);
-        int maxStack = CharmConfig.POKEBAG_MAX_STACK_SIZE.get();
-        if (stack.getCount() < countBefore && stack.getCount() < maxStack) {
-            stack.setCount(Math.min(countBefore, maxStack));
-        }
+    public int getMaxStackSize(ItemStack stack) {
+        return CharmConfig.POKEBAG_MAX_STACK_SIZE.get();
     }
 
     @Override
