@@ -1,0 +1,294 @@
+package com.cobblemon_ts.mod.gui.lucky;
+
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+
+
+import com.cobblemon_ts.mod.lucky.LuckyWeightManager;
+import com.cobblemon_ts.mod.pokemoneditor.PokemonNameMap;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
+import org.lwjgl.glfw.GLFW;
+
+import java.util.ArrayList;
+import java.util.List;
+
+// [线性-LWE-03] 幸运方块条目编辑界面
+// 编辑单个条目的: 物品/精灵列表(支持中文名), 权重值, 保底值
+// 精灵类幸运方块使用PokemonNameMap双向转换中文名
+// 物品类幸运方块使用PokemonNameMap.itemToChinese/ToEnglish
+@Environment(EnvType.CLIENT)
+public class LuckyWeightEditEntryScreen extends Screen {
+    private final Identifier blockId;
+    private final String blockDisplayName;
+    private final int entryIndex;
+    private final LuckyWeightManager.WeightEntry<?> entry;
+    private final Screen parent;
+
+    private TextFieldWidget itemsField;
+    private TextFieldWidget weightField;
+    private TextFieldWidget guaranteeField;
+    private boolean isPokemonBlock; // 是否为精灵类幸运方块
+
+    public LuckyWeightEditEntryScreen(Identifier blockId, String blockDisplayName,
+                                      int entryIndex, LuckyWeightManager.WeightEntry<?> entry, Screen parent) {
+        super(Text.translatable("cobblemon_ts.lucky.edit.title", entryIndex + 1));
+        this.blockId = blockId;
+        this.blockDisplayName = blockDisplayName;
+        this.entryIndex = entryIndex;
+        this.entry = entry;
+        this.parent = parent;
+        // 只有item_lucky_block是物品类，其他都是精灵类
+        this.isPokemonBlock = !"cobblemon_ts:item_lucky_block".equals(blockId.toString());
+    }
+
+    @Override
+    protected void init() {
+        int centerX = this.width / 2;
+        int y = 40;
+        int labelX = centerX - 180;
+        int fieldW = 360;
+        int fieldH = 20;
+
+        // 方块名称
+        this.addDrawableChild(ButtonWidget.builder(
+                Text.translatable("cobblemon_ts.lucky.edit.block_label", blockDisplayName),
+                btn -> {})
+                .position(centerX - 100, 10)
+                .size(200, 18)
+                .build());
+
+        // 物品/精灵输入框
+        String itemsRaw = String.join(", ", entry.entries.stream()
+                .map(obj -> {
+                    String s = obj.toString();
+                    if (s.isEmpty()) return "";
+                    // 精灵类: 显示中文名
+                    if (isPokemonBlock) {
+                        String zh = PokemonNameMap.toChinese(s);
+                        return zh.equals(s) ? s : zh;
+                    }
+                    return s;
+                }).toList());
+
+        this.addDrawableChild(ButtonWidget.builder(
+                Text.translatable(isPokemonBlock
+                        ? "cobblemon_ts.lucky.edit.pokemon_name"
+                        : "cobblemon_ts.lucky.edit.item_id"),
+                btn -> {})
+                .position(labelX, y)
+                .size(60, fieldH)
+                .build());
+
+        itemsField = new TextFieldWidget(this.textRenderer, labelX + 65, y, fieldW - 65, fieldH,
+                Text.literal("items"));
+        itemsField.setMaxLength(500);
+        itemsField.setText(itemsRaw);
+        itemsField.setChangedListener(s -> {});
+        this.addDrawableChild(itemsField);
+        y += 28;
+
+        // 提示文字
+        this.addDrawableChild(ButtonWidget.builder(
+                Text.translatable(isPokemonBlock
+                        ? "cobblemon_ts.lucky.edit.hint_pokemon"
+                        : "cobblemon_ts.lucky.edit.hint_item"),
+                btn -> {})
+                .position(labelX, y)
+                .size(fieldW, 14)
+                .build());
+        y += 20;
+
+        // 权重输入框
+        this.addDrawableChild(ButtonWidget.builder(
+                Text.translatable("cobblemon_ts.lucky.edit.weight"),
+                btn -> {})
+                .position(labelX, y)
+                .size(60, fieldH)
+                .build());
+
+        weightField = new TextFieldWidget(this.textRenderer, labelX + 65, y, 100, fieldH,
+                Text.literal("weight"));
+        weightField.setMaxLength(10);
+        weightField.setText(String.valueOf(entry.weight));
+        weightField.setTextPredicate(s -> s.matches("\\d*"));
+        this.addDrawableChild(weightField);
+        y += 28;
+
+        // 保底输入框
+        this.addDrawableChild(ButtonWidget.builder(
+                Text.translatable("cobblemon_ts.lucky.edit.guarantee"),
+                btn -> {})
+                .position(labelX, y)
+                .size(60, fieldH)
+                .build());
+
+        guaranteeField = new TextFieldWidget(this.textRenderer, labelX + 65, y, 100, fieldH,
+                Text.literal("guarantee"));
+        guaranteeField.setMaxLength(10);
+        guaranteeField.setText(String.valueOf(entry.guarantee));
+        guaranteeField.setTextPredicate(s -> s.matches("\\d*"));
+        this.addDrawableChild(guaranteeField);
+        y += 34;
+
+        // 权重区间预览
+        int totalWeight = 0;
+        LuckyWeightManager.LuckyWeightConfig config = LuckyWeightManager.getConfig(blockId);
+        if (config != null) {
+            for (LuckyWeightManager.WeightEntry<?> e : config.allEntries) {
+                if (e.weight > 0) totalWeight += e.weight;
+            }
+        }
+        int thisWeight = entry.weight;
+        String preview = totalWeight > 0
+                ? Text.translatable("cobblemon_ts.lucky.edit.probability",
+                        thisWeight, totalWeight, String.format("%.1f", 100.0 * thisWeight / totalWeight)).getString()
+                : Text.translatable("cobblemon_ts.lucky.edit.probability_zero").getString();
+        this.addDrawableChild(ButtonWidget.builder(
+                Text.literal(preview),
+                btn -> {})
+                .position(labelX, y)
+                .size(fieldW, 14)
+                .build());
+        y += 22;
+
+        // 保存按钮
+        this.addDrawableChild(ButtonWidget.builder(
+                Text.translatable("cobblemon_ts.lucky.edit.save"),
+                btn -> saveEntry())
+                .position(centerX - 100, y + 5)
+                .size(80, 20)
+                .build());
+
+        // 删除按钮
+        this.addDrawableChild(ButtonWidget.builder(
+                Text.translatable("cobblemon_ts.lucky.edit.delete"),
+                btn -> {
+                    LuckyWeightManager.LuckyWeightConfig cfg = LuckyWeightManager.getConfig(blockId);
+                    if (cfg != null && entryIndex < cfg.allEntries.size()) {
+                        cfg.allEntries.remove(entryIndex);
+                        // 删除后立即保存配置
+                        if (parent instanceof LuckyWeightEntryListScreen ps) {
+                            ps.saveConfigAndRefresh();
+                        }
+                    }
+                    MinecraftClient.getInstance().setScreen(parent);
+                })
+                .position(centerX - 10, y + 5)
+                .size(80, 20)
+                .build());
+
+        // 返回按钮
+        this.addDrawableChild(ButtonWidget.builder(
+                Text.translatable("cobblemon_ts.lucky.edit.back"),
+                btn -> {
+                    // 直接返回，不保存修改
+                    MinecraftClient.getInstance().setScreen(parent);
+                })
+                .position(centerX + 80, y + 5)
+                .size(60, 20)
+                .build());
+    }
+
+    // 保存条目修改
+    private void saveEntry() {
+        // 解析物品列表
+        String itemsStr = itemsField.getText().trim();
+        List<String> items = new ArrayList<>();
+        for (String item : itemsStr.split(",")) {
+            item = item.trim();
+            if (item.isEmpty()) continue;
+
+            if (isPokemonBlock) {
+                // 精灵类: 尝试中文→英文转换
+                String en = PokemonNameMap.toEnglish(item);
+                if (en != null && !en.equals(item)) {
+                    items.add(en);
+                } else {
+                    items.add(item.toLowerCase());
+                }
+            } else {
+                items.add(item);
+            }
+        }
+
+        if (items.isEmpty()) {
+            items.add(""); // 空标记
+        }
+
+        // 解析权重和保底
+        int weight;
+        int guarantee;
+        try { weight = Integer.parseInt(weightField.getText().trim()); } catch (NumberFormatException e) { weight = 0; }
+        try { guarantee = Integer.parseInt(guaranteeField.getText().trim()); } catch (NumberFormatException e) { guarantee = 0; }
+
+        // 更新条目
+        LuckyWeightManager.LuckyWeightConfig config = LuckyWeightManager.getConfig(blockId);
+        if (config != null) {
+            LuckyWeightManager.WeightEntry<?> newEntry = new LuckyWeightManager.WeightEntry<>(items, weight, guarantee);
+            if (entryIndex < config.allEntries.size()) {
+                // 已存在条目：替换
+                config.allEntries.set(entryIndex, newEntry);
+            } else {
+                // 新增条目：追加
+                config.allEntries.add(newEntry);
+            }
+        }
+
+        // 提示
+        if (MinecraftClient.getInstance().player != null) {
+            String display = String.join(",", items);
+            if (isPokemonBlock) {
+                List<String> zhNames = new ArrayList<>();
+                for (String en : items) {
+                    if (en.isEmpty()) {
+                        zhNames.add(Text.translatable("cobblemon_ts.lucky.empty_entry").getString());
+                        continue;
+                    }
+                    String zh = PokemonNameMap.toChinese(en);
+                    zhNames.add(zh.equals(en) ? en : zh);
+                }
+                display = String.join(",", zhNames);
+            }
+            String typeLabel = Text.translatable(isPokemonBlock
+                    ? "cobblemon_ts.lucky.edit.type_pokemon"
+                    : "cobblemon_ts.lucky.edit.type_item").getString();
+            MinecraftClient.getInstance().player.sendMessage(
+                    Text.translatable("cobblemon_ts.lucky.edit.updated",
+                            typeLabel, display, weight, guarantee),
+                    false);
+        }
+
+        // 返回列表并保存配置
+        MinecraftClient.getInstance().setScreen(parent);
+        if (parent instanceof LuckyWeightEntryListScreen ps) {
+            ps.saveConfigAndRefresh();
+        }
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+            // ESC直接返回，不保存修改
+            MinecraftClient.getInstance().setScreen(parent);
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public void render(DrawContext graphics, int mouseX, int mouseY, float partialTick) {
+        this.renderBackground(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    @Override
+    public boolean shouldPause() {
+        return false;
+    }
+}

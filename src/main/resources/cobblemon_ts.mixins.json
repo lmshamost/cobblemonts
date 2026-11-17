@@ -1,0 +1,37 @@
+{
+    "required": true,
+    "package": "com.cobblemon_ts.mod.mixin",
+    "compatibilityLevel": "JAVA_21",
+    "refmap": "cobblemon_ts.refmap.json",
+    "plugin": "com.cobblemon_ts.mod.mixin.CobblemonTSMixinPlugin",
+    "mixins": [
+        "PokemonMixin",
+        "PokemonCatchRateEventMixin",
+        "cobblemon.PokemonEVMixin",
+        "cobblemon.EVsCanSetMixin",
+        "cobblemon.EVsTotalCapMixin",
+        "cobblemon.ShinyChanceCalculationEventMixin",
+        "InventoryPickupMixin"
+    ],
+    "client": [
+        "EditBoxAccessor",
+        "EditBoxTextPositionMixin",
+        "InventoryScreenMixin",
+        "PartyUIInteractionMixin",
+        "ScreenCloseCleanupMixin",
+        "HudDrawingMixin",
+        "CatchRateDisplayMixin",
+        "cobblemon.ClientStorageManagerMixin",
+        "cobblemon.BattleOptionTileMixin",
+        "cobblemon.BattleGeneralActionSelectionMixin",
+        "cobblemon.BattleGUIBackButtonMixin",
+        "GuiEffectIconMixin",
+        "GuiHealthFoodMixin",
+        "cobblemon.SummaryInfoWidgetMixin",
+        "MinecraftResizeDisplayAccessor",
+        "MinecraftSetScreenScaleMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 0
+    }
+}

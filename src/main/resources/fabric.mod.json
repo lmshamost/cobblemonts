@@ -1,0 +1,32 @@
+{
+	"schemaVersion": 1,
+	"id": "cobblemon_ts",
+	"version": "${version}",
+	"name": "Cobblemon TS",
+	"description": "Cobblemon TS - Pokemon Editor, Lucky Blocks, Charms and more",
+	"authors": ["Cobblemon_TS"],
+	"contact": {},
+	"license": "MIT",
+	"icon": "assets/cobblemon_ts/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [ "com.cobblemon_ts.mod.CobblemonTS" ],
+		"client": [ "com.cobblemon_ts.mod.CobblemonTSClient" ],
+		"modmenu": [ "com.cobblemon_ts.mod.ModMenuIntegration" ]
+	},
+	"mixins": [
+		"cobblemon_ts.mixins.json",
+		{ "config": "cobblemon_ts.client.mixins.json", "environment": "client" }
+	],
+	"depends": {
+		"fabricloader": ">=0.20.1",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*",
+		"fabric-language-kotlin": "*"
+	},
+	"suggests": {
+		"modmenu": "*",
+		"cloth-config": ">=15.0.140"
+	}
+}

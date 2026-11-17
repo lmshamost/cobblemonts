@@ -1,0 +1,13 @@
+{
+    "required": true,
+    "package": "com.cobblemon_ts.mod.mixin",
+    "compatibilityLevel": "JAVA_21",
+    "refmap": "cobblemon_ts.refmap.json",
+    "client": [
+        "GuiHealthFoodMixin",
+        "GuiEffectIconMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

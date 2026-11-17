@@ -1,0 +1,22 @@
+{
+  "replace": false,
+  "values": [
+    "cobblemon_ts:oval_charm",
+    "cobblemon_ts:shiny_charm",
+    "cobblemon_ts:exp_charm",
+    "cobblemon_ts:catching_charm",
+    "cobblemon_ts:exp_all",
+    "cobblemon_ts:gold_crown",
+    "cobblemon:master_ball",
+    "#cobblemon:candies",
+    "minecraft:chorus_fruit",
+    "minecraft:phantom_membrane",
+    "minecraft:nether_star",
+    "minecraft:emerald",
+    "minecraft:diamond",
+    "minecraft:redstone_block",
+    "minecraft:gold_ingot",
+    "minecraft:iron_ingot",
+    "minecraft:coal_block" 
+  ]
+}

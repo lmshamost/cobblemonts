@@ -1,0 +1,61 @@
+{
+    "schemaVersion": 1,
+    "id": "configured",
+    "version": "2.6.3",
+    "name": "Configured",
+    "description": "Creates a simple GUI config for every mod!",
+    "authors": [ "MrCrayfish" ],
+    "contact": {
+        "homepage": "https://mrcrayfish.com/mods?id=configured",
+        "sources": "https://github.com/MrCrayfish/Configured",
+        "issues": "https://github.com/MrCrayfish/Configured/issues"
+    },
+    "license": "GNU Lesser General Public License v3.0",
+    "icon": "assets/configured/icon.png",
+    "environment": "*",
+    "entrypoints": {
+        "main": [
+            "com.mrcrayfish.configured.Configured"
+        ],
+        "client": [
+            "com.mrcrayfish.configured.client.ClientConfigured"
+        ],
+        "modmenu": [
+            "com.mrcrayfish.configured.integration.ModMenuConfigFactory"
+        ],
+        "jei_mod_plugin": [
+            "com.mrcrayfish.configured.impl.jei.ConfiguredJeiPlugin"
+        ]
+    },
+    "mixins": [
+        "configured.fabric.mixins.json"
+    ],
+    "depends": {
+        "fabricloader": ">=0.15",
+        "fabric-api": "*",
+        "minecraft": "1.21.1",
+        "java": ">=21"
+    },
+    "breaks": {
+        "catalogue": "<1.11.2",
+        "framework": "<0.13.5"
+    },
+    "accessWidener": "configured.accesswidener",
+    "custom": {
+        "configured": {
+            "configs": [
+                "com.mrcrayfish.configured.Config"
+            ],
+            "providers": [
+                "com.mrcrayfish.configured.impl.framework.FrameworkConfigProvider",
+                "com.mrcrayfish.configured.impl.jei.JeiConfigProvider"
+            ]
+        },
+        "catalogue": {
+            "banner": "assets/configured/banner.png",
+            "background": "assets/configured/background.png",
+            "configFactory": "com.mrcrayfish.configured.integration.CatalogueConfigFactory"
+        }
+    }
+}
+  

@@ -1,0 +1,76 @@
+package com.cobblemon_ts.mod.network;
+
+import net.minecraft.network.RegistryByteBuf;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.packet.CustomPayload;
+import net.minecraft.util.Identifier;
+import net.minecraft.item.ItemStack;
+
+import java.util.ArrayList;
+import java.util.List;
+
+// [线性-B05zf] Pokebag库存同步包：服务端→客户端，携带物品ID和数量列表
+public record SyncPokebagContentsPacket(List<ItemEntry> items) implements CustomPayload {
+
+    // [线性-B05zf] 物品条目：含物品ID、数量，以及客户端渲染缓存
+    // [线性-O06] 添加renderStack和cachedName避免每帧创建对象
+    public static final class ItemEntry {
+        private final String itemId;
+        private final int count;
+        // [线性-O06] 客户端渲染缓存，延迟初始化
+        private ItemStack renderStack;
+        private String cachedName;
+
+        public ItemEntry(String itemId, int count) {
+            this.itemId = itemId;
+            this.count = count;
+        }
+
+        public String itemId() { return itemId; }
+        public int count() { return count; }
+
+        // [线性-O06] 获取渲染用的ItemStack（延迟初始化，复用）
+        public ItemStack renderStack() { return renderStack; }
+        public void setRenderStack(ItemStack stack) { this.renderStack = stack; }
+
+        // [线性-O06] 获取缓存的物品名称
+        public String cachedName() { return cachedName; }
+        public void setCachedName(String name) { this.cachedName = name; }
+    }
+
+    public static final Id<SyncPokebagContentsPacket> TYPE = new Id<>(
+            Identifier.of("cobblemon_ts", "sync_pokebag_contents"));
+
+    public static final PacketCodec<RegistryByteBuf, SyncPokebagContentsPacket> STREAM_CODEC = new PacketCodec<>() {
+        @Override
+        public SyncPokebagContentsPacket decode(RegistryByteBuf buf) {
+            int size = buf.readVarInt();
+            List<ItemEntry> entries = new ArrayList<>(size);
+            for (int i = 0; i < size; i++) {
+                entries.add(new ItemEntry(buf.readString(), buf.readVarInt()));
+            }
+            return new SyncPokebagContentsPacket(entries);
+        }
+
+        @Override
+        public void encode(RegistryByteBuf buf, SyncPokebagContentsPacket packet) {
+            buf.writeVarInt(packet.items().size());
+            for (ItemEntry entry : packet.items()) {
+                buf.writeString(entry.itemId());
+                buf.writeVarInt(entry.count());
+            }
+        }
+    };
+
+    @Override
+    public Id<? extends CustomPayload> getId() {
+        return TYPE;
+    }
+
+    // [线性-B05zf] 客户端处理：缓存到PokebagClientCache，供PkBagActionSelection读取
+    public static void handleClientSide(SyncPokebagContentsPacket packet, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            PokebagClientCache.update(packet.items());
+        });
+    }
+}

@@ -1,0 +1,259 @@
+// [线性-TB-V3] TestBuild重构：移除独立toggle按钮，标签自身红/绿着色+点击切换
+package com.cobblemon_ts.mod.gui;
+
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import com.cobblemon_ts.mod.CharmConfig;
+import com.cobblemon_ts.mod.CobblemonTSConfig;
+import com.cobblemon_ts.mod.network.ClearAllCharmsPacket;
+import com.cobblemon_ts.mod.network.TestBuildOpenStarterPacket;
+import com.cobblemon_ts.mod.network.UpdateCharmStatePacket;
+import com.cobblemon_ts.mod.network.RequestCharmStatesPacket;
+import com.cobblemon_ts.mod.network.SyncCharmStatesS2CPacket;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.text.Text;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+public class TestBuildScreen extends Screen {
+
+    // [线性-TB-V3a] 护符属性编辑输入框
+    private TextFieldWidget shinyBoostField;
+    private TextFieldWidget catchBoostField;
+    private TextFieldWidget expBoostField;
+    private TextFieldWidget hatchBoostField;
+    private TextFieldWidget expAllPercentField;
+    private TextFieldWidget bagStackField;
+
+    // [线性-TB-V3b] 护符状态（本地切换，红/绿着色）——key=charmId, value=是否拥有(有即绿，不管开关)
+    private final Map<String, Boolean> charmStates = new LinkedHashMap<>();
+    private boolean charmStatesLoaded = false;
+
+    // [线性-TB-V3c] 布局常量（init时计算）
+    private int centerX, col0X, col1X, charmStartY, rowStep;
+    private int labelW = 75; // 标签文字区域宽度（点击区域）
+    private int fieldW = 52;
+    private int fieldH = 16;
+
+    public TestBuildScreen() {
+        super(Text.translatable("cobblemon_ts.testbuild.title"));
+    }
+
+    @Override
+    protected void init() {
+        int btnW = 100, btnH = 20;
+        centerX = this.width / 2;
+        col0X = centerX - 125;
+        col1X = centerX + 5;
+        int startY = this.height / 2 - 80;
+        rowStep = 25;
+
+        // ===== 行0: 初始宝可梦选择 | 统一主题切换 =====
+        this.addDrawableChild(ButtonWidget.builder(
+                Text.translatable("cobblemon_ts.testbuild.starter_select"),
+                btn -> { ClientPlayNetworking.send(new TestBuildOpenStarterPacket()); this.close(); })
+                .position(col0X, startY).size(btnW, btnH).build());
+
+        this.addDrawableChild(ButtonWidget.builder(
+                Text.translatable(getThemeToggleKey()),
+                btn -> {
+                    boolean c = CobblemonTSConfig.LIGHT_PANEL_THEME.get();
+                    CobblemonTSConfig.LIGHT_PANEL_THEME.set(!c);
+                    CobblemonTSConfig.LIGHT_EDITOR_THEME.set(!c);
+                    btn.setMessage(Text.translatable(getThemeToggleKey()));
+                }).position(col1X, startY).size(btnW, btnH).build());
+
+        // ===== 行1: 颜色编辑器 | 清除所有护符 =====
+        this.addDrawableChild(ButtonWidget.builder(
+                Text.translatable("cobblemon_ts.testbuild.color_editor"),
+                btn -> MinecraftClient.getInstance().setScreen(new ColorEditorScreen()))
+                .position(col0X, startY + rowStep).size(btnW, btnH).build());
+
+        this.addDrawableChild(ButtonWidget.builder(
+                Text.translatable("cobblemon_ts.testbuild.clear_charms"),
+                btn -> { ClientPlayNetworking.send(new ClearAllCharmsPacket()); this.close(); })
+                .position(col1X, startY + rowStep).size(btnW, btnH).build());
+
+        // ===== 行2: 幸运方块权重 | HUD设置 =====
+        this.addDrawableChild(ButtonWidget.builder(
+                Text.translatable("cobblemon_ts.testbuild.lucky_weight"),
+                btn -> MinecraftClient.getInstance().setScreen(new com.cobblemon_ts.mod.gui.lucky.LuckyWeightEditorScreen()))
+                .position(col0X, startY + rowStep * 2).size(btnW, btnH).build());
+
+        this.addDrawableChild(ButtonWidget.builder(
+                Text.translatable("cobblemon_ts.testbuild.hud_settings"),
+                btn -> MinecraftClient.getInstance().setScreen(new HudSettingsScreen()))
+                .position(col1X, startY + rowStep * 2).size(btnW, btnH).build());
+
+        // ===== 护符编辑区域（无独立toggle，标签即开关） =====
+        charmStartY = startY + rowStep * 3 + 5;
+        int fieldX_off = labelW + 3; // 字段与标签之间的偏移
+
+        // [线性-TB-V3d] 初始化护符状态默认值
+        String[] ids = {"shiny_charm", "catching_charm", "exp_charm", "oval_charm", "exp_all", "pokebag"};
+        for (String id : ids) charmStates.putIfAbsent(id, false);
+
+        // 闪光护符 (左) → 闪光概率
+        this.shinyBoostField = addEditBox(col0X + fieldX_off, charmStartY + 1, fieldW, fieldH,
+                String.format("%.1f", CharmConfig.SHINY_CHARM_BOOST.get()));
+
+        // 防晃护符 (右) → 捕获倍率
+        this.catchBoostField = addEditBox(col1X + fieldX_off, charmStartY + 1, fieldW, fieldH,
+                String.format("%.1f", CharmConfig.CATCHING_CHARM_BOOST.get()));
+
+        // 经验护符 (左, row+1) → 经验倍率
+        this.expBoostField = addEditBox(col0X + fieldX_off, charmStartY + rowStep + 1, fieldW, fieldH,
+                String.format("%.1f", CharmConfig.EXP_CHARM_BOOST.get()));
+
+        // 圆形护符 (右, row+1) → 孵化倍率
+        this.hatchBoostField = addEditBox(col1X + fieldX_off, charmStartY + rowStep + 1, fieldW, fieldH,
+                String.format("%.1f", CharmConfig.OVAL_CHARM_HATCH_BOOST.get()));
+
+        // Exp.All (左, row+2) → 经验共享%
+        this.expAllPercentField = addEditBox(col0X + fieldX_off, charmStartY + rowStep * 2 + 1, fieldW, fieldH,
+                String.valueOf((int)CharmConfig.EXP_ALL_PERCENT.get()));
+
+        // 道具袋 (右, row+2) → 堆叠上限
+        this.bagStackField = addEditBox(col1X + fieldX_off, charmStartY + rowStep * 2 + 1, fieldW, fieldH,
+                String.valueOf(CharmConfig.POKEBAG_MAX_STACK_SIZE.get()));
+
+        // ===== 行3: 保存护符配置 | 道具袋编辑器（对称布局） =====
+        this.addDrawableChild(ButtonWidget.builder(
+                Text.translatable("cobblemon_ts.testbuild.save_charm_config"),
+                btn -> saveAll())
+                .position(col0X, charmStartY + rowStep * 3 + 5)
+                .size(btnW, btnH).build());
+
+        this.addDrawableChild(ButtonWidget.builder(
+                Text.translatable("cobblemon_ts.testbuild.pokebag_editor"),
+                btn -> MinecraftClient.getInstance().setScreen(new PokebagConfigScreen()))
+                .position(col1X, charmStartY + rowStep * 3 + 5)
+                .size(btnW, btnH).build());
+
+        // [线性-TB-V3e] 请求服务端护符状态
+        SyncCharmStatesS2CPacket.resetForNewRequest();
+        ClientPlayNetworking.send(new RequestCharmStatesPacket());
+    }
+
+    // [线性-TB-V3f] 标签点击区域定义（6个护符的label区域）
+    // 布局: 左列 [col0X, col0X+labelW], 右列 [col1X, col1X+labelW]
+    // 行: charmStartY, +rowStep, +rowStep*2
+    private int[] labelRect(String charmId) {
+        return switch (charmId) {
+            case "shiny_charm"  -> new int[]{col0X, charmStartY, col0X + labelW, charmStartY + fieldH + 2};
+            case "catching_charm" -> new int[]{col1X, charmStartY, col1X + labelW, charmStartY + fieldH + 2};
+            case "exp_charm"   -> new int[]{col0X, charmStartY + rowStep, col0X + labelW, charmStartY + rowStep + fieldH + 2};
+            case "oval_charm"  -> new int[]{col1X, charmStartY + rowStep, col1X + labelW, charmStartY + rowStep + fieldH + 2};
+            case "exp_all"     -> new int[]{col0X, charmStartY + rowStep * 2, col0X + labelW, charmStartY + rowStep * 2 + fieldH + 2};
+            case "pokebag"     -> new int[]{col1X, charmStartY + rowStep * 2, col1X + labelW, charmStartY + rowStep * 2 + fieldH + 2};
+            default -> new int[]{0, 0, 0, 0};
+        };
+    }
+
+    @Override
+    public boolean mouseClicked(double mx, double my, int button) {
+        if (button == 0) { // 左键
+            for (String charmId : charmStates.keySet()) {
+                int[] r = labelRect(charmId);
+                if (mx >= r[0] && mx <= r[2] && my >= r[1] && my <= r[3]) {
+                    charmStates.put(charmId, !charmStates.get(charmId));
+                    return true;
+                }
+            }
+        }
+        return super.mouseClicked(mx, my, button);
+    }
+
+    private TextFieldWidget addEditBox(int x, int y, int w, int h, String val) {
+        TextFieldWidget box = new TextFieldWidget(this.textRenderer, x, y, w, h, Text.literal(""));
+        box.setText(val);
+        this.addDrawableChild(box);
+        return box;
+    }
+
+    private String getThemeToggleKey() {
+        boolean light = CobblemonTSConfig.LIGHT_PANEL_THEME.get();
+        return light ? "cobblemon_ts.testbuild.theme_light" : "cobblemon_ts.testbuild.theme_dark";
+    }
+
+    private void saveAll() {
+        try {
+            double shiny = Double.parseDouble(this.shinyBoostField.getText());
+            CharmConfig.SHINY_CHARM_BOOST.set(shiny); // CharmConfig.SHINY_CHARM_BOOST.toNbt();
+
+            double catchV = Double.parseDouble(this.catchBoostField.getText());
+            CharmConfig.CATCHING_CHARM_BOOST.set(catchV); // CharmConfig.CATCHING_CHARM_BOOST.toNbt();
+
+            double exp = Double.parseDouble(this.expBoostField.getText());
+            CharmConfig.EXP_CHARM_BOOST.set(exp); // CharmConfig.EXP_CHARM_BOOST.toNbt();
+
+            double hatch = Double.parseDouble(this.hatchBoostField.getText());
+            CharmConfig.OVAL_CHARM_HATCH_BOOST.set(hatch); // CharmConfig.OVAL_CHARM_HATCH_BOOST.toNbt();
+
+            int expAll = Integer.parseInt(this.expAllPercentField.getText());
+            CharmConfig.EXP_ALL_PERCENT.set((double) expAll); // CharmConfig.EXP_ALL_PERCENT.toNbt();
+
+            int bagStack = Integer.parseInt(this.bagStackField.getText());
+            CharmConfig.POKEBAG_MAX_STACK_SIZE.set(bagStack); // CharmConfig.POKEBAG_MAX_STACK_SIZE.toNbt();
+
+            // [线性-TB-V3g] 同步护符状态到服务端（遍历charmStates）
+            for (Map.Entry<String, Boolean> e : charmStates.entrySet()) {
+                ClientPlayNetworking.send(new UpdateCharmStatePacket(e.getKey(), e.getValue()));
+            }
+
+            if (MinecraftClient.getInstance().player != null)
+                MinecraftClient.getInstance().player.sendMessage(
+                        Text.translatable("cobblemon_ts.testbuild.charm_saved"), false);
+        } catch (NumberFormatException e) {
+            if (MinecraftClient.getInstance().player != null)
+                MinecraftClient.getInstance().player.sendMessage(
+                        Text.translatable("cobblemon_ts.testbuild.input_error"), false);
+        }
+    }
+
+    @Override
+    public void render(DrawContext g, int mouseX, int mouseY, float partial) {
+        this.renderBackground(g, mouseX, mouseY, partial);
+        super.render(g, mouseX, mouseY, partial);
+
+        int labelY_base = charmStartY + 4; // 标签文字的Y基线
+
+        // [线性-TB-V3h] 标题
+        g.drawCenteredTextWithShadow(this.textRenderer, this.title, centerX, this.height / 2 - 100, 0xFFFFFF);
+
+        // [线性-TB-V3i] 护符标签着色渲染（绿=拥有 / 红=无）
+        renderCharmLabel(g, "shiny_charm",   "cobblemon_ts.testbuild.shiny_boost",   col0X, labelY_base);
+        renderCharmLabel(g, "catching_charm","cobblemon_ts.testbuild.catch_boost",   col1X, labelY_base);
+        renderCharmLabel(g, "exp_charm",     "cobblemon_ts.testbuild.exp_boost",     col0X, labelY_base + rowStep);
+        renderCharmLabel(g, "oval_charm",    "cobblemon_ts.testbuild.hatch_boost",   col1X, labelY_base + rowStep);
+        renderCharmLabel(g, "exp_all",       "cobblemon_ts.testbuild.exp_all_percent", col0X, labelY_base + rowStep * 2);
+        renderCharmLabel(g, "pokebag",       "cobblemon_ts.testbuild.bag_stack",     col1X, labelY_base + rowStep * 2);
+    }
+
+    private void renderCharmLabel(DrawContext g, String charmId, String translationKey, int x, int y) {
+        boolean on = charmStates.getOrDefault(charmId, false);
+        int color = on ? 0xFF_40FF40 : 0xFF_FF4040; // 绿/红
+        String text = Text.translatable(translationKey).getString();
+        g.drawText(this.textRenderer, text, x + 2, y, color, false);
+    }
+
+    @Override
+    public void tick() {
+        if (!charmStatesLoaded) {
+            Map<String, Boolean> ss = SyncCharmStatesS2CPacket.pollLatestStates();
+            if (ss != null) {
+                for (Map.Entry<String, Boolean> e : ss.entrySet())
+                    charmStates.put(e.getKey(), e.getValue());
+                charmStatesLoaded = true;
+            }
+        }
+        super.tick();
+    }
+
+    @Override
+    public boolean shouldPause() { return false; }
+}
